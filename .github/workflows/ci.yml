@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  dotnet:
+    name: .NET
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore, build, and test
+        shell: bash
+        run: |
+          if [ -f rn-fabricator.sln ]; then
+            dotnet restore rn-fabricator.sln
+            dotnet build rn-fabricator.sln --no-restore --configuration Release
+            dotnet test rn-fabricator.sln --no-build --configuration Release
+          else
+            echo "rn-fabricator.sln not found yet; skipping .NET checks during documentation setup."
+          fi

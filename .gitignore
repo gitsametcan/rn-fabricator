@@ -1,0 +1,41 @@
+# .NET
+bin/
+obj/
+TestResults/
+*.user
+*.suo
+*.rsuser
+*.nupkg
+*.snupkg
+coverage/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Node / React Native generated projects
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/build/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+credentials.json
+credentials.*.json
+!credentials.example.json
+
+# Tool output
+artifacts/
+dist/
+tmp/
