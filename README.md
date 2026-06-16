@@ -33,6 +33,24 @@ tests/
   Fabricator.Tests/
 ```
 
+## Local Development
+
+Restore, build, and test:
+
+```bash
+dotnet restore rn-fabricator.sln
+dotnet build rn-fabricator.sln --configuration Release
+dotnet test rn-fabricator.sln --configuration Release --no-build
+```
+
+Run the CLI locally:
+
+```bash
+dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- --help
+dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- doctor
+dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- create MyApp --template basic-auth
+```
+
 ## Documentation
 
 - [Product Brief](docs/product-brief.md)

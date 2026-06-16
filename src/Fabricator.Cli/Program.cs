@@ -1,3 +1,4 @@
-using Fabricator.Core;
+using Fabricator.Cli;
 
-Console.WriteLine($"{ProductInfo.Name} - {ProductInfo.Description}");
+var rootCommand = CliCommandFactory.CreateRootCommand();
+return await rootCommand.Parse(args).InvokeAsync();
