@@ -1,0 +1,222 @@
+{
+  "labels": [
+    {
+      "name": "type:feature",
+      "color": "0E8A16",
+      "description": "New user-facing behavior or capability."
+    },
+    {
+      "name": "type:docs",
+      "color": "0075CA",
+      "description": "Documentation changes."
+    },
+    {
+      "name": "type:chore",
+      "color": "C5DEF5",
+      "description": "Maintenance, setup, or repository hygiene."
+    },
+    {
+      "name": "area:cli",
+      "color": "5319E7",
+      "description": "Command-line interface behavior."
+    },
+    {
+      "name": "area:core",
+      "color": "1D76DB",
+      "description": "Core application logic."
+    },
+    {
+      "name": "area:templates",
+      "color": "FBCA04",
+      "description": "Generated project templates."
+    },
+    {
+      "name": "area:ci",
+      "color": "BFDADC",
+      "description": "Continuous integration and automation."
+    },
+    {
+      "name": "area:release",
+      "color": "D93F0B",
+      "description": "Packaging, versioning, and releases."
+    },
+    {
+      "name": "priority:p0",
+      "color": "B60205",
+      "description": "Required for the current milestone."
+    },
+    {
+      "name": "priority:p1",
+      "color": "D4C5F9",
+      "description": "Important but not blocking the current milestone."
+    }
+  ],
+  "milestones": [
+    {
+      "title": "v0.1.0 - .NET CLI Foundation",
+      "description": "Create the initial .NET solution, CLI entry point, test setup, and reliable CI pipeline."
+    },
+    {
+      "title": "v0.2.0 - doctor Command MVP",
+      "description": "Implement environment diagnostics for React Native CLI development."
+    },
+    {
+      "title": "v0.3.0 - create Command MVP",
+      "description": "Create new React Native CLI projects with predictable validation and output."
+    },
+    {
+      "title": "v0.4.0 - basic-auth Template",
+      "description": "Ship the first starter template for a common React Native application foundation."
+    },
+    {
+      "title": "v0.5.0 - Release Packaging",
+      "description": "Prepare rn-fabricator for installation and public use as a .NET CLI tool."
+    }
+  ],
+  "issues": [
+    {
+      "title": "Create .NET 8 solution and project layout",
+      "milestone": "v0.1.0 - .NET CLI Foundation",
+      "labels": ["type:chore", "area:core", "priority:p0"],
+      "body": "Create `rn-fabricator.sln` with `src/Fabricator.Core`, `src/Fabricator.Cli`, and `tests/Fabricator.Tests`.\n\nAcceptance criteria:\n- Solution builds locally.\n- Project references are configured.\n- Folder layout matches the architecture documentation."
+    },
+    {
+      "title": "Add System.CommandLine CLI shell",
+      "milestone": "v0.1.0 - .NET CLI Foundation",
+      "labels": ["type:feature", "area:cli", "priority:p0"],
+      "body": "Add the first CLI entry point using System.CommandLine.\n\nAcceptance criteria:\n- `--help` works.\n- `--version` works or has a clear placeholder.\n- `doctor` and `create` command skeletons are registered."
+    },
+    {
+      "title": "Add xUnit test project and first smoke tests",
+      "milestone": "v0.1.0 - .NET CLI Foundation",
+      "labels": ["type:chore", "area:core", "priority:p0"],
+      "body": "Add the initial xUnit test project and smoke tests for the CLI/core foundation.\n\nAcceptance criteria:\n- Test project references the required projects.\n- At least one test runs successfully.\n- Test naming and structure are documented by example."
+    },
+    {
+      "title": "Make GitHub Actions run restore, build, and test",
+      "milestone": "v0.1.0 - .NET CLI Foundation",
+      "labels": ["type:chore", "area:ci", "priority:p0"],
+      "body": "Update CI so it performs real .NET restore, build, and test checks after the solution exists.\n\nAcceptance criteria:\n- CI fails on build failures.\n- CI fails on test failures.\n- The workflow targets `main`, `develop`, and pull requests."
+    },
+    {
+      "title": "Document local development workflow",
+      "milestone": "v0.1.0 - .NET CLI Foundation",
+      "labels": ["type:docs", "area:cli", "priority:p1"],
+      "body": "Document how to restore, build, test, and run the CLI locally.\n\nAcceptance criteria:\n- README has local development commands.\n- Required SDK/tool versions are listed.\n- First-time contributor path is clear."
+    },
+    {
+      "title": "Add external process runner abstraction",
+      "milestone": "v0.2.0 - doctor Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p0"],
+      "body": "Wrap external command execution behind a testable abstraction.\n\nAcceptance criteria:\n- Core logic does not directly depend on `Process.Start`.\n- Tests can simulate command success, failure, and missing executables.\n- Exit code, stdout, and stderr are captured."
+    },
+    {
+      "title": "Define dependency check result model",
+      "milestone": "v0.2.0 - doctor Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p0"],
+      "body": "Define reusable models for environment dependency checks.\n\nAcceptance criteria:\n- Checks can return passed, warning, or failed.\n- Results include dependency name, detected version, message, and remediation hint.\n- Result model is covered by tests where useful."
+    },
+    {
+      "title": "Implement Node.js, npm, and Git checks",
+      "milestone": "v0.2.0 - doctor Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p0"],
+      "body": "Implement the first cross-platform dependency checks.\n\nAcceptance criteria:\n- Node.js version check works.\n- npm version check works.\n- Git version check works.\n- Missing tools produce actionable messages."
+    },
+    {
+      "title": "Implement Watchman, Xcode, and CocoaPods checks",
+      "milestone": "v0.2.0 - doctor Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p1"],
+      "body": "Add iOS/macOS-oriented React Native dependency checks.\n\nAcceptance criteria:\n- Watchman check works where applicable.\n- Xcode check is skipped or warned clearly on non-macOS systems.\n- CocoaPods check reports actionable output."
+    },
+    {
+      "title": "Implement Java and Android SDK checks",
+      "milestone": "v0.2.0 - doctor Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p0"],
+      "body": "Add Android development dependency checks.\n\nAcceptance criteria:\n- Java check reports version or missing state.\n- Android SDK detection checks common environment variables.\n- Missing Android setup produces clear remediation hints."
+    },
+    {
+      "title": "Render doctor command summary and exit codes",
+      "milestone": "v0.2.0 - doctor Command MVP",
+      "labels": ["type:feature", "area:cli", "priority:p0"],
+      "body": "Render a readable `doctor` summary and map results to stable exit codes.\n\nAcceptance criteria:\n- Passed, warning, and failed checks are visually distinct in console output.\n- Required failures return the documented environment failure exit code.\n- Output is covered by tests where practical."
+    },
+    {
+      "title": "Add project name and output path validation",
+      "milestone": "v0.3.0 - create Command MVP",
+      "labels": ["type:feature", "area:cli", "priority:p0"],
+      "body": "Validate create command inputs before invoking React Native CLI.\n\nAcceptance criteria:\n- Invalid project names fail early.\n- Existing output paths are handled safely.\n- Error messages explain how to fix the input."
+    },
+    {
+      "title": "Add React Native CLI project creation orchestration",
+      "milestone": "v0.3.0 - create Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p0"],
+      "body": "Invoke React Native CLI project creation through the core orchestration layer.\n\nAcceptance criteria:\n- The command used to create the React Native project is explicit and testable.\n- Failures are reported clearly.\n- The implementation avoids hiding external process errors."
+    },
+    {
+      "title": "Add safe file operation and rollback strategy",
+      "milestone": "v0.3.0 - create Command MVP",
+      "labels": ["type:feature", "area:core", "priority:p1"],
+      "body": "Design safe file operations for generated projects.\n\nAcceptance criteria:\n- Template application avoids silent overwrites.\n- Partial failure behavior is documented.\n- Rollback or cleanup strategy is implemented for critical failures."
+    },
+    {
+      "title": "Print create command next steps",
+      "milestone": "v0.3.0 - create Command MVP",
+      "labels": ["type:feature", "area:cli", "priority:p1"],
+      "body": "Print useful next steps after project creation.\n\nAcceptance criteria:\n- Output includes project path.\n- Output includes install/run guidance.\n- Output identifies generated example config files."
+    },
+    {
+      "title": "Decide template packaging strategy",
+      "milestone": "v0.4.0 - basic-auth Template",
+      "labels": ["type:chore", "area:templates", "priority:p0"],
+      "body": "Choose how templates are stored and shipped with the CLI.\n\nAcceptance criteria:\n- Decision is recorded in `docs/decisions.md`.\n- The chosen strategy works for local development and packaged tool usage.\n- Tests can access template assets reliably."
+    },
+    {
+      "title": "Add basic-auth template screens",
+      "milestone": "v0.4.0 - basic-auth Template",
+      "labels": ["type:feature", "area:templates", "priority:p0"],
+      "body": "Add Splash, Loading, Login, and Home screens for the first template.\n\nAcceptance criteria:\n- Generated files are readable React Native code.\n- Screen names and folder structure are consistent.\n- Template files do not include real secrets."
+    },
+    {
+      "title": "Add simple auth flow wiring",
+      "milestone": "v0.4.0 - basic-auth Template",
+      "labels": ["type:feature", "area:templates", "priority:p0"],
+      "body": "Wire the basic-auth template into a simple authentication flow.\n\nAcceptance criteria:\n- Splash/loading/login/home flow is understandable.\n- State handling is minimal and easy to replace.\n- Generated code is documented by structure, not excessive comments."
+    },
+    {
+      "title": "Generate environment and credential example files",
+      "milestone": "v0.4.0 - basic-auth Template",
+      "labels": ["type:feature", "area:templates", "priority:p0"],
+      "body": "Generate safe example config files for projects using the template.\n\nAcceptance criteria:\n- `.env.example` is generated.\n- `credentials.example.json` is generated.\n- Real secret files are documented as ignored."
+    },
+    {
+      "title": "Add template application tests",
+      "milestone": "v0.4.0 - basic-auth Template",
+      "labels": ["type:chore", "area:templates", "priority:p0"],
+      "body": "Add tests that verify template application behavior.\n\nAcceptance criteria:\n- Expected files are generated.\n- Existing files are not silently overwritten.\n- Example files contain placeholders only."
+    },
+    {
+      "title": "Configure .NET tool packaging",
+      "milestone": "v0.5.0 - Release Packaging",
+      "labels": ["type:chore", "area:release", "priority:p0"],
+      "body": "Configure rn-fabricator for packaging as a .NET tool.\n\nAcceptance criteria:\n- Package metadata is present.\n- Local tool installation can be tested.\n- Package output is ignored or stored in the expected artifact location."
+    },
+    {
+      "title": "Add installation and usage documentation",
+      "milestone": "v0.5.0 - Release Packaging",
+      "labels": ["type:docs", "area:release", "priority:p0"],
+      "body": "Document how users install and run rn-fabricator.\n\nAcceptance criteria:\n- README includes installation instructions.\n- README includes doctor and create examples.\n- Troubleshooting links are present."
+    },
+    {
+      "title": "Add versioning and release notes workflow",
+      "milestone": "v0.5.0 - Release Packaging",
+      "labels": ["type:chore", "area:release", "priority:p1"],
+      "body": "Define the release versioning and changelog update workflow.\n\nAcceptance criteria:\n- Versioning policy is documented.\n- CHANGELOG update expectations are clear.\n- Release steps are repeatable."
+    },
+    {
+      "title": "Prepare v0.5.0 GitHub release",
+      "milestone": "v0.5.0 - Release Packaging",
+      "labels": ["type:chore", "area:release", "priority:p0"],
+      "body": "Prepare the first public release candidate.\n\nAcceptance criteria:\n- CI passes.\n- Release notes are complete.\n- Artifacts or package instructions are attached to the release."
+    }
+  ]
+}
