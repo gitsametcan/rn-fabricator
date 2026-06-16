@@ -43,10 +43,12 @@ fix: handle missing npm path
 
 ## Local Checks
 
-After the .NET solution is created, run:
+Before opening a pull request, run:
 
 ```bash
-dotnet restore
-dotnet build
-dotnet test
+dotnet restore rn-fabricator.sln
+dotnet build rn-fabricator.sln --configuration Release
+dotnet test rn-fabricator.sln --configuration Release
 ```
+
+For full setup and CI-equivalent commands, see [Local Development](docs/development.md).
