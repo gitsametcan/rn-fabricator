@@ -6,9 +6,9 @@ It helps developers create new React Native projects, verify their local develop
 
 ## Project Status
 
-Status: Planning
+Status: Early development
 
-The first milestone is documentation and repository setup. The .NET solution and CLI implementation will be added after the initial project decisions are captured.
+The project has an initial .NET solution, CLI shell, tests, and CI workflow. The first functional command implementation will be the `doctor` command.
 
 ## MVP Scope
 
@@ -23,7 +23,7 @@ The first milestone is documentation and repository setup. The .NET solution and
 - xUnit
 - GitHub Actions
 
-Planned solution layout:
+Current solution layout:
 
 ```text
 src/
@@ -35,20 +35,14 @@ tests/
 
 ## Local Development
 
-Restore, build, and test:
+See [Local Development](docs/development.md) for setup, build, test, run, branch workflow, and local secrets guidance.
+
+CI-equivalent local checks:
 
 ```bash
 dotnet restore rn-fabricator.sln
-dotnet build rn-fabricator.sln --configuration Release
-dotnet test rn-fabricator.sln --configuration Release --no-build
-```
-
-Run the CLI locally:
-
-```bash
-dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- --help
-dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- doctor
-dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- create MyApp --template basic-auth
+dotnet build rn-fabricator.sln --no-restore --configuration Release
+dotnet test rn-fabricator.sln --no-build --configuration Release
 ```
 
 ## Documentation
@@ -56,6 +50,7 @@ dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- create MyApp --
 - [Product Brief](docs/product-brief.md)
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
+- [Local Development](docs/development.md)
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
 - [Release Checklist](docs/release-checklist.md)
