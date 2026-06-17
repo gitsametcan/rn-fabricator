@@ -4,4 +4,5 @@ public sealed record DependencyCheckDefinition(
     string Name,
     string FileName,
     IReadOnlyList<string> Arguments,
-    string RemediationHint);
+    string RemediationHint,
+    DependencyCheckStatus MissingStatus = DependencyCheckStatus.Failed);
