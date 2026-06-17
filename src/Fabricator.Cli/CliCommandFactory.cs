@@ -26,11 +26,26 @@ public static class CliCommandFactory
         Func<CreateCommandHandler> createHandlerFactory)
     {
         var rootCommand = new RootCommand(ProductInfo.Description);
+        ConfigureVersionOption(rootCommand);
 
         rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
         rootCommand.Subcommands.Add(CreateCreateCommand(createHandlerFactory));
 
         return rootCommand;
+    }
+
+    private static void ConfigureVersionOption(RootCommand rootCommand)
+    {
+        var defaultVersionOption = rootCommand.Options.OfType<VersionOption>().SingleOrDefault();
+        if (defaultVersionOption is not null)
+        {
+            rootCommand.Options.Remove(defaultVersionOption);
+        }
+
+        rootCommand.Options.Add(new VersionOption
+        {
+            Action = new ProductVersionAction()
+        });
     }
 
     private static Command CreateDoctorCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
