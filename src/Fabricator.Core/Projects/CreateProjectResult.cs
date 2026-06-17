@@ -7,11 +7,13 @@ public sealed class CreateProjectResult
     private CreateProjectResult(
         CreateProjectValidationResult validation,
         ProcessRunRequest? command,
-        ProcessRunResult? processResult)
+        ProcessRunResult? processResult,
+        CreateProjectRollbackResult rollback)
     {
         Validation = validation;
         Command = command;
         ProcessResult = processResult;
+        Rollback = rollback;
     }
 
     public CreateProjectValidationResult Validation { get; }
@@ -19,6 +21,8 @@ public sealed class CreateProjectResult
     public ProcessRunRequest? Command { get; }
 
     public ProcessRunResult? ProcessResult { get; }
+
+    public CreateProjectRollbackResult Rollback { get; }
 
     public bool Succeeded => Validation.IsValid && ProcessResult?.Succeeded == true;
 
@@ -39,7 +43,11 @@ public sealed class CreateProjectResult
 
     public static CreateProjectResult Invalid(CreateProjectValidationResult validation)
     {
-        return new CreateProjectResult(validation, null, null);
+        return new CreateProjectResult(
+            validation,
+            null,
+            null,
+            CreateProjectRollbackResult.NotRequired("Rollback was not required because validation failed before project creation."));
     }
 
     public static CreateProjectResult Completed(
@@ -47,6 +55,19 @@ public sealed class CreateProjectResult
         ProcessRunRequest command,
         ProcessRunResult processResult)
     {
-        return new CreateProjectResult(validation, command, processResult);
+        return Completed(
+            validation,
+            command,
+            processResult,
+            CreateProjectRollbackResult.NotRequired("Rollback was not required."));
+    }
+
+    public static CreateProjectResult Completed(
+        CreateProjectValidationResult validation,
+        ProcessRunRequest command,
+        ProcessRunResult processResult,
+        CreateProjectRollbackResult rollback)
+    {
+        return new CreateProjectResult(validation, command, processResult, rollback);
     }
 }

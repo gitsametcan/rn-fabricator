@@ -129,7 +129,8 @@ public sealed class CliInvocationSmokeTests
                 "MyApp",
                 "basic-auth",
                 Directory.GetCurrentDirectory(),
-                new ProcessRunResult(1, "partial output", "React Native CLI failed.")));
+                new ProcessRunResult(1, "partial output", "React Native CLI failed."),
+                CreateProjectRollbackResult.Completed("Removed partial project directory: /tmp/MyApp")));
 
         using var output = ConsoleOutputScope.Capture();
         var exitCode = rootCommand.Parse(["create", "MyApp"]).Invoke();
@@ -138,6 +139,7 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("React Native project creation failed.", output.ErrorOutput);
         Assert.Contains("partial output", output.ErrorOutput);
         Assert.Contains("React Native CLI failed.", output.ErrorOutput);
+        Assert.Contains("Rollback completed: Removed partial project directory: /tmp/MyApp", output.ErrorOutput);
     }
 
     private static RootCommand CreateRootCommandWithCreateResult(CreateProjectResult result)
@@ -154,7 +156,8 @@ public sealed class CliInvocationSmokeTests
         string projectName,
         string templateName,
         string outputDirectory,
-        ProcessRunResult? processResult = null)
+        ProcessRunResult? processResult = null,
+        CreateProjectRollbackResult? rollback = null)
     {
         var validation = new CreateProjectValidator().Validate(
             new CreateProjectRequest(projectName, templateName, outputDirectory));
@@ -166,6 +169,7 @@ public sealed class CliInvocationSmokeTests
         return CreateProjectResult.Completed(
             validation,
             command,
-            processResult ?? new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
+            processResult ?? new ProcessRunResult(ExitCodes.Success, "created", string.Empty),
+            rollback ?? CreateProjectRollbackResult.NotRequired("Rollback was not required."));
     }
 }

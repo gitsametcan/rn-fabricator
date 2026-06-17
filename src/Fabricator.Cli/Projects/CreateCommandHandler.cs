@@ -86,5 +86,29 @@ public sealed class CreateCommandHandler
         {
             _errorWriter.WriteLine(result.ProcessResult.StandardError.Trim());
         }
+
+        RenderRollback(result.Rollback);
+    }
+
+    private void RenderRollback(CreateProjectRollbackResult rollback)
+    {
+        if (!rollback.Attempted)
+        {
+            _errorWriter.WriteLine($"Rollback: {rollback.Message}");
+            return;
+        }
+
+        if (rollback.Succeeded)
+        {
+            _errorWriter.WriteLine($"Rollback completed: {rollback.Message}");
+            return;
+        }
+
+        _errorWriter.WriteLine($"Rollback failed: {rollback.Message}");
+
+        if (!string.IsNullOrWhiteSpace(rollback.ErrorMessage))
+        {
+            _errorWriter.WriteLine(rollback.ErrorMessage);
+        }
     }
 }

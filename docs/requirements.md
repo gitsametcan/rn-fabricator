@@ -32,6 +32,8 @@ Expected behavior:
 
 - Accept a project name.
 - Invoke React Native CLI project creation.
+- Refuse to overwrite an existing target project path.
+- Clean up a partial generated project directory when React Native CLI fails.
 - Apply the selected template.
 - Generate example environment files.
 - Print next steps after successful creation.
@@ -60,6 +62,7 @@ Initial template contents:
 
 - The CLI must provide clear help text for every command.
 - Commands must validate user input before running long operations.
+- Critical creation failures must either roll back partial output or clearly explain required manual cleanup.
 - Generated files must avoid committing real secrets.
 - Templates must be versioned with the CLI.
 - Failures must be actionable and readable.

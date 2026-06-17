@@ -58,6 +58,52 @@ public sealed class CreateProjectServiceTests
         Assert.Equal(1, result.ExitCode);
         Assert.Equal("partial output", result.ProcessResult?.StandardOutput);
         Assert.Equal("cli failed", result.ProcessResult?.StandardError);
+        Assert.False(result.Rollback.Attempted);
+        Assert.Contains("no partial project directory", result.Rollback.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsyncRemovesPartialProjectDirectoryWhenReactNativeCliFails()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ => Directory.CreateDirectory(projectPath)
+        };
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "cli failed"));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest("MyApp", "basic-auth", outputDirectory.Path));
+
+        Assert.False(result.Succeeded);
+        Assert.True(result.Rollback.Attempted);
+        Assert.True(result.Rollback.Succeeded);
+        Assert.False(Directory.Exists(projectPath));
+        Assert.Contains("Removed partial project directory", result.Rollback.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsyncDoesNotDeleteTargetFileDuringRollback()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ => File.WriteAllText(projectPath, "not a directory")
+        };
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "cli failed"));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest("MyApp", "basic-auth", outputDirectory.Path));
+
+        Assert.False(result.Succeeded);
+        Assert.True(result.Rollback.Attempted);
+        Assert.False(result.Rollback.Succeeded);
+        Assert.True(File.Exists(projectPath));
+        Assert.Contains("target path is a file", result.Rollback.Message);
     }
 
     private sealed class TemporaryDirectory : IDisposable
