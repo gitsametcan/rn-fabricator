@@ -1,5 +1,6 @@
 using Fabricator.Core;
 using Fabricator.Core.Processes;
+using System.Runtime.InteropServices;
 
 namespace Fabricator.Tests.Processes;
 
@@ -9,11 +10,12 @@ public sealed class ProcessRunnerTests
     public async Task RunAsyncCapturesStandardOutput()
     {
         var runner = new ProcessRunner();
+        var request = CreateEchoRequest("rn-fabricator");
 
-        var result = await runner.RunAsync(ProcessRunRequest.Create("dotnet", "--version"));
+        var result = await runner.RunAsync(request);
 
         Assert.True(result.Succeeded, result.StandardError);
-        Assert.NotEmpty(result.StandardOutput.Trim());
+        Assert.Equal("rn-fabricator", result.StandardOutput.Trim());
         Assert.Empty(result.StandardError);
     }
 
@@ -27,5 +29,15 @@ public sealed class ProcessRunnerTests
         Assert.False(result.Succeeded);
         Assert.Equal(ExitCodes.GeneralFailure, result.ExitCode);
         Assert.NotEmpty(result.StandardError);
+    }
+
+    private static ProcessRunRequest CreateEchoRequest(string value)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return ProcessRunRequest.Create("cmd", "/c", $"echo {value}");
+        }
+
+        return ProcessRunRequest.Create("/bin/sh", "-c", $"printf '%s' {value}");
     }
 }
