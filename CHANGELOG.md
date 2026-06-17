@@ -6,6 +6,10 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.6.0-alpha.1 - 2026-06-17
+
 ### Added
 
 - Platform-specific `doctor` remediation guidance for macOS, Windows, and Linux.
