@@ -6,12 +6,31 @@ using Fabricator.Core.Environment;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
 using System.CommandLine;
+using System.Reflection;
 
 namespace Fabricator.Tests;
 
 [Collection("ConsoleOutput")]
 public sealed class CliInvocationSmokeTests
 {
+    [Fact]
+    public void VersionOptionWritesCleanPackageVersion()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var expectedVersion = typeof(CliCommandFactory)
+            .Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["--version"]).Invoke();
+
+        var versionOutput = output.ToString().Trim();
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal(expectedVersion, versionOutput);
+        Assert.DoesNotContain("+", versionOutput);
+    }
+
     [Fact]
     public void DoctorCommandReturnsSuccessAndWritesSummaryOutput()
     {
