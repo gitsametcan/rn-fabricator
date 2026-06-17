@@ -43,7 +43,25 @@ public sealed class DoctorSummaryRenderer
 
         if (!string.IsNullOrWhiteSpace(result.RemediationHint))
         {
-            _writer.WriteLine($"       Hint: {result.RemediationHint}");
+            RenderRemediationHint(result.RemediationHint);
+        }
+    }
+
+    private void RenderRemediationHint(string remediationHint)
+    {
+        var lines = remediationHint
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (lines.Length == 1)
+        {
+            _writer.WriteLine($"       Hint: {lines[0]}");
+            return;
+        }
+
+        _writer.WriteLine("       Hint:");
+        foreach (var line in lines)
+        {
+            _writer.WriteLine($"       - {line}");
         }
     }
 }

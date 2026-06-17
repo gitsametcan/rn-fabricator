@@ -120,7 +120,8 @@ public sealed class AppleToolDependencyCheckServiceTests
 
         var watchmanResult = summary.Results.Single(result => result.Name == "Watchman");
         Assert.Equal(DependencyCheckStatus.Warning, watchmanResult.Status);
-        Assert.Equal("Install Watchman for a better React Native development experience.", watchmanResult.RemediationHint);
+        Assert.Contains("brew install watchman", watchmanResult.RemediationHint);
+        Assert.Contains("watchman --version", watchmanResult.RemediationHint);
     }
 
     [Fact]
@@ -140,6 +141,22 @@ public sealed class AppleToolDependencyCheckServiceTests
 
         var xcodeResult = summary.Results.Single(result => result.Name == "Xcode");
         Assert.Equal(DependencyCheckStatus.Failed, xcodeResult.Status);
-        Assert.Equal("Install Xcode from the App Store and run `sudo xcode-select --switch /Applications/Xcode.app`.", xcodeResult.RemediationHint);
+        Assert.Contains("Install Xcode from the App Store.", xcodeResult.RemediationHint);
+        Assert.Contains("sudo xcode-select --switch /Applications/Xcode.app", xcodeResult.RemediationHint);
+    }
+
+    [Fact]
+    public async Task CheckAppleToolsAsyncUsesWindowsWatchmanGuidance()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "watchman failed"));
+        var platform = new FakeSystemPlatform { IsWindows = true };
+        var service = new DependencyCheckService(runner, platform);
+
+        var summary = await service.CheckAppleToolsAsync();
+
+        var watchmanResult = summary.Results.Single(result => result.Name == "Watchman");
+        Assert.Equal(DependencyCheckStatus.Warning, watchmanResult.Status);
+        Assert.Contains("optional for React Native on Windows", watchmanResult.RemediationHint);
     }
 }

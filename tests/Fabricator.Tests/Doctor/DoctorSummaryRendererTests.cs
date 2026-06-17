@@ -28,4 +28,26 @@ public sealed class DoctorSummaryRendererTests
         Assert.Contains("Hint: Install Git.", output);
         Assert.Contains("Passed: 1, Warnings: 1, Failed: 1", output);
     }
+
+    [Fact]
+    public void RenderWritesMultilineHintsAsReadableSteps()
+    {
+        var summary = new DependencyCheckSummary(
+        [
+            DependencyCheckResult.Failed(
+                "Android SDK",
+                null,
+                "Android SDK environment variables were not found.",
+                "Install Android Studio.\nSet ANDROID_HOME.")
+        ]);
+        using var writer = new StringWriter();
+        var renderer = new DoctorSummaryRenderer(writer);
+
+        renderer.Render(summary);
+
+        var output = writer.ToString();
+        Assert.Contains("Hint:", output);
+        Assert.Contains("- Install Android Studio.", output);
+        Assert.Contains("- Set ANDROID_HOME.", output);
+    }
 }
