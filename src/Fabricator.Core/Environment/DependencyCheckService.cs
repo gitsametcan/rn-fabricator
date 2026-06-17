@@ -23,11 +23,41 @@ public sealed class DependencyCheckService : IDependencyCheckService
             "Install Git and make sure `git` is available on PATH.")
     ];
 
+    private static readonly DependencyCheckDefinition WatchmanDefinition = new(
+        "Watchman",
+        "watchman",
+        ["--version"],
+        "Install Watchman for a better React Native development experience.",
+        DependencyCheckStatus.Warning);
+
+    private static readonly DependencyCheckDefinition[] MacOnlyToolDefinitions =
+    [
+        new(
+            "Xcode",
+            "xcodebuild",
+            ["-version"],
+            "Install Xcode from the App Store and run `sudo xcode-select --switch /Applications/Xcode.app`."),
+        new(
+            "CocoaPods",
+            "pod",
+            ["--version"],
+            "Install CocoaPods with `sudo gem install cocoapods` or your preferred Ruby environment.")
+    ];
+
     private readonly IProcessRunner _processRunner;
+    private readonly ISystemPlatform _systemPlatform;
 
     public DependencyCheckService(IProcessRunner processRunner)
+        : this(processRunner, new SystemPlatform())
+    {
+    }
+
+    public DependencyCheckService(
+        IProcessRunner processRunner,
+        ISystemPlatform systemPlatform)
     {
         _processRunner = processRunner;
+        _systemPlatform = systemPlatform;
     }
 
     public async Task<DependencyCheckSummary> CheckCoreToolsAsync(CancellationToken cancellationToken = default)
@@ -42,7 +72,44 @@ public sealed class DependencyCheckService : IDependencyCheckService
         return new DependencyCheckSummary(results);
     }
 
+    public async Task<DependencyCheckSummary> CheckAppleToolsAsync(CancellationToken cancellationToken = default)
+    {
+        var results = new List<DependencyCheckResult>
+        {
+            await CheckToolAsync(WatchmanDefinition, cancellationToken)
+        };
+
+        if (!_systemPlatform.IsMacOS)
+        {
+            results.AddRange(MacOnlyToolDefinitions.Select(CreateNonMacOSWarning));
+            return new DependencyCheckSummary(results);
+        }
+
+        foreach (var definition in MacOnlyToolDefinitions)
+        {
+            results.Add(await CheckToolAsync(definition, cancellationToken));
+        }
+
+        return new DependencyCheckSummary(results);
+    }
+
+    private static DependencyCheckResult CreateNonMacOSWarning(DependencyCheckDefinition definition)
+    {
+        return DependencyCheckResult.Warning(
+            definition.Name,
+            null,
+            $"{definition.Name} check is only available on macOS.",
+            "Run this check on macOS when preparing React Native iOS builds.");
+    }
+
     private async Task<DependencyCheckResult> CheckRequiredToolAsync(
+        DependencyCheckDefinition definition,
+        CancellationToken cancellationToken)
+    {
+        return await CheckToolAsync(definition, cancellationToken);
+    }
+
+    private async Task<DependencyCheckResult> CheckToolAsync(
         DependencyCheckDefinition definition,
         CancellationToken cancellationToken)
     {
@@ -54,11 +121,11 @@ public sealed class DependencyCheckService : IDependencyCheckService
 
         if (!processResult.Succeeded)
         {
-            return DependencyCheckResult.Failed(
-                definition.Name,
-                null,
-                $"{definition.Name} was not found or returned exit code {processResult.ExitCode}.",
-                definition.RemediationHint);
+            var message = $"{definition.Name} was not found or returned exit code {processResult.ExitCode}.";
+
+            return definition.MissingStatus == DependencyCheckStatus.Warning
+                ? DependencyCheckResult.Warning(definition.Name, null, message, definition.RemediationHint)
+                : DependencyCheckResult.Failed(definition.Name, null, message, definition.RemediationHint);
         }
 
         var detectedVersion = ExtractDetectedVersion(processResult.StandardOutput);
