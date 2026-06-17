@@ -81,6 +81,8 @@ dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- create MyApp --
 
 The `create` command prints the generated project path, `cd` guidance, Metro start command, and iOS/Android run commands after successful project creation.
 
+For real usage testing, install the packed tool in a repo-external playground. See [Dogfooding Workflow](dogfooding.md).
+
 ## Project Layout
 
 ```text

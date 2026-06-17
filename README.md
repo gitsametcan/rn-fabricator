@@ -111,6 +111,7 @@ rn-fabricator create --help
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
 - [Local Development](docs/development.md)
+- [Dogfooding Workflow](docs/dogfooding.md)
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
 - [Release Checklist](docs/release-checklist.md)
