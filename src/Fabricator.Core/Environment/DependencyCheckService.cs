@@ -44,20 +44,39 @@ public sealed class DependencyCheckService : IDependencyCheckService
             "Install CocoaPods with `sudo gem install cocoapods` or your preferred Ruby environment.")
     ];
 
+    private static readonly DependencyCheckDefinition JavaDefinition = new(
+        "Java",
+        "java",
+        ["-version"],
+        "Install a supported JDK and make sure `java` is available on PATH.");
+
+    private const string AndroidHomeVariableName = "ANDROID_HOME";
+    private const string AndroidSdkRootVariableName = "ANDROID_SDK_ROOT";
+
     private readonly IProcessRunner _processRunner;
     private readonly ISystemPlatform _systemPlatform;
+    private readonly IEnvironmentVariables _environmentVariables;
 
     public DependencyCheckService(IProcessRunner processRunner)
-        : this(processRunner, new SystemPlatform())
+        : this(processRunner, new SystemPlatform(), new SystemEnvironmentVariables())
     {
     }
 
     public DependencyCheckService(
         IProcessRunner processRunner,
         ISystemPlatform systemPlatform)
+        : this(processRunner, systemPlatform, new SystemEnvironmentVariables())
+    {
+    }
+
+    public DependencyCheckService(
+        IProcessRunner processRunner,
+        ISystemPlatform systemPlatform,
+        IEnvironmentVariables environmentVariables)
     {
         _processRunner = processRunner;
         _systemPlatform = systemPlatform;
+        _environmentVariables = environmentVariables;
     }
 
     public async Task<DependencyCheckSummary> CheckCoreToolsAsync(CancellationToken cancellationToken = default)
@@ -70,6 +89,44 @@ public sealed class DependencyCheckService : IDependencyCheckService
         }
 
         return new DependencyCheckSummary(results);
+    }
+
+    public async Task<DependencyCheckSummary> CheckAndroidToolsAsync(CancellationToken cancellationToken = default)
+    {
+        var results = new List<DependencyCheckResult>
+        {
+            await CheckToolAsync(JavaDefinition, cancellationToken),
+            CheckAndroidSdk()
+        };
+
+        return new DependencyCheckSummary(results);
+    }
+
+    private DependencyCheckResult CheckAndroidSdk()
+    {
+        var androidHome = _environmentVariables.Get(AndroidHomeVariableName);
+        if (!string.IsNullOrWhiteSpace(androidHome))
+        {
+            return DependencyCheckResult.Passed(
+                "Android SDK",
+                androidHome,
+                $"{AndroidHomeVariableName} is configured.");
+        }
+
+        var androidSdkRoot = _environmentVariables.Get(AndroidSdkRootVariableName);
+        if (!string.IsNullOrWhiteSpace(androidSdkRoot))
+        {
+            return DependencyCheckResult.Passed(
+                "Android SDK",
+                androidSdkRoot,
+                $"{AndroidSdkRootVariableName} is configured.");
+        }
+
+        return DependencyCheckResult.Failed(
+            "Android SDK",
+            null,
+            "Android SDK environment variables were not found.",
+            $"Set {AndroidHomeVariableName} or {AndroidSdkRootVariableName} to your Android SDK path.");
     }
 
     public async Task<DependencyCheckSummary> CheckAppleToolsAsync(CancellationToken cancellationToken = default)
@@ -128,7 +185,10 @@ public sealed class DependencyCheckService : IDependencyCheckService
                 : DependencyCheckResult.Failed(definition.Name, null, message, definition.RemediationHint);
         }
 
-        var detectedVersion = ExtractDetectedVersion(processResult.StandardOutput);
+        var detectedVersion = ExtractDetectedVersion(
+            string.IsNullOrWhiteSpace(processResult.StandardOutput)
+                ? processResult.StandardError
+                : processResult.StandardOutput);
 
         return DependencyCheckResult.Passed(
             definition.Name,
