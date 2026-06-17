@@ -45,6 +45,66 @@ dotnet build rn-fabricator.sln --no-restore --configuration Release
 dotnet test rn-fabricator.sln --no-build --configuration Release
 ```
 
+## Installation
+
+rn-fabricator targets .NET 8 and is currently prepared as a pre-release .NET tool.
+
+Install from NuGet after the first package is published:
+
+```bash
+dotnet tool install --global rn-fabricator
+```
+
+Update an existing global installation:
+
+```bash
+dotnet tool update --global rn-fabricator
+```
+
+Install from a local package while developing the repository:
+
+```bash
+dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages
+dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.5.0-alpha.1
+./.tools/rn-fabricator --help
+```
+
+## Usage
+
+Check the local React Native CLI development environment:
+
+```bash
+rn-fabricator doctor
+```
+
+Create a React Native CLI project with the default `basic-auth` template:
+
+```bash
+rn-fabricator create MyApp
+```
+
+Create a project in a specific output directory:
+
+```bash
+rn-fabricator create MyApp --output ./sandbox --template basic-auth
+```
+
+Useful help commands:
+
+```bash
+rn-fabricator --help
+rn-fabricator doctor --help
+rn-fabricator create --help
+```
+
+## Troubleshooting
+
+- Confirm .NET 8 is installed: [Download .NET](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Review .NET tool install behavior: [dotnet tool install](https://learn.microsoft.com/dotnet/core/tools/dotnet-tool-install)
+- Prepare React Native CLI dependencies: [Set up your environment](https://reactnative.dev/docs/environment-setup)
+- Check project-specific development steps: [Local Development](docs/development.md)
+- Review release readiness checks: [Release Checklist](docs/release-checklist.md)
+
 ## Documentation
 
 - [Product Brief](docs/product-brief.md)
