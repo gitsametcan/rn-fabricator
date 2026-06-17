@@ -9,6 +9,8 @@ public sealed class FakeProcessRunner : IProcessRunner
 
     public List<ProcessRunRequest> Requests { get; } = [];
 
+    public Action<ProcessRunRequest>? OnRun { get; set; }
+
     public void Enqueue(ProcessRunResult result)
     {
         _results.Enqueue(result);
@@ -19,6 +21,7 @@ public sealed class FakeProcessRunner : IProcessRunner
         CancellationToken cancellationToken = default)
     {
         Requests.Add(request);
+        OnRun?.Invoke(request);
 
         if (_results.Count == 0)
         {

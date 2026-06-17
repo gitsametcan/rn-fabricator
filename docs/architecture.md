@@ -93,6 +93,10 @@ Template application must:
 
 ## Error Handling
 
+Project creation must validate the target path before invoking external tools. If React Native CLI fails after creating the target project directory, rn-fabricator should remove only that generated project directory.
+
+It must not delete the output directory itself, existing files, or paths outside the validated output directory.
+
 Commands should return stable exit codes:
 
 - `0`: Success.
