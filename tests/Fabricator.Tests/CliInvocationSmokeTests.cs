@@ -1,7 +1,10 @@
 using Fabricator.Cli;
 using Fabricator.Cli.Doctor;
+using Fabricator.Cli.Projects;
 using Fabricator.Core;
 using Fabricator.Core.Environment;
+using Fabricator.Core.Processes;
+using Fabricator.Core.Projects;
 using System.CommandLine;
 
 namespace Fabricator.Tests;
@@ -53,33 +56,39 @@ public sealed class CliInvocationSmokeTests
     [Fact]
     public void CreateCommandReturnsSuccessAndUsesProvidedTemplate()
     {
-        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var rootCommand = CreateRootCommandWithCreateResult(
+            BuildCreateResult("MyApp", "basic-auth", Directory.GetCurrentDirectory()));
 
         using var output = ConsoleOutputScope.Capture();
         var exitCode = rootCommand.Parse(
             ["create", "MyApp", "--template", "basic-auth", "--output", Directory.GetCurrentDirectory()]).Invoke();
 
         Assert.Equal(ExitCodes.Success, exitCode);
-        Assert.Contains("Requested project: MyApp, template: basic-auth", output.ToString());
+        Assert.Contains("Creating React Native project: MyApp", output.ToString());
+        Assert.Contains("Command: npx @react-native-community/cli@latest init MyApp", output.ToString());
+        Assert.Contains("React Native project created:", output.ToString());
         Assert.Contains(Path.Combine(Directory.GetCurrentDirectory(), "MyApp"), output.ToString());
     }
 
     [Fact]
     public void CreateCommandReturnsSuccessAndUsesDefaultTemplate()
     {
-        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var rootCommand = CreateRootCommandWithCreateResult(
+            BuildCreateResult("MyApp", "basic-auth", Directory.GetCurrentDirectory()));
 
         using var output = ConsoleOutputScope.Capture();
         var exitCode = rootCommand.Parse(["create", "MyApp"]).Invoke();
 
         Assert.Equal(ExitCodes.Success, exitCode);
-        Assert.Contains("Requested project: MyApp, template: basic-auth", output.ToString());
+        Assert.Contains("Creating React Native project: MyApp", output.ToString());
     }
 
     [Fact]
     public void CreateCommandReturnsInvalidInputForInvalidProjectName()
     {
-        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var validation = new CreateProjectValidator().Validate(
+            new CreateProjectRequest("my-app", "basic-auth", Directory.GetCurrentDirectory()));
+        var rootCommand = CreateRootCommandWithCreateResult(CreateProjectResult.Invalid(validation));
 
         using var output = ConsoleOutputScope.Capture();
         var exitCode = rootCommand.Parse(["create", "my-app"]).Invoke();
@@ -92,9 +101,11 @@ public sealed class CliInvocationSmokeTests
     [Fact]
     public void CreateCommandReturnsInvalidInputWhenTargetProjectPathExists()
     {
-        var rootCommand = CliCommandFactory.CreateRootCommand();
         var outputDirectory = Path.Combine(Path.GetTempPath(), $"rn-fabricator-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(outputDirectory, "MyApp"));
+        var validation = new CreateProjectValidator().Validate(
+            new CreateProjectRequest("MyApp", "basic-auth", outputDirectory));
+        var rootCommand = CreateRootCommandWithCreateResult(CreateProjectResult.Invalid(validation));
 
         try
         {
@@ -108,5 +119,53 @@ public sealed class CliInvocationSmokeTests
         {
             Directory.Delete(outputDirectory, recursive: true);
         }
+    }
+
+    [Fact]
+    public void CreateCommandReturnsProcessExitCodeAndWritesFailureOutput()
+    {
+        var rootCommand = CreateRootCommandWithCreateResult(
+            BuildCreateResult(
+                "MyApp",
+                "basic-auth",
+                Directory.GetCurrentDirectory(),
+                new ProcessRunResult(1, "partial output", "React Native CLI failed.")));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["create", "MyApp"]).Invoke();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("React Native project creation failed.", output.ErrorOutput);
+        Assert.Contains("partial output", output.ErrorOutput);
+        Assert.Contains("React Native CLI failed.", output.ErrorOutput);
+    }
+
+    private static RootCommand CreateRootCommandWithCreateResult(CreateProjectResult result)
+    {
+        var createProjectService = new FakeCreateProjectService();
+        createProjectService.Enqueue(result);
+
+        return CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(createProjectService, Console.Out, Console.Error));
+    }
+
+    private static CreateProjectResult BuildCreateResult(
+        string projectName,
+        string templateName,
+        string outputDirectory,
+        ProcessRunResult? processResult = null)
+    {
+        var validation = new CreateProjectValidator().Validate(
+            new CreateProjectRequest(projectName, templateName, outputDirectory));
+        var command = new ProcessRunRequest(
+            "npx",
+            ["@react-native-community/cli@latest", "init", projectName],
+            validation.FullOutputDirectory);
+
+        return CreateProjectResult.Completed(
+            validation,
+            command,
+            processResult ?? new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
     }
 }
