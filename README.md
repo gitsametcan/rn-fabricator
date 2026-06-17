@@ -65,7 +65,7 @@ Install from a local package while developing the repository:
 
 ```bash
 dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages
-dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.5.0-alpha.1
+dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.6.0-alpha.1
 ./.tools/rn-fabricator --help
 ```
 
@@ -75,6 +75,12 @@ Check the local React Native CLI development environment:
 
 ```bash
 rn-fabricator doctor
+```
+
+Print a guided setup plan without running install commands:
+
+```bash
+rn-fabricator setup plan
 ```
 
 Create a React Native CLI project with the default `basic-auth` template:
@@ -94,6 +100,7 @@ Useful help commands:
 ```bash
 rn-fabricator --help
 rn-fabricator doctor --help
+rn-fabricator setup plan --help
 rn-fabricator create --help
 ```
 
@@ -111,10 +118,13 @@ rn-fabricator create --help
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
 - [Local Development](docs/development.md)
+- [Dogfooding Workflow](docs/dogfooding.md)
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
+- [Guided Setup Design](docs/guided-setup.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
+- [v0.6.0-alpha.1 Release Notes](docs/releases/v0.6.0-alpha.1.md)
 - [v0.5.0-alpha.1 Release Notes](docs/releases/v0.5.0-alpha.1.md)
 
 ## Contributing

@@ -59,3 +59,25 @@ Consequences:
 - Each template must include a manifest before template application code can use it.
 - Tests can load template assets from build output instead of relying on repository-relative paths.
 - Remote template downloads remain out of scope for MVP and can be added later behind a separate provider.
+
+## ADR-006: Keep Doctor Read-Only And Add Guided Setup
+
+Status: Accepted
+
+Decision:
+`doctor` remains a read-only diagnostics command. Guided setup should use a separate `setup` command family:
+
+```text
+rn-fabricator setup plan
+rn-fabricator setup run
+```
+
+Reason:
+Dependency installation can mutate the user's machine, require admin access, open GUI installers, accept licenses, or edit environment variables. A read-only `doctor` command is safe to run repeatedly, while `setup` makes mutation explicit and reviewable.
+
+Consequences:
+
+- `setup plan` should be implemented before any command execution.
+- `setup run` must print the plan and require explicit confirmation.
+- Dry-run support is required before real install execution.
+- Manual steps such as Xcode installation and shell profile edits stay manual in the first implementation.

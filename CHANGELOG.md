@@ -8,6 +8,16 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 No unreleased changes yet.
 
+## 0.6.0-alpha.1 - 2026-06-17
+
+### Added
+
+- Platform-specific `doctor` remediation guidance for macOS, Windows, and Linux.
+- Clean `--version` output that prints the package version without commit metadata.
+- Dogfooding workflow documentation for repo-external playground testing.
+- Guided setup design that keeps `doctor` read-only and plans a separate `setup` command family.
+- `setup plan` command for read-only guided dependency setup planning.
+
 ## 0.5.0-alpha.1 - 2026-06-17
 
 ### Added

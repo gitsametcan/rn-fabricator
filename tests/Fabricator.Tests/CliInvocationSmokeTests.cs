@@ -1,17 +1,38 @@
 using Fabricator.Cli;
 using Fabricator.Cli.Doctor;
 using Fabricator.Cli.Projects;
+using Fabricator.Cli.Setup;
 using Fabricator.Core;
 using Fabricator.Core.Environment;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
+using Fabricator.Core.Setup;
 using System.CommandLine;
+using System.Reflection;
 
 namespace Fabricator.Tests;
 
 [Collection("ConsoleOutput")]
 public sealed class CliInvocationSmokeTests
 {
+    [Fact]
+    public void VersionOptionWritesCleanPackageVersion()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var expectedVersion = typeof(CliCommandFactory)
+            .Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["--version"]).Invoke();
+
+        var versionOutput = output.ToString().Trim();
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal(expectedVersion, versionOutput);
+        Assert.DoesNotContain("+", versionOutput);
+    }
+
     [Fact]
     public void DoctorCommandReturnsSuccessAndWritesSummaryOutput()
     {
@@ -75,6 +96,37 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("4. npm run android", output.ToString());
         Assert.Contains("Template selected: basic-auth", output.ToString());
         Assert.Contains("Example config files: not generated yet", output.ToString());
+    }
+
+    [Fact]
+    public void SetupPlanCommandReturnsSuccessAndWritesPlanOutput()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                new PackageManagerInfo("Homebrew", true, "brew"),
+                [
+                    new SetupPlanItem(
+                        "Watchman",
+                        SetupPlanItemKind.Command,
+                        "Install Watchman",
+                        ["brew install watchman"])
+                ])
+        };
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "plan"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal(1, setupPlanService.CallCount);
+        Assert.Contains("React Native setup plan", output.ToString());
+        Assert.Contains("[command] Watchman: Install Watchman", output.ToString());
+        Assert.Contains("No install commands were executed.", output.ToString());
     }
 
     [Fact]

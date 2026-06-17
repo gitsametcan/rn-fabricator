@@ -1,6 +1,7 @@
 using Fabricator.Core;
 using Fabricator.Cli.Doctor;
 using Fabricator.Cli.Projects;
+using Fabricator.Cli.Setup;
 using System.CommandLine;
 
 namespace Fabricator.Cli;
@@ -11,26 +12,55 @@ public static class CliCommandFactory
     {
         return CreateRootCommand(
             () => DoctorDependencies.CreateDefaultHandler(Console.Out),
-            () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error));
+            () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error),
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
     }
 
     public static RootCommand CreateRootCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
     {
         return CreateRootCommand(
             doctorHandlerFactory,
-            () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error));
+            () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error),
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
     }
 
     public static RootCommand CreateRootCommand(
         Func<DoctorCommandHandler> doctorHandlerFactory,
         Func<CreateCommandHandler> createHandlerFactory)
     {
+        return CreateRootCommand(
+            doctorHandlerFactory,
+            createHandlerFactory,
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+    }
+
+    public static RootCommand CreateRootCommand(
+        Func<DoctorCommandHandler> doctorHandlerFactory,
+        Func<CreateCommandHandler> createHandlerFactory,
+        Func<SetupPlanCommandHandler> setupPlanHandlerFactory)
+    {
         var rootCommand = new RootCommand(ProductInfo.Description);
+        ConfigureVersionOption(rootCommand);
 
         rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
+        rootCommand.Subcommands.Add(CreateSetupCommand(setupPlanHandlerFactory));
         rootCommand.Subcommands.Add(CreateCreateCommand(createHandlerFactory));
 
         return rootCommand;
+    }
+
+    private static void ConfigureVersionOption(RootCommand rootCommand)
+    {
+        var defaultVersionOption = rootCommand.Options.OfType<VersionOption>().SingleOrDefault();
+        if (defaultVersionOption is not null)
+        {
+            rootCommand.Options.Remove(defaultVersionOption);
+        }
+
+        rootCommand.Options.Add(new VersionOption
+        {
+            Action = new ProductVersionAction()
+        });
     }
 
     private static Command CreateDoctorCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
@@ -43,6 +73,25 @@ public static class CliCommandFactory
             return await handler.RunAsync(cancellationToken);
         });
 
+        return command;
+    }
+
+    private static Command CreateSetupCommand(Func<SetupPlanCommandHandler> setupPlanHandlerFactory)
+    {
+        var command = new Command(
+            "setup",
+            "Plan guided React Native environment setup. The doctor command is read-only; setup prints next actions.");
+        var planCommand = new Command(
+            "plan",
+            "Run read-only environment checks and print setup actions without executing install commands.");
+
+        planCommand.SetAction(async (_, cancellationToken) =>
+        {
+            var handler = setupPlanHandlerFactory();
+            return await handler.RunAsync(cancellationToken);
+        });
+
+        command.Subcommands.Add(planCommand);
         return command;
     }
 
