@@ -6,6 +6,9 @@ public sealed class BasicAuthTemplateAssetsTests
 {
     private static readonly string[] ExpectedTemplateFiles =
     [
+        ".env.example",
+        "credentials.example.json",
+        "CONFIGURATION.md",
         "App.tsx",
         "src/auth/AuthProvider.tsx",
         "src/auth/index.ts",
@@ -60,6 +63,34 @@ public sealed class BasicAuthTemplateAssetsTests
         Assert.Contains("signOut: () => void", content);
         Assert.DoesNotContain("fetch(", content);
         Assert.DoesNotContain("axios", content, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void BasicAuthIncludesSafeExampleConfigurationFiles()
+    {
+        var package = new LocalTemplatePackageProvider().GetTemplate("basic-auth");
+
+        var envExample = File.ReadAllText(Path.Combine(package.RootDirectory, ".env.example"));
+        var credentialsExample = File.ReadAllText(Path.Combine(package.RootDirectory, "credentials.example.json"));
+
+        Assert.Contains("APP_ENV=development", envExample);
+        Assert.Contains("API_BASE_URL=https://api.example.com", envExample);
+        Assert.Contains("\"clientId\": \"replace-with-client-id\"", credentialsExample);
+        Assert.Contains("\"tenantId\": \"replace-with-tenant-id\"", credentialsExample);
+        Assert.Contains("\"redirectScheme\": \"replace-with-app-scheme\"", credentialsExample);
+    }
+
+    [Fact]
+    public void BasicAuthDocumentsRealConfigurationFilesAsIgnored()
+    {
+        var package = new LocalTemplatePackageProvider().GetTemplate("basic-auth");
+        var configuration = File.ReadAllText(Path.Combine(package.RootDirectory, "CONFIGURATION.md"));
+
+        Assert.Contains(".env", configuration);
+        Assert.Contains(".env.*", configuration);
+        Assert.Contains("credentials.json", configuration);
+        Assert.Contains("credentials.*.json", configuration);
+        Assert.Contains("Keep real local configuration files out of Git", configuration);
     }
 
     [Theory]
