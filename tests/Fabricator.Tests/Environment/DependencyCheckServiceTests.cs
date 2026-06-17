@@ -13,7 +13,8 @@ public sealed class DependencyCheckServiceTests
         runner.Enqueue(new ProcessRunResult(0, "v20.11.1\n", string.Empty));
         runner.Enqueue(new ProcessRunResult(0, "10.2.4\n", string.Empty));
         runner.Enqueue(new ProcessRunResult(0, "git version 2.39.5\n", string.Empty));
-        var service = new DependencyCheckService(runner);
+        var platform = new FakeSystemPlatform { IsMacOS = true };
+        var service = new DependencyCheckService(runner, platform);
 
         var summary = await service.CheckCoreToolsAsync();
 
@@ -75,7 +76,8 @@ public sealed class DependencyCheckServiceTests
         runner.Enqueue(new ProcessRunResult(0, "v20.11.1\n", string.Empty));
         runner.Enqueue(new ProcessRunResult(1, string.Empty, "npm failed"));
         runner.Enqueue(new ProcessRunResult(0, "git version 2.39.5\n", string.Empty));
-        var service = new DependencyCheckService(runner);
+        var platform = new FakeSystemPlatform { IsMacOS = true };
+        var service = new DependencyCheckService(runner, platform);
 
         var summary = await service.CheckCoreToolsAsync();
 
@@ -88,7 +90,8 @@ public sealed class DependencyCheckServiceTests
         Assert.Equal(DependencyCheckStatus.Failed, npmResult.Status);
         Assert.Null(npmResult.DetectedVersion);
         Assert.Contains("npm was not found or returned exit code 1.", npmResult.Message);
-        Assert.Equal("Install npm and make sure `npm` is available on PATH.", npmResult.RemediationHint);
+        Assert.Contains("brew install node", npmResult.RemediationHint);
+        Assert.Contains("npm --version", npmResult.RemediationHint);
     }
 
     [Fact]
@@ -106,5 +109,41 @@ public sealed class DependencyCheckServiceTests
         Assert.Equal(DependencyCheckStatus.Passed, nodeResult.Status);
         Assert.Null(nodeResult.DetectedVersion);
         Assert.Equal("Node.js is installed.", nodeResult.Message);
+    }
+
+    [Fact]
+    public async Task CheckCoreToolsAsyncUsesWindowsInstallGuidance()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "node failed"));
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "npm failed"));
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "git failed"));
+        var platform = new FakeSystemPlatform { IsWindows = true };
+        var service = new DependencyCheckService(runner, platform);
+
+        var summary = await service.CheckCoreToolsAsync();
+
+        var nodeResult = summary.Results.Single(result => result.Name == "Node.js");
+        var gitResult = summary.Results.Single(result => result.Name == "Git");
+        Assert.Contains("winget install OpenJS.NodeJS.LTS", nodeResult.RemediationHint);
+        Assert.Contains("winget install Git.Git", gitResult.RemediationHint);
+    }
+
+    [Fact]
+    public async Task CheckCoreToolsAsyncUsesLinuxInstallGuidance()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "node failed"));
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "npm failed"));
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "git failed"));
+        var platform = new FakeSystemPlatform { IsLinux = true };
+        var service = new DependencyCheckService(runner, platform);
+
+        var summary = await service.CheckCoreToolsAsync();
+
+        var nodeResult = summary.Results.Single(result => result.Name == "Node.js");
+        var gitResult = summary.Results.Single(result => result.Name == "Git");
+        Assert.Contains("sudo apt-get install nodejs npm", nodeResult.RemediationHint);
+        Assert.Contains("sudo apt-get install git", gitResult.RemediationHint);
     }
 }

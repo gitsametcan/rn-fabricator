@@ -109,7 +109,8 @@ public sealed class AndroidToolDependencyCheckServiceTests
 
         var javaResult = summary.Results.Single(result => result.Name == "Java");
         Assert.Equal(DependencyCheckStatus.Failed, javaResult.Status);
-        Assert.Equal("Install a supported JDK and make sure `java` is available on PATH.", javaResult.RemediationHint);
+        Assert.Contains("supported JDK", javaResult.RemediationHint);
+        Assert.Contains("java -version", javaResult.RemediationHint);
     }
 
     [Fact]
@@ -130,6 +131,61 @@ public sealed class AndroidToolDependencyCheckServiceTests
         var androidSdkResult = summary.Results.Single(result => result.Name == "Android SDK");
         Assert.Equal(DependencyCheckStatus.Failed, androidSdkResult.Status);
         Assert.Equal("Android SDK environment variables were not found.", androidSdkResult.Message);
-        Assert.Equal("Set ANDROID_HOME or ANDROID_SDK_ROOT to your Android SDK path.", androidSdkResult.RemediationHint);
+        Assert.Contains("Install Android Studio", androidSdkResult.RemediationHint);
+        Assert.Contains("ANDROID_HOME", androidSdkResult.RemediationHint);
+    }
+
+    [Fact]
+    public async Task CheckAndroidToolsAsyncUsesMacOSAndroidSdkGuidance()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(0, string.Empty, "openjdk version \"17.0.12\"\n"));
+        var platform = new FakeSystemPlatform { IsMacOS = true };
+        var service = new DependencyCheckService(
+            runner,
+            platform,
+            new FakeEnvironmentVariables());
+
+        var summary = await service.CheckAndroidToolsAsync();
+
+        var androidSdkResult = summary.Results.Single(result => result.Name == "Android SDK");
+        Assert.Contains("$HOME/Library/Android/sdk", androidSdkResult.RemediationHint);
+        Assert.Contains("platform-tools", androidSdkResult.RemediationHint);
+    }
+
+    [Fact]
+    public async Task CheckAndroidToolsAsyncUsesWindowsAndroidSdkGuidance()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(0, string.Empty, "openjdk version \"17.0.12\"\n"));
+        var platform = new FakeSystemPlatform { IsWindows = true };
+        var service = new DependencyCheckService(
+            runner,
+            platform,
+            new FakeEnvironmentVariables());
+
+        var summary = await service.CheckAndroidToolsAsync();
+
+        var androidSdkResult = summary.Results.Single(result => result.Name == "Android SDK");
+        Assert.Contains("%LOCALAPPDATA%\\Android\\Sdk", androidSdkResult.RemediationHint);
+        Assert.Contains("echo $env:ANDROID_HOME", androidSdkResult.RemediationHint);
+    }
+
+    [Fact]
+    public async Task CheckAndroidToolsAsyncUsesLinuxAndroidSdkGuidance()
+    {
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(0, string.Empty, "openjdk version \"17.0.12\"\n"));
+        var platform = new FakeSystemPlatform { IsLinux = true };
+        var service = new DependencyCheckService(
+            runner,
+            platform,
+            new FakeEnvironmentVariables());
+
+        var summary = await service.CheckAndroidToolsAsync();
+
+        var androidSdkResult = summary.Results.Single(result => result.Name == "Android SDK");
+        Assert.Contains("$HOME/Android/Sdk", androidSdkResult.RemediationHint);
+        Assert.Contains("$ANDROID_HOME/platform-tools", androidSdkResult.RemediationHint);
     }
 }
