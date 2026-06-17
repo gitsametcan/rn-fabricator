@@ -53,6 +53,9 @@ public sealed class CliCommandFactoryTests
         Assert.Contains(
             createCommand.Options,
             option => option.Name == "--template" && option.Aliases.Contains("-t"));
+        Assert.Contains(
+            createCommand.Options,
+            option => option.Name == "--output" && option.Aliases.Contains("-o"));
     }
 
     [Fact]

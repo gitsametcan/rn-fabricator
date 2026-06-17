@@ -1,5 +1,6 @@
 using Fabricator.Core;
 using Fabricator.Cli.Doctor;
+using Fabricator.Core.Projects;
 using System.CommandLine;
 
 namespace Fabricator.Cli;
@@ -47,16 +48,39 @@ public static class CliCommandFactory
             DefaultValueFactory = _ => "basic-auth"
         };
 
+        var outputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Directory where the React Native project will be created.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
+        };
+
         var command = new Command("create", "Create a new React Native CLI project.");
         command.Arguments.Add(nameArgument);
         command.Options.Add(templateOption);
+        command.Options.Add(outputOption);
 
         command.SetAction(parseResult =>
         {
             var name = parseResult.GetRequiredValue(nameArgument);
             var template = parseResult.GetValue(templateOption) ?? "basic-auth";
+            var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
+            var validation = new CreateProjectValidator().Validate(
+                new CreateProjectRequest(name, template, outputDirectory));
 
-            Console.WriteLine($"create is not implemented yet. Requested project: {name}, template: {template}");
+            if (!validation.IsValid)
+            {
+                Console.Error.WriteLine("Invalid create command input:");
+
+                foreach (var error in validation.Errors)
+                {
+                    Console.Error.WriteLine($"- {error}");
+                }
+
+                return ExitCodes.InvalidInput;
+            }
+
+            Console.WriteLine(
+                $"create is not implemented yet. Requested project: {validation.Request.ProjectName}, template: {validation.Request.TemplateName}, output: {validation.FullProjectPath}");
             return ExitCodes.Success;
         });
 

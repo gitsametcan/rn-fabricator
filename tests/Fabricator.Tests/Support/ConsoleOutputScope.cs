@@ -2,14 +2,19 @@ namespace Fabricator.Tests;
 
 public sealed class ConsoleOutputScope : IDisposable
 {
-    private readonly StringWriter _writer;
+    private readonly StringWriter _errorWriter;
+    private readonly StringWriter _outputWriter;
+    private readonly TextWriter _originalError;
     private readonly TextWriter _originalOut;
 
     private ConsoleOutputScope()
     {
-        _writer = new StringWriter();
+        _errorWriter = new StringWriter();
+        _outputWriter = new StringWriter();
+        _originalError = Console.Error;
         _originalOut = Console.Out;
-        Console.SetOut(_writer);
+        Console.SetError(_errorWriter);
+        Console.SetOut(_outputWriter);
     }
 
     public static ConsoleOutputScope Capture()
@@ -17,15 +22,26 @@ public sealed class ConsoleOutputScope : IDisposable
         return new ConsoleOutputScope();
     }
 
+    public string ErrorOutput
+    {
+        get
+        {
+            _errorWriter.Flush();
+            return _errorWriter.ToString();
+        }
+    }
+
     public override string ToString()
     {
-        _writer.Flush();
-        return _writer.ToString();
+        _outputWriter.Flush();
+        return _outputWriter.ToString();
     }
 
     public void Dispose()
     {
+        Console.SetError(_originalError);
         Console.SetOut(_originalOut);
-        _writer.Dispose();
+        _errorWriter.Dispose();
+        _outputWriter.Dispose();
     }
 }
