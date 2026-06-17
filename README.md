@@ -114,6 +114,7 @@ rn-fabricator create --help
 - [Dogfooding Workflow](docs/dogfooding.md)
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
+- [Guided Setup Design](docs/guided-setup.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
 - [v0.5.0-alpha.1 Release Notes](docs/releases/v0.5.0-alpha.1.md)

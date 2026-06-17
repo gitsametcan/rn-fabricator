@@ -60,6 +60,8 @@ Planned commands:
 
 ```text
 rn-fabricator doctor
+rn-fabricator setup plan
+rn-fabricator setup run
 rn-fabricator create <name> --template basic-auth
 rn-fabricator template list
 rn-fabricator release-check
@@ -127,6 +129,8 @@ Commands should return stable exit codes:
 - `3`: Environment requirement failure.
 
 Error messages should explain what failed and what the user can do next.
+
+`doctor` should remain read-only. Guided dependency setup belongs in the separate `setup` command family so users can review a plan before any install command runs.
 
 ## Security
 
