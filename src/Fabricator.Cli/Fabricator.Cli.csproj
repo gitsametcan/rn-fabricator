@@ -17,7 +17,6 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>rn-fabricator</ToolCommandName>
     <PackageId>rn-fabricator</PackageId>
-    <Version>0.5.0-alpha.1</Version>
     <Authors>Samet CAN</Authors>
     <Description>React Native CLI project scaffolding and diagnostics tool.</Description>
     <PackageProjectUrl>https://github.com/gitsametcan/rn-fabricator</PackageProjectUrl>

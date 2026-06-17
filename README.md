@@ -114,6 +114,7 @@ rn-fabricator create --help
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
 - [Release Checklist](docs/release-checklist.md)
+- [Release Workflow](docs/release-workflow.md)
 
 ## Contributing
 
