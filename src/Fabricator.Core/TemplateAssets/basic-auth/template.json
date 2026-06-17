@@ -1,0 +1,7 @@
+{
+  "id": "basic-auth",
+  "displayName": "Basic Auth",
+  "description": "React Native CLI starter template with splash, loading, login, home, and simple auth flow files.",
+  "version": "0.1.0",
+  "files": []
+}
