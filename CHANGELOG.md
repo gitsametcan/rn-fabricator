@@ -11,3 +11,5 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 - Initial project documentation.
 - Open source repository support files.
 - Planned MVP scope for `doctor`, `create`, and `basic-auth`.
+- .NET tool packaging metadata and local package verification workflow.
+- Installation, usage, troubleshooting, versioning, and release workflow documentation.
