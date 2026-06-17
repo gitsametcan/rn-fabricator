@@ -4,6 +4,9 @@
   "description": "React Native CLI starter template with splash, loading, login, home, and simple auth flow files.",
   "version": "0.1.0",
   "files": [
+    "App.tsx",
+    "src/auth/AuthProvider.tsx",
+    "src/auth/index.ts",
     "src/screens/SplashScreen.tsx",
     "src/screens/LoadingScreen.tsx",
     "src/screens/LoginScreen.tsx",
