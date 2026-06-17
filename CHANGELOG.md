@@ -10,6 +10,7 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 - Platform-specific `doctor` remediation guidance for macOS, Windows, and Linux.
 - Clean `--version` output that prints the package version without commit metadata.
+- Dogfooding workflow documentation for repo-external playground testing.
 
 ## 0.5.0-alpha.1 - 2026-06-17
 
