@@ -42,7 +42,7 @@ public sealed class CreateCommandHandler
             return result.ExitCode;
         }
 
-        _outputWriter.WriteLine($"React Native project created: {result.ProjectPath}");
+        RenderSuccess(result);
         return result.ExitCode;
     }
 
@@ -66,6 +66,22 @@ public sealed class CreateCommandHandler
         _outputWriter.WriteLine($"Creating React Native project: {result.Validation.Request.ProjectName}");
         _outputWriter.WriteLine($"Output directory: {result.Validation.FullOutputDirectory}");
         _outputWriter.WriteLine($"Command: {result.Command.FileName} {string.Join(' ', result.Command.Arguments)}");
+    }
+
+    private void RenderSuccess(CreateProjectResult result)
+    {
+        var projectName = result.Validation.Request.ProjectName;
+
+        _outputWriter.WriteLine($"React Native project created: {result.ProjectPath}");
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine("Next steps:");
+        _outputWriter.WriteLine($"1. cd {projectName}");
+        _outputWriter.WriteLine("2. npm start");
+        _outputWriter.WriteLine("3. npm run ios");
+        _outputWriter.WriteLine("4. npm run android");
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine($"Template selected: {result.Validation.Request.TemplateName}");
+        _outputWriter.WriteLine("Example config files: not generated yet; basic-auth template files are planned for v0.4.0.");
     }
 
     private void RenderProcessFailure(CreateProjectResult result)

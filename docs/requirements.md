@@ -37,6 +37,7 @@ Expected behavior:
 - Apply the selected template.
 - Generate example environment files.
 - Print next steps after successful creation.
+  Until template application ships, the command must clearly say that example config files are not generated yet.
 
 Example:
 

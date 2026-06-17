@@ -8,12 +8,12 @@ It helps developers create new React Native projects, verify their local develop
 
 Status: Early development
 
-The project has an initial .NET solution, CLI shell, tests, and CI workflow. The first functional command implementation will be the `doctor` command.
+The project has an initial .NET solution, CLI shell, tests, CI workflow, a working `doctor` command, and a React Native CLI-backed `create` command.
 
 ## MVP Scope
 
 - `doctor`: Check React Native CLI development requirements such as Node.js, npm, Git, Watchman, Xcode, CocoaPods, Java, and Android SDK.
-- `create`: Generate a new React Native CLI project and apply a standard project structure.
+- `create`: Generate a new React Native CLI project, validate output paths, clean up partial failures, and print next steps.
 - `basic-auth` template: Add Splash, Loading, Login, and Home screens with a simple authentication flow plus `.env.example` and `credentials.example.json`.
 
 ## Planned Technology

@@ -68,6 +68,13 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Command: npx @react-native-community/cli@latest init MyApp", output.ToString());
         Assert.Contains("React Native project created:", output.ToString());
         Assert.Contains(Path.Combine(Directory.GetCurrentDirectory(), "MyApp"), output.ToString());
+        Assert.Contains("Next steps:", output.ToString());
+        Assert.Contains("1. cd MyApp", output.ToString());
+        Assert.Contains("2. npm start", output.ToString());
+        Assert.Contains("3. npm run ios", output.ToString());
+        Assert.Contains("4. npm run android", output.ToString());
+        Assert.Contains("Template selected: basic-auth", output.ToString());
+        Assert.Contains("Example config files: not generated yet", output.ToString());
     }
 
     [Fact]
@@ -81,6 +88,8 @@ public sealed class CliInvocationSmokeTests
 
         Assert.Equal(ExitCodes.Success, exitCode);
         Assert.Contains("Creating React Native project: MyApp", output.ToString());
+        Assert.Contains("Next steps:", output.ToString());
+        Assert.Contains("1. cd MyApp", output.ToString());
     }
 
     [Fact]
