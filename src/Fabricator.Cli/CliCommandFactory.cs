@@ -1,4 +1,5 @@
 using Fabricator.Core;
+using Fabricator.Cli.Doctor;
 using System.CommandLine;
 
 namespace Fabricator.Cli;
@@ -7,22 +8,27 @@ public static class CliCommandFactory
 {
     public static RootCommand CreateRootCommand()
     {
+        return CreateRootCommand(() => DoctorDependencies.CreateDefaultHandler(Console.Out));
+    }
+
+    public static RootCommand CreateRootCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
+    {
         var rootCommand = new RootCommand(ProductInfo.Description);
 
-        rootCommand.Subcommands.Add(CreateDoctorCommand());
+        rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
         rootCommand.Subcommands.Add(CreateCreateCommand());
 
         return rootCommand;
     }
 
-    private static Command CreateDoctorCommand()
+    private static Command CreateDoctorCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
     {
         var command = new Command("doctor", "Check React Native CLI development environment requirements.");
 
-        command.SetAction(_ =>
+        command.SetAction(async (_, cancellationToken) =>
         {
-            Console.WriteLine("doctor checks are not implemented yet.");
-            return ExitCodes.Success;
+            var handler = doctorHandlerFactory();
+            return await handler.RunAsync(cancellationToken);
         });
 
         return command;
