@@ -42,12 +42,20 @@ The CLI should use System.CommandLine unless implementation constraints make ano
 Reason:
 System.CommandLine provides structured command definitions, argument parsing, help text, and command handlers without requiring a custom parser.
 
-## ADR-005: Start With Local Templates
+## ADR-005: Ship Templates As Local Package Assets
 
-Status: Proposed
+Status: Accepted
 
 Decision:
-The MVP should ship templates with the CLI instead of downloading remote templates.
+The MVP will ship templates with the CLI instead of downloading remote templates. Template assets live under `src/Fabricator.Core/TemplateAssets/<template-id>` with a required `template.json` manifest.
+
+Template files are copied to `Templates/<template-id>` in build and publish output through the `Fabricator.Core` project file. At runtime, core template services resolve templates from `AppContext.BaseDirectory/Templates` by default.
 
 Reason:
-Local templates are easier to test, version, and distribute. Remote template management can be added later if needed.
+Local package assets work for local development, tests, and packaged .NET tool usage without network access. They are versioned with the CLI, easy to inspect in pull requests, and can be tested through the same runtime path the packaged tool uses.
+
+Consequences:
+
+- Each template must include a manifest before template application code can use it.
+- Tests can load template assets from build output instead of relying on repository-relative paths.
+- Remote template downloads remain out of scope for MVP and can be added later behind a separate provider.
