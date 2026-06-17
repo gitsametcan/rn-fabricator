@@ -5,6 +5,7 @@ The test suite uses xUnit and is split by behavior:
 - `ProductInfoTests`: stable product metadata.
 - `CliCommandFactoryTests`: command registration and parse shape.
 - `CliInvocationSmokeTests`: end-to-end command invocation smoke tests for current placeholder actions.
+- `Doctor/*`: doctor command orchestration, output rendering, and exit code behavior.
 - `Environment/*`: dependency check result models and dependency check services for the future `doctor` command, including core, Apple, and Android tool checks.
 - `Processes/*`: process execution abstractions and test doubles for future environment checks.
 
