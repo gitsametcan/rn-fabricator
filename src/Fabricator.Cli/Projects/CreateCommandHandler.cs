@@ -1,0 +1,90 @@
+using Fabricator.Core.Projects;
+
+namespace Fabricator.Cli.Projects;
+
+public sealed class CreateCommandHandler
+{
+    private readonly ICreateProjectService _createProjectService;
+    private readonly TextWriter _errorWriter;
+    private readonly TextWriter _outputWriter;
+
+    public CreateCommandHandler(
+        ICreateProjectService createProjectService,
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        _createProjectService = createProjectService;
+        _outputWriter = outputWriter;
+        _errorWriter = errorWriter;
+    }
+
+    public async Task<int> RunAsync(
+        string name,
+        string template,
+        string outputDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _createProjectService.CreateAsync(
+            new CreateProjectRequest(name, template, outputDirectory),
+            cancellationToken);
+
+        if (!result.Validation.IsValid)
+        {
+            RenderInvalidInput(result.Validation);
+            return result.ExitCode;
+        }
+
+        RenderCommand(result);
+
+        if (!result.Succeeded)
+        {
+            RenderProcessFailure(result);
+            return result.ExitCode;
+        }
+
+        _outputWriter.WriteLine($"React Native project created: {result.ProjectPath}");
+        return result.ExitCode;
+    }
+
+    private void RenderInvalidInput(CreateProjectValidationResult validation)
+    {
+        _errorWriter.WriteLine("Invalid create command input:");
+
+        foreach (var error in validation.Errors)
+        {
+            _errorWriter.WriteLine($"- {error}");
+        }
+    }
+
+    private void RenderCommand(CreateProjectResult result)
+    {
+        if (result.Command is null)
+        {
+            return;
+        }
+
+        _outputWriter.WriteLine($"Creating React Native project: {result.Validation.Request.ProjectName}");
+        _outputWriter.WriteLine($"Output directory: {result.Validation.FullOutputDirectory}");
+        _outputWriter.WriteLine($"Command: {result.Command.FileName} {string.Join(' ', result.Command.Arguments)}");
+    }
+
+    private void RenderProcessFailure(CreateProjectResult result)
+    {
+        _errorWriter.WriteLine("React Native project creation failed.");
+
+        if (result.ProcessResult is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.ProcessResult.StandardOutput))
+        {
+            _errorWriter.WriteLine(result.ProcessResult.StandardOutput.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.ProcessResult.StandardError))
+        {
+            _errorWriter.WriteLine(result.ProcessResult.StandardError.Trim());
+        }
+    }
+}

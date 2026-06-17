@@ -1,6 +1,6 @@
 using Fabricator.Core;
 using Fabricator.Cli.Doctor;
-using Fabricator.Core.Projects;
+using Fabricator.Cli.Projects;
 using System.CommandLine;
 
 namespace Fabricator.Cli;
@@ -9,15 +9,26 @@ public static class CliCommandFactory
 {
     public static RootCommand CreateRootCommand()
     {
-        return CreateRootCommand(() => DoctorDependencies.CreateDefaultHandler(Console.Out));
+        return CreateRootCommand(
+            () => DoctorDependencies.CreateDefaultHandler(Console.Out),
+            () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error));
     }
 
     public static RootCommand CreateRootCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
     {
+        return CreateRootCommand(
+            doctorHandlerFactory,
+            () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error));
+    }
+
+    public static RootCommand CreateRootCommand(
+        Func<DoctorCommandHandler> doctorHandlerFactory,
+        Func<CreateCommandHandler> createHandlerFactory)
+    {
         var rootCommand = new RootCommand(ProductInfo.Description);
 
         rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
-        rootCommand.Subcommands.Add(CreateCreateCommand());
+        rootCommand.Subcommands.Add(CreateCreateCommand(createHandlerFactory));
 
         return rootCommand;
     }
@@ -35,7 +46,7 @@ public static class CliCommandFactory
         return command;
     }
 
-    private static Command CreateCreateCommand()
+    private static Command CreateCreateCommand(Func<CreateCommandHandler> createHandlerFactory)
     {
         var nameArgument = new Argument<string>("name")
         {
@@ -59,29 +70,14 @@ public static class CliCommandFactory
         command.Options.Add(templateOption);
         command.Options.Add(outputOption);
 
-        command.SetAction(parseResult =>
+        command.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetRequiredValue(nameArgument);
             var template = parseResult.GetValue(templateOption) ?? "basic-auth";
             var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
-            var validation = new CreateProjectValidator().Validate(
-                new CreateProjectRequest(name, template, outputDirectory));
 
-            if (!validation.IsValid)
-            {
-                Console.Error.WriteLine("Invalid create command input:");
-
-                foreach (var error in validation.Errors)
-                {
-                    Console.Error.WriteLine($"- {error}");
-                }
-
-                return ExitCodes.InvalidInput;
-            }
-
-            Console.WriteLine(
-                $"create is not implemented yet. Requested project: {validation.Request.ProjectName}, template: {validation.Request.TemplateName}, output: {validation.FullProjectPath}");
-            return ExitCodes.Success;
+            var handler = createHandlerFactory();
+            return await handler.RunAsync(name, template, outputDirectory, cancellationToken);
         });
 
         return command;
