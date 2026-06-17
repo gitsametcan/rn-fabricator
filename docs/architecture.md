@@ -83,15 +83,41 @@ External process execution should be wrapped behind an abstraction so it can be 
 
 ## Templates
 
-Templates should be stored in the repository and shipped with the CLI package. The first implementation can use embedded files or copied template directories. The final approach will be decided during implementation.
+Templates are stored in the repository and shipped with the CLI package as copied local assets.
+
+Runtime template layout:
+
+```text
+Templates/
+  basic-auth/
+    template.json
+    ...
+```
+
+Source template layout:
+
+```text
+src/Fabricator.Core/
+  TemplateAssets/
+    basic-auth/
+      template.json
+      ...
+```
+
+`Fabricator.Core` copies `TemplateAssets/**/*` to `Templates/` in build and publish output. Runtime services resolve templates from `AppContext.BaseDirectory/Templates` by default, so local development, tests, and packaged tool usage use the same lookup strategy.
 
 Template application must:
 
+- Read template metadata from `template.json`.
 - Avoid overwriting user files unless explicitly allowed.
 - Generate example config files, not real secret files.
 - Keep generated React Native code readable.
 
 ## Error Handling
+
+Project creation must validate the target path before invoking external tools. If React Native CLI fails after creating the target project directory, rn-fabricator should remove only that generated project directory.
+
+It must not delete the output directory itself, existing files, or paths outside the validated output directory.
 
 Commands should return stable exit codes:
 

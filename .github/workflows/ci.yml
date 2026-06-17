@@ -21,13 +21,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore, build, and test
-        shell: bash
-        run: |
-          if [ -f rn-fabricator.sln ]; then
-            dotnet restore rn-fabricator.sln
-            dotnet build rn-fabricator.sln --no-restore --configuration Release
-            dotnet test rn-fabricator.sln --no-build --configuration Release
-          else
-            echo "rn-fabricator.sln not found yet; skipping .NET checks during documentation setup."
-          fi
+      - name: Restore
+        run: dotnet restore rn-fabricator.sln
+
+      - name: Build
+        run: dotnet build rn-fabricator.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test rn-fabricator.sln --no-build --configuration Release
+
+      - name: Pack CLI tool
+        run: dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --no-build --configuration Release --output artifacts/packages

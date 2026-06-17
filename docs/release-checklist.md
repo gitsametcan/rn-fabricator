@@ -9,9 +9,11 @@ This checklist defines the initial release readiness expectations for rn-fabrica
 - Tests pass locally.
 - GitHub Actions CI passes.
 - Version number is updated.
+- Version values in `Directory.Build.props` match the release notes.
 - No secrets are committed.
 - License and security policy are present.
 - Generated templates have been tested on a clean machine or clean workspace.
+- Packaged tool can be installed from `artifacts/packages`.
 
 ## Generated React Native Project
 

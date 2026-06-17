@@ -6,14 +6,14 @@ It helps developers create new React Native projects, verify their local develop
 
 ## Project Status
 
-Status: Planning
+Status: Early development
 
-The first milestone is documentation and repository setup. The .NET solution and CLI implementation will be added after the initial project decisions are captured.
+The project has an initial .NET solution, CLI shell, tests, CI workflow, a working `doctor` command, and a React Native CLI-backed `create` command.
 
 ## MVP Scope
 
 - `doctor`: Check React Native CLI development requirements such as Node.js, npm, Git, Watchman, Xcode, CocoaPods, Java, and Android SDK.
-- `create`: Generate a new React Native CLI project and apply a standard project structure.
+- `create`: Generate a new React Native CLI project, validate output paths, clean up partial failures, and print next steps.
 - `basic-auth` template: Add Splash, Loading, Login, and Home screens with a simple authentication flow plus `.env.example` and `credentials.example.json`.
 
 ## Planned Technology
@@ -23,7 +23,7 @@ The first milestone is documentation and repository setup. The .NET solution and
 - xUnit
 - GitHub Actions
 
-Planned solution layout:
+Current solution layout:
 
 ```text
 src/
@@ -33,14 +33,89 @@ tests/
   Fabricator.Tests/
 ```
 
+## Local Development
+
+See [Local Development](docs/development.md) for setup, build, test, run, branch workflow, and local secrets guidance.
+
+CI-equivalent local checks:
+
+```bash
+dotnet restore rn-fabricator.sln
+dotnet build rn-fabricator.sln --no-restore --configuration Release
+dotnet test rn-fabricator.sln --no-build --configuration Release
+```
+
+## Installation
+
+rn-fabricator targets .NET 8 and is currently prepared as a pre-release .NET tool.
+
+Install from NuGet after the first package is published:
+
+```bash
+dotnet tool install --global rn-fabricator
+```
+
+Update an existing global installation:
+
+```bash
+dotnet tool update --global rn-fabricator
+```
+
+Install from a local package while developing the repository:
+
+```bash
+dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages
+dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.5.0-alpha.1
+./.tools/rn-fabricator --help
+```
+
+## Usage
+
+Check the local React Native CLI development environment:
+
+```bash
+rn-fabricator doctor
+```
+
+Create a React Native CLI project with the default `basic-auth` template:
+
+```bash
+rn-fabricator create MyApp
+```
+
+Create a project in a specific output directory:
+
+```bash
+rn-fabricator create MyApp --output ./sandbox --template basic-auth
+```
+
+Useful help commands:
+
+```bash
+rn-fabricator --help
+rn-fabricator doctor --help
+rn-fabricator create --help
+```
+
+## Troubleshooting
+
+- Confirm .NET 8 is installed: [Download .NET](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Review .NET tool install behavior: [dotnet tool install](https://learn.microsoft.com/dotnet/core/tools/dotnet-tool-install)
+- Prepare React Native CLI dependencies: [Set up your environment](https://reactnative.dev/docs/environment-setup)
+- Check project-specific development steps: [Local Development](docs/development.md)
+- Review release readiness checks: [Release Checklist](docs/release-checklist.md)
+
 ## Documentation
 
 - [Product Brief](docs/product-brief.md)
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md)
+- [Local Development](docs/development.md)
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
 - [Release Checklist](docs/release-checklist.md)
+- [Release Workflow](docs/release-workflow.md)
+- [v0.5.0-alpha.1 Release Notes](docs/releases/v0.5.0-alpha.1.md)
 
 ## Contributing
 
