@@ -29,3 +29,6 @@ jobs:
 
       - name: Test
         run: dotnet test rn-fabricator.sln --no-build --configuration Release
+
+      - name: Pack CLI tool
+        run: dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --no-build --configuration Release --output artifacts/packages
