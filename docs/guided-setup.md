@@ -141,7 +141,17 @@ Execution boundaries:
 - Do not run `sudo` commands automatically in the first implementation.
 - Prefer plan output over command execution until package manager detection is implemented.
 
-## Follow-Up Implementation Issues
+## Package Manager Detection
+
+Initial detection is intentionally read-only:
+
+- macOS checks `brew --version` and uses Homebrew command guidance when available.
+- Windows checks `winget --version` and uses winget command guidance when available.
+- Linux checks `apt-get --version` and uses Ubuntu-style apt guidance when available.
+
+If the expected package manager is not available, the setup plan falls back to manual guidance instead of treating the missing package manager as a setup failure.
+
+## Implementation Sequence
 
 The design should be implemented in small increments:
 
@@ -153,7 +163,7 @@ The design should be implemented in small increments:
 
 Each increment should include tests and dogfooding notes.
 
-Initial follow-up issues:
+Initial implementation issues:
 
 - #59 Add setup plan model and renderer.
 - #58 Add setup plan command.

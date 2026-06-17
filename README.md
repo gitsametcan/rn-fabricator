@@ -77,6 +77,12 @@ Check the local React Native CLI development environment:
 rn-fabricator doctor
 ```
 
+Print a guided setup plan without running install commands:
+
+```bash
+rn-fabricator setup plan
+```
+
 Create a React Native CLI project with the default `basic-auth` template:
 
 ```bash

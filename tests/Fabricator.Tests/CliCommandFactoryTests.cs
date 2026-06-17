@@ -20,7 +20,30 @@ public sealed class CliCommandFactoryTests
         var commandNames = rootCommand.Subcommands.Select(command => command.Name).ToArray();
 
         Assert.Contains("doctor", commandNames);
+        Assert.Contains("setup", commandNames);
         Assert.Contains("create", commandNames);
+    }
+
+    [Fact]
+    public void SetupCommandRegistersPlanSubcommand()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var setupCommand = rootCommand.Subcommands.Single(command => command.Name == "setup");
+        var subcommandNames = setupCommand.Subcommands.Select(command => command.Name).ToArray();
+
+        Assert.Contains("plan", subcommandNames);
+        Assert.Contains("doctor command is read-only", setupCommand.Description);
+    }
+
+    [Fact]
+    public void SetupPlanCommandDocumentsReadOnlyBehavior()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var setupCommand = rootCommand.Subcommands.Single(command => command.Name == "setup");
+        var planCommand = setupCommand.Subcommands.Single(command => command.Name == "plan");
+
+        Assert.Contains("read-only", planCommand.Description);
+        Assert.Contains("without executing install commands", planCommand.Description);
     }
 
     [Fact]
