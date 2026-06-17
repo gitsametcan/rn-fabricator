@@ -115,6 +115,7 @@ rn-fabricator create --help
 - [Architecture Decisions](docs/decisions.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
+- [v0.5.0-alpha.1 Release Notes](docs/releases/v0.5.0-alpha.1.md)
 
 ## Contributing
 
