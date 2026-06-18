@@ -129,6 +129,7 @@ rn-fabricator create --help
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
 - [Guided Setup Design](docs/guided-setup.md)
+- [Setup Apply Safety Policy](docs/setup-apply-safety.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
 - [v0.6.0-alpha.1 Release Notes](docs/releases/v0.6.0-alpha.1.md)
