@@ -9,6 +9,7 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 ### Added
 
 - Core toolchain profile model for version-aware React Native setup recommendations.
+- Local toolchain profile data source for deterministic default and explicit profile selection.
 
 ## 0.6.0-alpha.1 - 2026-06-17
 

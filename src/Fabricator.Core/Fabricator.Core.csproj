@@ -9,6 +9,8 @@
   <ItemGroup>
     <None Remove="TemplateAssets/**/*" />
     <Content Include="TemplateAssets/**/*" Link="Templates/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Remove="ToolchainProfiles/**/*" />
+    <Content Include="ToolchainProfiles/**/*" Link="ToolchainProfiles/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
