@@ -3,7 +3,8 @@ namespace Fabricator.Core.Setup;
 public sealed record SetupPlan(
     string PlatformName,
     PackageManagerInfo PackageManager,
-    IReadOnlyList<SetupPlanItem> Items)
+    IReadOnlyList<SetupPlanItem> Items,
+    SetupPlanToolchainProfile? ToolchainProfile = null)
 {
     public bool HasItems => Items.Count > 0;
 

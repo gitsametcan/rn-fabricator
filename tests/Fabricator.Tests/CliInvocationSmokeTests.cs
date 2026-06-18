@@ -130,6 +130,76 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void SetupPlanCommandPassesReactNativeVersionToHandler()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                PackageManagerInfo.NotDetected(),
+                [])
+        };
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "plan", "--react-native", "0.76.x"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal("0.76.x", setupPlanService.LastRequest?.ReactNativeVersion);
+        Assert.Null(setupPlanService.LastRequest?.ProfileId);
+        Assert.Contains("React Native setup plan", output.ToString());
+    }
+
+    [Fact]
+    public void SetupPlanCommandReturnsInvalidInputWhenProfileAndReactNativeAreProvided()
+    {
+        var setupPlanService = new FakeSetupPlanService();
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out), Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse([
+            "setup",
+            "plan",
+            "--profile",
+            "react-native-stable",
+            "--react-native",
+            "0.76.x"
+        ]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Equal(0, setupPlanService.CallCount);
+        Assert.Contains("Choose either --profile or --react-native, not both.", output.ErrorOutput);
+    }
+
+    [Fact]
+    public void SetupPlanCommandReturnsInvalidInputWhenProfileLookupFails()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            ExceptionToThrow = new SetupPlanException([
+                "Unsupported React Native toolchain profile: 0.99.x."
+            ])
+        };
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out), Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "plan", "--react-native", "0.99.x"]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Contains("Invalid setup plan input:", output.ErrorOutput);
+        Assert.Contains("Unsupported React Native toolchain profile: 0.99.x.", output.ErrorOutput);
+    }
+
+    [Fact]
     public void CreateCommandReturnsSuccessAndUsesDefaultTemplate()
     {
         var rootCommand = CreateRootCommandWithCreateResult(

@@ -84,11 +84,24 @@ public static class CliCommandFactory
         var planCommand = new Command(
             "plan",
             "Run read-only environment checks and print setup actions without executing install commands.");
-
-        planCommand.SetAction(async (_, cancellationToken) =>
+        var profileOption = new Option<string>("--profile", "-p")
         {
+            Description = "Toolchain profile id to use for setup recommendations."
+        };
+        var reactNativeOption = new Option<string>("--react-native")
+        {
+            Description = "React Native version to use for setup recommendations."
+        };
+
+        planCommand.Options.Add(profileOption);
+        planCommand.Options.Add(reactNativeOption);
+
+        planCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var profile = parseResult.GetValue(profileOption);
+            var reactNativeVersion = parseResult.GetValue(reactNativeOption);
             var handler = setupPlanHandlerFactory();
-            return await handler.RunAsync(cancellationToken);
+            return await handler.RunAsync(profile, reactNativeVersion, cancellationToken);
         });
 
         command.Subcommands.Add(planCommand);
