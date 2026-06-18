@@ -1,0 +1,63 @@
+{
+  "id": "react-native-stable",
+  "displayName": "React Native Stable",
+  "reactNativeVersion": "0.76.x",
+  "isDefault": true,
+  "nodeJs": {
+    "name": "Node.js",
+    "strategy": "Lts",
+    "required": true,
+    "notes": [
+      "Use an active LTS release supported by React Native."
+    ]
+  },
+  "java": {
+    "name": "Java",
+    "strategy": "SupportedRange",
+    "supportedVersionRange": "17-21",
+    "required": true,
+    "notes": [
+      "Use the JDK range supported by the selected React Native and Android Gradle Plugin stack."
+    ]
+  },
+  "xcode": {
+    "name": "Xcode",
+    "strategy": "MinimumVersion",
+    "minimumVersion": "15.0",
+    "required": false,
+    "notes": [
+      "Required for iOS development on macOS."
+    ]
+  },
+  "cocoaPods": {
+    "name": "CocoaPods",
+    "strategy": "MinimumVersion",
+    "minimumVersion": "1.14.0",
+    "required": false,
+    "notes": [
+      "Required for iOS dependency installation."
+    ]
+  },
+  "watchman": {
+    "name": "Watchman",
+    "strategy": "LatestStable",
+    "required": false,
+    "notes": [
+      "Recommended for a better React Native development experience."
+    ]
+  },
+  "android": {
+    "compileSdk": 35,
+    "targetSdk": 35,
+    "minSdk": 23,
+    "platformTools": {
+      "name": "Android Platform Tools",
+      "strategy": "LatestStable",
+      "required": true
+    },
+    "requiredPackages": [
+      "platforms;android-35",
+      "platform-tools"
+    ]
+  }
+}
