@@ -33,7 +33,7 @@ Only `safe command` steps are eligible for execution in the first `setup apply` 
 5. Use `y/N` with No as the default.
 6. Continue to the next step after a declined command.
 7. Continue through the plan after a failed command and return a failure exit code at the end.
-8. Print a final summary of succeeded, failed, skipped by user, skipped by policy, and manual-only steps.
+8. Print a final summary of succeeded, failed, skipped by user, skipped by policy, manual-only, and dry-run eligible steps.
 
 Prompt format:
 
@@ -74,6 +74,7 @@ Any other input, including empty input, must skip the command.
 `--yes` must not run `sudo`, edit shell profiles, install Xcode, install Android Studio through a GUI, accept licenses, or modify machine-level environment variables in the first implementation.
 
 If `--yes` and `--dry-run` are both provided, the command should fail with invalid input unless a future issue explicitly defines combined semantics.
+Current behavior fails with invalid input when both flags are provided.
 
 ## First Implementation Allowlist
 
@@ -128,6 +129,7 @@ The final summary should group results:
 - `skipped by user`
 - `skipped by policy`
 - `manual`
+- `would run`
 
 Failure output should explain that skipped manual and environment steps may still be required before React Native development works.
 

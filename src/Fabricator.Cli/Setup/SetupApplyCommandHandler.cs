@@ -43,8 +43,16 @@ public sealed class SetupApplyCommandHandler
     public async Task<int> RunAsync(
         string? profileId = null,
         string? reactNativeVersion = null,
+        bool dryRun = false,
+        bool yes = false,
         CancellationToken cancellationToken = default)
     {
+        if (dryRun && yes)
+        {
+            _errorWriter.WriteLine("Choose either --dry-run or --yes, not both.");
+            return ExitCodes.InvalidInput;
+        }
+
         if (!string.IsNullOrWhiteSpace(profileId) && !string.IsNullOrWhiteSpace(reactNativeVersion))
         {
             _errorWriter.WriteLine("Choose either --profile or --react-native, not both.");
@@ -75,12 +83,20 @@ public sealed class SetupApplyCommandHandler
         _planRenderer.Render(plan, includeReadOnlyFooter: false);
         _writer.WriteLine();
         _writer.WriteLine("Setup apply");
+        if (dryRun)
+        {
+            _writer.WriteLine("Mode: dry-run (no commands will be executed).");
+        }
+        else if (yes)
+        {
+            _writer.WriteLine("Mode: yes (safe allowlisted commands will run without prompts).");
+        }
 
         var summary = new SetupApplySummary();
 
         foreach (var item in plan.Items)
         {
-            await ApplyItemAsync(item, summary, cancellationToken);
+            await ApplyItemAsync(item, summary, dryRun, yes, cancellationToken);
         }
 
         RenderSummary(summary);
@@ -91,6 +107,8 @@ public sealed class SetupApplyCommandHandler
     private async Task ApplyItemAsync(
         SetupPlanItem item,
         SetupApplySummary summary,
+        bool dryRun,
+        bool yes,
         CancellationToken cancellationToken)
     {
         if (item.Kind != SetupPlanItemKind.Command)
@@ -122,16 +140,26 @@ public sealed class SetupApplyCommandHandler
             return;
         }
 
+        if (dryRun)
+        {
+            summary.WouldRun++;
+            _writer.WriteLine($"[dry-run] {item.DependencyName}: would run {commandText}");
+            return;
+        }
+
         _writer.WriteLine($"[command] {item.DependencyName}");
         _writer.WriteLine($"Command: {commandText}");
-        _writer.Write("Run this command? [y/N]: ");
-
-        var response = await _reader.ReadLineAsync(cancellationToken);
-        if (!IsAccepted(response))
+        if (!yes)
         {
-            summary.SkippedByUser++;
-            _writer.WriteLine($"[skipped by user] {item.DependencyName}");
-            return;
+            _writer.Write("Run this command? [y/N]: ");
+
+            var response = await _reader.ReadLineAsync(cancellationToken);
+            if (!IsAccepted(response))
+            {
+                summary.SkippedByUser++;
+                _writer.WriteLine($"[skipped by user] {item.DependencyName}");
+                return;
+            }
         }
 
         var request = CreateProcessRequest(commandText);
@@ -153,8 +181,14 @@ public sealed class SetupApplyCommandHandler
     private void RenderSummary(SetupApplySummary summary)
     {
         _writer.WriteLine();
-        _writer.WriteLine(
-            $"Apply summary: {summary.Succeeded} succeeded, {summary.Failed} failed, {summary.SkippedByUser} skipped by user, {summary.SkippedByPolicy} skipped by policy, {summary.Manual} manual.");
+        var summaryText =
+            $"Apply summary: {summary.Succeeded} succeeded, {summary.Failed} failed, {summary.SkippedByUser} skipped by user, {summary.SkippedByPolicy} skipped by policy, {summary.Manual} manual";
+        if (summary.WouldRun > 0)
+        {
+            summaryText += $", {summary.WouldRun} would run";
+        }
+
+        _writer.WriteLine($"{summaryText}.");
         if (summary.Manual > 0 || summary.SkippedByPolicy > 0)
         {
             _writer.WriteLine("Manual or skipped steps may still be required before React Native development works.");
@@ -197,5 +231,7 @@ public sealed class SetupApplyCommandHandler
         public int SkippedByPolicy { get; set; }
 
         public int Manual { get; set; }
+
+        public int WouldRun { get; set; }
     }
 }

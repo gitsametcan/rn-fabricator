@@ -266,6 +266,45 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void SetupApplyCommandSupportsDryRunMode()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                new PackageManagerInfo("Homebrew", true, "brew"),
+                [
+                    new SetupPlanItem(
+                        "Watchman",
+                        SetupPlanItemKind.Command,
+                        "Install Watchman",
+                        ["brew install watchman"])
+                ])
+        };
+        var processRunner = new FakeProcessRunner();
+        using var reader = new StringReader(string.Empty);
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)),
+            () => new SetupApplyCommandHandler(
+                setupPlanService,
+                new SetupPlanRenderer(Console.Out),
+                processRunner,
+                reader,
+                Console.Out,
+                Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "apply", "--dry-run"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Empty(processRunner.Requests);
+        Assert.Contains("Mode: dry-run", output.ToString());
+        Assert.Contains("[dry-run] Watchman: would run brew install watchman", output.ToString());
+    }
+
+    [Fact]
     public void CreateCommandReturnsSuccessAndUsesDefaultTemplate()
     {
         var rootCommand = CreateRootCommandWithCreateResult(
