@@ -27,7 +27,12 @@ public sealed class SetupPlanRendererTests
                     SetupPlanItemKind.Environment,
                     "Configure Android SDK",
                     ["export ANDROID_HOME=\"$HOME/Library/Android/sdk\""])
-            ]);
+            ],
+            new SetupPlanToolchainProfile(
+                "react-native-stable",
+                "React Native Stable",
+                "0.76.x",
+                IsDefault: true));
         using var writer = new StringWriter();
         var renderer = new SetupPlanRenderer(writer);
 
@@ -36,6 +41,8 @@ public sealed class SetupPlanRendererTests
         var output = writer.ToString();
         Assert.Contains("React Native setup plan", output);
         Assert.Contains("Platform: macOS", output);
+        Assert.Contains("Toolchain profile: React Native Stable (react-native-stable)", output);
+        Assert.Contains("React Native: 0.76.x", output);
         Assert.Contains("Package manager: Homebrew (brew)", output);
         Assert.Contains("[command] Watchman: Install Watchman", output);
         Assert.Contains("[manual] Xcode: Install and select Xcode", output);

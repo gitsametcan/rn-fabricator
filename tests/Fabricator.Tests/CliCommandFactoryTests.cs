@@ -47,6 +47,22 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void SetupPlanCommandDefinesProfileOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var setupCommand = rootCommand.Subcommands.Single(command => command.Name == "setup");
+        var planCommand = setupCommand.Subcommands.Single(command => command.Name == "plan");
+
+        Assert.Contains(
+            planCommand.Options,
+            option => option.Name == "--profile" && option.Aliases.Contains("-p"));
+        Assert.Contains(
+            planCommand.Options,
+            option => option.Name == "--react-native");
+        Assert.Empty(rootCommand.Parse(["setup", "plan", "--react-native", "0.76.x"]).Errors);
+    }
+
+    [Fact]
     public void CreateCommandAcceptsProjectNameAndTemplateOption()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

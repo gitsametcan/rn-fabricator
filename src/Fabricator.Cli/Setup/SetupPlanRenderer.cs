@@ -16,6 +16,12 @@ public sealed class SetupPlanRenderer
         _writer.WriteLine("React Native setup plan");
         _writer.WriteLine();
         _writer.WriteLine($"Platform: {plan.PlatformName}");
+        if (plan.ToolchainProfile is not null)
+        {
+            _writer.WriteLine($"Toolchain profile: {plan.ToolchainProfile.DisplayName} ({plan.ToolchainProfile.Id})");
+            _writer.WriteLine($"React Native: {plan.ToolchainProfile.ReactNativeVersion}");
+        }
+
         _writer.WriteLine($"Package manager: {FormatPackageManager(plan.PackageManager)}");
         _writer.WriteLine();
 

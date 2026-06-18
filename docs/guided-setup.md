@@ -33,6 +33,9 @@ Keeping `doctor` read-only makes it safe to run in CI, scripts, and user termina
 
 - Run the same dependency checks as `doctor`.
 - Build a platform-specific setup plan for missing or warning dependencies.
+- Select the default stable React Native toolchain profile unless a profile or React Native version is provided.
+- Print the selected profile and React Native version near the top of the plan.
+- Include profile-backed version expectations, such as Node LTS, Java supported range, Xcode minimum version, CocoaPods minimum version, and Android SDK values.
 - Print commands and manual steps without executing them.
 - Mark each step as `manual`, `command`, or `environment`.
 - Explain which steps require admin privileges or GUI interaction.
@@ -42,17 +45,47 @@ Example:
 ```text
 React Native setup plan
 
+Toolchain profile: React Native Stable (react-native-stable)
+React Native: 0.76.x
+
 [manual] Xcode
   Install Xcode from the App Store.
+  Profile recommendation for React Native 0.76.x: Xcode minimum version 15.0.
   Then run: sudo xcode-select --switch /Applications/Xcode.app
 
 [command] Watchman
   brew install watchman
+  Profile recommendation for React Native 0.76.x: Watchman latest stable version.
 
 [environment] Android SDK
   export ANDROID_HOME="$HOME/Library/Android/sdk"
   export PATH="$PATH:$ANDROID_HOME/platform-tools"
 ```
+
+Profile selection examples:
+
+```bash
+rn-fabricator setup plan
+rn-fabricator setup plan --profile react-native-stable
+rn-fabricator setup plan --react-native 0.76.x
+```
+
+Unsupported profile requests should fail before rendering the plan and explain which profile or React Native version is unsupported.
+
+### Toolchain Profiles
+
+Toolchain profiles keep setup guidance tied to a tested React Native environment instead of blindly recommending the latest version of every dependency.
+
+The first local profile is `react-native-stable`. It contains:
+
+- React Native version family.
+- Node.js recommendation strategy.
+- Java supported range.
+- Xcode and CocoaPods minimum versions.
+- Watchman recommendation.
+- Android SDK compile, target, min SDK, and required package ids.
+
+Profile data is local and deterministic in the first implementation. Remote profile updates can be considered later, but setup planning should remain usable without network access.
 
 ### `setup run`
 
@@ -158,8 +191,10 @@ The design should be implemented in small increments:
 1. Add setup plan model and renderer.
 2. Add `setup plan` command.
 3. Add package manager detection.
-4. Add guarded `setup run --dry-run`.
-5. Add interactive `setup run` execution for low-risk commands.
+4. Add local toolchain profiles.
+5. Use toolchain profiles in `setup plan` recommendations.
+6. Add guarded setup execution dry-run behavior.
+7. Add interactive setup execution for low-risk commands.
 
 Each increment should include tests and dogfooding notes.
 
@@ -168,3 +203,6 @@ Initial implementation issues:
 - #59 Add setup plan model and renderer.
 - #58 Add setup plan command.
 - #57 Design package manager detection for setup.
+- #64 Define React Native toolchain profile model.
+- #65 Add local toolchain profile data source.
+- #66 Use toolchain profiles in setup plan recommendations.

@@ -83,6 +83,13 @@ Print a guided setup plan without running install commands:
 rn-fabricator setup plan
 ```
 
+Use a specific toolchain profile or React Native version for setup recommendations:
+
+```bash
+rn-fabricator setup plan --profile react-native-stable
+rn-fabricator setup plan --react-native 0.76.x
+```
+
 Create a React Native CLI project with the default `basic-auth` template:
 
 ```bash
