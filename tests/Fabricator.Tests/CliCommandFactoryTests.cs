@@ -32,6 +32,7 @@ public sealed class CliCommandFactoryTests
         var subcommandNames = setupCommand.Subcommands.Select(command => command.Name).ToArray();
 
         Assert.Contains("plan", subcommandNames);
+        Assert.Contains("apply", subcommandNames);
         Assert.Contains("doctor command is read-only", setupCommand.Description);
     }
 
@@ -60,6 +61,23 @@ public sealed class CliCommandFactoryTests
             planCommand.Options,
             option => option.Name == "--react-native");
         Assert.Empty(rootCommand.Parse(["setup", "plan", "--react-native", "0.76.x"]).Errors);
+    }
+
+    [Fact]
+    public void SetupApplyCommandDefinesProfileOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var setupCommand = rootCommand.Subcommands.Single(command => command.Name == "setup");
+        var applyCommand = setupCommand.Subcommands.Single(command => command.Name == "apply");
+
+        Assert.Contains("per-step confirmation", applyCommand.Description);
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--profile" && option.Aliases.Contains("-p"));
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--react-native");
+        Assert.Empty(rootCommand.Parse(["setup", "apply", "--profile", "react-native-stable"]).Errors);
     }
 
     [Fact]

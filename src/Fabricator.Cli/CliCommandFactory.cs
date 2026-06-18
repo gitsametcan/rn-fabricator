@@ -13,7 +13,8 @@ public static class CliCommandFactory
         return CreateRootCommand(
             () => DoctorDependencies.CreateDefaultHandler(Console.Out),
             () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error),
-            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out),
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
     }
 
     public static RootCommand CreateRootCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
@@ -21,7 +22,8 @@ public static class CliCommandFactory
         return CreateRootCommand(
             doctorHandlerFactory,
             () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error),
-            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out),
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
     }
 
     public static RootCommand CreateRootCommand(
@@ -31,7 +33,8 @@ public static class CliCommandFactory
         return CreateRootCommand(
             doctorHandlerFactory,
             createHandlerFactory,
-            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out),
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
     }
 
     public static RootCommand CreateRootCommand(
@@ -39,11 +42,24 @@ public static class CliCommandFactory
         Func<CreateCommandHandler> createHandlerFactory,
         Func<SetupPlanCommandHandler> setupPlanHandlerFactory)
     {
+        return CreateRootCommand(
+            doctorHandlerFactory,
+            createHandlerFactory,
+            setupPlanHandlerFactory,
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
+    }
+
+    public static RootCommand CreateRootCommand(
+        Func<DoctorCommandHandler> doctorHandlerFactory,
+        Func<CreateCommandHandler> createHandlerFactory,
+        Func<SetupPlanCommandHandler> setupPlanHandlerFactory,
+        Func<SetupApplyCommandHandler> setupApplyHandlerFactory)
+    {
         var rootCommand = new RootCommand(ProductInfo.Description);
         ConfigureVersionOption(rootCommand);
 
         rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
-        rootCommand.Subcommands.Add(CreateSetupCommand(setupPlanHandlerFactory));
+        rootCommand.Subcommands.Add(CreateSetupCommand(setupPlanHandlerFactory, setupApplyHandlerFactory));
         rootCommand.Subcommands.Add(CreateCreateCommand(createHandlerFactory));
 
         return rootCommand;
@@ -76,7 +92,9 @@ public static class CliCommandFactory
         return command;
     }
 
-    private static Command CreateSetupCommand(Func<SetupPlanCommandHandler> setupPlanHandlerFactory)
+    private static Command CreateSetupCommand(
+        Func<SetupPlanCommandHandler> setupPlanHandlerFactory,
+        Func<SetupApplyCommandHandler> setupApplyHandlerFactory)
     {
         var command = new Command(
             "setup",
@@ -84,6 +102,9 @@ public static class CliCommandFactory
         var planCommand = new Command(
             "plan",
             "Run read-only environment checks and print setup actions without executing install commands.");
+        var applyCommand = new Command(
+            "apply",
+            "Run setup plan and apply safe command steps after per-step confirmation.");
         var profileOption = new Option<string>("--profile", "-p")
         {
             Description = "Toolchain profile id to use for setup recommendations."
@@ -92,9 +113,19 @@ public static class CliCommandFactory
         {
             Description = "React Native version to use for setup recommendations."
         };
+        var applyProfileOption = new Option<string>("--profile", "-p")
+        {
+            Description = "Toolchain profile id to use for setup recommendations."
+        };
+        var applyReactNativeOption = new Option<string>("--react-native")
+        {
+            Description = "React Native version to use for setup recommendations."
+        };
 
         planCommand.Options.Add(profileOption);
         planCommand.Options.Add(reactNativeOption);
+        applyCommand.Options.Add(applyProfileOption);
+        applyCommand.Options.Add(applyReactNativeOption);
 
         planCommand.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -104,7 +135,16 @@ public static class CliCommandFactory
             return await handler.RunAsync(profile, reactNativeVersion, cancellationToken);
         });
 
+        applyCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var profile = parseResult.GetValue(applyProfileOption);
+            var reactNativeVersion = parseResult.GetValue(applyReactNativeOption);
+            var handler = setupApplyHandlerFactory();
+            return await handler.RunAsync(profile, reactNativeVersion, cancellationToken);
+        });
+
         command.Subcommands.Add(planCommand);
+        command.Subcommands.Add(applyCommand);
         return command;
     }
 

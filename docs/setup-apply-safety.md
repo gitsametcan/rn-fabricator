@@ -1,6 +1,6 @@
 # Setup Apply Safety Policy
 
-This document defines the safety rules for future `rn-fabricator setup apply` execution. The current `setup plan` command remains read-only.
+This document defines the safety rules for `rn-fabricator setup apply` execution. The `setup plan` command remains read-only.
 
 ## Goals
 
@@ -20,7 +20,7 @@ Each setup plan item must be classified before execution:
 - `environment change`: A shell profile, PATH, `ANDROID_HOME`, or machine/user environment variable update.
 - `unsupported action`: A step that rn-fabricator can describe but must not execute on the current platform.
 
-Only `safe command` steps are eligible for automatic execution in the first `setup apply` implementation.
+Only `safe command` steps are eligible for execution in the first `setup apply` implementation.
 
 ## Default Interactive Behavior
 
@@ -32,7 +32,7 @@ Only `safe command` steps are eligible for automatic execution in the first `set
 4. Prompt before each executable safe command.
 5. Use `y/N` with No as the default.
 6. Continue to the next step after a declined command.
-7. Stop or continue after a failed command according to the initial implementation decision for that issue.
+7. Continue through the plan after a failed command and return a failure exit code at the end.
 8. Print a final summary of succeeded, failed, skipped by user, skipped by policy, and manual-only steps.
 
 Prompt format:
@@ -77,7 +77,7 @@ If `--yes` and `--dry-run` are both provided, the command should fail with inval
 
 ## First Implementation Allowlist
 
-The first `setup apply` implementation may execute only commands matching an explicit allowlist.
+The first `setup apply` implementation executes only commands matching an explicit allowlist.
 
 Initial macOS allowlist:
 

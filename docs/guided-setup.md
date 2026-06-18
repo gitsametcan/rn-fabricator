@@ -89,21 +89,19 @@ Profile data is local and deterministic in the first implementation. Remote prof
 
 ### `setup apply`
 
-`setup apply` should not be implemented until the plan model and safety policy are stable.
+`setup apply` applies only safe allowlisted command steps after explicit user confirmation.
 
-When implemented, it must:
+It must:
 
 - Show the setup plan before execution.
 - Require per-step `y/N` confirmation before running executable commands.
-- Support `--dry-run` and make dry-run the safest documented path.
-- Support `--yes` only for safe allowlisted commands.
+- Keep `--dry-run` and `--yes` out of the first implementation until their behavior is implemented explicitly.
 - Skip manual, elevated, environment, and unsupported steps by policy.
 - Print a final execution summary.
 
-Initial execution should be conservative:
+Initial execution is conservative:
 
 ```bash
-rn-fabricator setup apply --dry-run
 rn-fabricator setup apply
 ```
 

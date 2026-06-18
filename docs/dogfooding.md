@@ -90,6 +90,12 @@ Preview guided setup actions without installing dependencies:
 ./.tools/rn-fabricator setup plan
 ```
 
+Run safe setup commands only after per-step confirmation:
+
+```bash
+./.tools/rn-fabricator setup apply
+```
+
 Create a sample React Native project:
 
 ```bash
