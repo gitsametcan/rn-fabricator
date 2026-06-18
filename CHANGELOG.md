@@ -6,7 +6,9 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
-No unreleased changes yet.
+### Added
+
+- Core toolchain profile model for version-aware React Native setup recommendations.
 
 ## 0.6.0-alpha.1 - 2026-06-17
 
