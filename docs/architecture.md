@@ -61,7 +61,7 @@ Planned commands:
 ```text
 rn-fabricator doctor
 rn-fabricator setup plan
-rn-fabricator setup run
+rn-fabricator setup apply
 rn-fabricator create <name> --template basic-auth
 rn-fabricator template list
 rn-fabricator release-check

@@ -10,7 +10,7 @@ Planned commands:
 
 ```text
 rn-fabricator setup plan
-rn-fabricator setup run
+rn-fabricator setup apply
 ```
 
 `doctor` remains a read-only diagnostic command. `setup` becomes the explicit place for guided installation plans and, later, user-confirmed install execution.
@@ -87,27 +87,29 @@ The first local profile is `react-native-stable`. It contains:
 
 Profile data is local and deterministic in the first implementation. Remote profile updates can be considered later, but setup planning should remain usable without network access.
 
-### `setup run`
+### `setup apply`
 
-`setup run` should not be implemented until the plan model is stable.
+`setup apply` should not be implemented until the plan model and safety policy are stable.
 
 When implemented, it must:
 
 - Show the setup plan before execution.
-- Require explicit confirmation before running commands.
+- Require per-step `y/N` confirmation before running executable commands.
 - Support `--dry-run` and make dry-run the safest documented path.
-- Support `--yes` only for non-interactive environments and only after the plan is printed.
-- Skip manual-only steps.
-- Stop on the first failed install command unless `--continue-on-error` is explicitly added in a later issue.
+- Support `--yes` only for safe allowlisted commands.
+- Skip manual, elevated, environment, and unsupported steps by policy.
+- Print a final execution summary.
 
 Initial execution should be conservative:
 
 ```bash
-rn-fabricator setup run --dry-run
-rn-fabricator setup run
+rn-fabricator setup apply --dry-run
+rn-fabricator setup apply
 ```
 
 Avoid silently editing shell profile files in the first implementation. Print environment variable snippets and let users apply them.
+
+Detailed execution rules are defined in [Setup Apply Safety Policy](setup-apply-safety.md).
 
 ## Confirmation Rules
 
@@ -122,10 +124,12 @@ Before any install command runs, the CLI should print:
 Example prompt:
 
 ```text
-Run 2 install command(s)? Type "yes" to continue:
+[command] Watchman
+Command: brew install watchman
+Run this command? [y/N]:
 ```
 
-Only `yes` should approve execution. Empty input, `y`, or any other value should cancel.
+Only `y` and `yes` should approve execution. Empty input or any other value should skip the command.
 
 ## Platform Boundaries
 
@@ -206,3 +210,4 @@ Initial implementation issues:
 - #64 Define React Native toolchain profile model.
 - #65 Add local toolchain profile data source.
 - #66 Use toolchain profiles in setup plan recommendations.
+- #67 Design setup apply safety policy.
