@@ -66,6 +66,65 @@ public sealed class SetupApplyCommandHandlerTests
     }
 
     [Fact]
+    public async Task RunAsyncDryRunDoesNotPromptOrExecuteSafeCommand()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = CreatePlan([
+                new SetupPlanItem(
+                    "Watchman",
+                    SetupPlanItemKind.Command,
+                    "Install Watchman",
+                    ["brew install watchman"])
+            ])
+        };
+        var processRunner = new FakeProcessRunner();
+        using var writer = new StringWriter();
+        using var reader = new StringReader(string.Empty);
+        var handler = CreateHandler(setupPlanService, processRunner, reader, writer);
+
+        var exitCode = await handler.RunAsync(dryRun: true);
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Empty(processRunner.Requests);
+        var output = writer.ToString();
+        Assert.Contains("Mode: dry-run (no commands will be executed).", output);
+        Assert.Contains("[dry-run] Watchman: would run brew install watchman", output);
+        Assert.DoesNotContain("Run this command?", output);
+        Assert.Contains("Apply summary: 0 succeeded, 0 failed, 0 skipped by user, 0 skipped by policy, 0 manual, 1 would run.", output);
+    }
+
+    [Fact]
+    public async Task RunAsyncYesExecutesSafeCommandWithoutPrompt()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = CreatePlan([
+                new SetupPlanItem(
+                    "Watchman",
+                    SetupPlanItemKind.Command,
+                    "Install Watchman",
+                    ["brew install watchman"])
+            ])
+        };
+        var processRunner = new FakeProcessRunner();
+        processRunner.Enqueue(new ProcessRunResult(ExitCodes.Success, "installed", string.Empty));
+        using var writer = new StringWriter();
+        using var reader = new StringReader(string.Empty);
+        var handler = CreateHandler(setupPlanService, processRunner, reader, writer);
+
+        var exitCode = await handler.RunAsync(yes: true);
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Single(processRunner.Requests);
+        var output = writer.ToString();
+        Assert.Contains("Mode: yes (safe allowlisted commands will run without prompts).", output);
+        Assert.Contains("[succeeded] Watchman", output);
+        Assert.DoesNotContain("Run this command?", output);
+        Assert.Contains("Apply summary: 1 succeeded, 0 failed, 0 skipped by user, 0 skipped by policy, 0 manual.", output);
+    }
+
+    [Fact]
     public async Task RunAsyncReturnsFailureWhenAcceptedCommandFails()
     {
         var setupPlanService = new FakeSetupPlanService
@@ -134,6 +193,40 @@ public sealed class SetupApplyCommandHandlerTests
     }
 
     [Fact]
+    public async Task RunAsyncYesSkipsElevatedAndManualSteps()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = CreatePlan([
+                new SetupPlanItem(
+                    "CocoaPods",
+                    SetupPlanItemKind.Command,
+                    "Install CocoaPods",
+                    ["sudo gem install cocoapods"],
+                    RequiresAdmin: true),
+                new SetupPlanItem(
+                    "Android SDK",
+                    SetupPlanItemKind.Environment,
+                    "Configure Android SDK",
+                    ["Set ANDROID_HOME."])
+            ])
+        };
+        var processRunner = new FakeProcessRunner();
+        using var writer = new StringWriter();
+        using var reader = new StringReader(string.Empty);
+        var handler = CreateHandler(setupPlanService, processRunner, reader, writer);
+
+        var exitCode = await handler.RunAsync(yes: true);
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Empty(processRunner.Requests);
+        var output = writer.ToString();
+        Assert.Contains("[skipped by policy] CocoaPods: command requires admin privileges.", output);
+        Assert.Contains("[manual] Android SDK: review plan output.", output);
+        Assert.Contains("Apply summary: 0 succeeded, 0 failed, 0 skipped by user, 1 skipped by policy, 1 manual.", output);
+    }
+
+    [Fact]
     public async Task RunAsyncReturnsInvalidInputForMutuallyExclusiveProfileOptions()
     {
         var setupPlanService = new FakeSetupPlanService();
@@ -147,6 +240,22 @@ public sealed class SetupApplyCommandHandlerTests
         Assert.Equal(ExitCodes.InvalidInput, exitCode);
         Assert.Equal(0, setupPlanService.CallCount);
         Assert.Contains("Choose either --profile or --react-native, not both.", errorWriter.ToString());
+    }
+
+    [Fact]
+    public async Task RunAsyncReturnsInvalidInputForMutuallyExclusiveApplyModes()
+    {
+        var setupPlanService = new FakeSetupPlanService();
+        using var writer = new StringWriter();
+        using var errorWriter = new StringWriter();
+        using var reader = new StringReader(string.Empty);
+        var handler = CreateHandler(setupPlanService, new FakeProcessRunner(), reader, writer, errorWriter);
+
+        var exitCode = await handler.RunAsync(dryRun: true, yes: true);
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Equal(0, setupPlanService.CallCount);
+        Assert.Contains("Choose either --dry-run or --yes, not both.", errorWriter.ToString());
     }
 
     private static SetupApplyCommandHandler CreateHandler(

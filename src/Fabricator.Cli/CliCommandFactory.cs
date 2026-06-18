@@ -121,11 +121,21 @@ public static class CliCommandFactory
         {
             Description = "React Native version to use for setup recommendations."
         };
+        var applyDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show eligible setup commands without executing them."
+        };
+        var applyYesOption = new Option<bool>("--yes")
+        {
+            Description = "Run safe allowlisted setup commands without per-step prompts."
+        };
 
         planCommand.Options.Add(profileOption);
         planCommand.Options.Add(reactNativeOption);
         applyCommand.Options.Add(applyProfileOption);
         applyCommand.Options.Add(applyReactNativeOption);
+        applyCommand.Options.Add(applyDryRunOption);
+        applyCommand.Options.Add(applyYesOption);
 
         planCommand.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -139,8 +149,10 @@ public static class CliCommandFactory
         {
             var profile = parseResult.GetValue(applyProfileOption);
             var reactNativeVersion = parseResult.GetValue(applyReactNativeOption);
+            var dryRun = parseResult.GetValue(applyDryRunOption);
+            var yes = parseResult.GetValue(applyYesOption);
             var handler = setupApplyHandlerFactory();
-            return await handler.RunAsync(profile, reactNativeVersion, cancellationToken);
+            return await handler.RunAsync(profile, reactNativeVersion, dryRun, yes, cancellationToken);
         });
 
         command.Subcommands.Add(planCommand);

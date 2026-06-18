@@ -89,6 +89,18 @@ Apply safe setup commands with per-step confirmation:
 rn-fabricator setup apply
 ```
 
+Preview setup execution without running commands:
+
+```bash
+rn-fabricator setup apply --dry-run
+```
+
+Run only safe allowlisted setup commands without prompts:
+
+```bash
+rn-fabricator setup apply --yes
+```
+
 Use a specific toolchain profile or React Native version for setup recommendations:
 
 ```bash

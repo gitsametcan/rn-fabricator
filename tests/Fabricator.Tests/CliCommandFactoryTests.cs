@@ -77,7 +77,15 @@ public sealed class CliCommandFactoryTests
         Assert.Contains(
             applyCommand.Options,
             option => option.Name == "--react-native");
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--dry-run");
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--yes");
         Assert.Empty(rootCommand.Parse(["setup", "apply", "--profile", "react-native-stable"]).Errors);
+        Assert.Empty(rootCommand.Parse(["setup", "apply", "--dry-run"]).Errors);
+        Assert.Empty(rootCommand.Parse(["setup", "apply", "--yes"]).Errors);
     }
 
     [Fact]

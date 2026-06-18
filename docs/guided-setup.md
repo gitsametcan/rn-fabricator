@@ -95,7 +95,8 @@ It must:
 
 - Show the setup plan before execution.
 - Require per-step `y/N` confirmation before running executable commands.
-- Keep `--dry-run` and `--yes` out of the first implementation until their behavior is implemented explicitly.
+- Support `--dry-run` for non-mutating execution previews.
+- Support `--yes` only for safe allowlisted commands.
 - Skip manual, elevated, environment, and unsupported steps by policy.
 - Print a final execution summary.
 
@@ -103,6 +104,8 @@ Initial execution is conservative:
 
 ```bash
 rn-fabricator setup apply
+rn-fabricator setup apply --dry-run
+rn-fabricator setup apply --yes
 ```
 
 Avoid silently editing shell profile files in the first implementation. Print environment variable snippets and let users apply them.
