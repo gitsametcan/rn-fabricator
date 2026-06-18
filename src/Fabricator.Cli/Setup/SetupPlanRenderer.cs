@@ -11,7 +11,7 @@ public sealed class SetupPlanRenderer
         _writer = writer;
     }
 
-    public void Render(SetupPlan plan)
+    public void Render(SetupPlan plan, bool includeReadOnlyFooter = true)
     {
         _writer.WriteLine("React Native setup plan");
         _writer.WriteLine();
@@ -39,7 +39,10 @@ public sealed class SetupPlanRenderer
 
         _writer.WriteLine(
             $"Summary: {plan.CommandCount} command, {plan.ManualCount} manual, {plan.EnvironmentCount} environment step(s).");
-        _writer.WriteLine("No install commands were executed. Review the plan before running any setup commands.");
+        if (includeReadOnlyFooter)
+        {
+            _writer.WriteLine("No install commands were executed. Review the plan before running any setup commands.");
+        }
     }
 
     private void RenderItem(SetupPlanItem item)

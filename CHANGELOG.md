@@ -12,6 +12,7 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 - Local toolchain profile data source for deterministic default and explicit profile selection.
 - `setup plan` profile selection with `--profile` and `--react-native` options.
 - Setup apply safety policy for future user-confirmed dependency installation.
+- `setup apply` command with per-step confirmation for safe allowlisted setup commands.
 
 ## 0.6.0-alpha.1 - 2026-06-17
 

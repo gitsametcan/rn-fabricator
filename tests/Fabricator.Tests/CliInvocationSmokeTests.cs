@@ -200,6 +200,72 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void SetupApplyCommandReturnsSuccessAndExecutesAcceptedCommand()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                new PackageManagerInfo("Homebrew", true, "brew"),
+                [
+                    new SetupPlanItem(
+                        "Watchman",
+                        SetupPlanItemKind.Command,
+                        "Install Watchman",
+                        ["brew install watchman"])
+                ])
+        };
+        var processRunner = new FakeProcessRunner();
+        processRunner.Enqueue(new ProcessRunResult(ExitCodes.Success, "installed", string.Empty));
+        using var reader = new StringReader("y\n");
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)),
+            () => new SetupApplyCommandHandler(
+                setupPlanService,
+                new SetupPlanRenderer(Console.Out),
+                processRunner,
+                reader,
+                Console.Out,
+                Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "apply"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Single(processRunner.Requests);
+        Assert.Contains("Setup apply", output.ToString());
+        Assert.Contains("[succeeded] Watchman", output.ToString());
+    }
+
+    [Fact]
+    public void SetupApplyCommandPassesReactNativeVersionToHandler()
+    {
+        var setupPlanService = new FakeSetupPlanService();
+        var processRunner = new FakeProcessRunner();
+        using var reader = new StringReader(string.Empty);
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)),
+            () => new SetupApplyCommandHandler(
+                setupPlanService,
+                new SetupPlanRenderer(Console.Out),
+                processRunner,
+                reader,
+                Console.Out,
+                Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "apply", "--react-native", "0.76.x"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal("0.76.x", setupPlanService.LastRequest?.ReactNativeVersion);
+        Assert.Null(setupPlanService.LastRequest?.ProfileId);
+    }
+
+    [Fact]
     public void CreateCommandReturnsSuccessAndUsesDefaultTemplate()
     {
         var rootCommand = CreateRootCommandWithCreateResult(
