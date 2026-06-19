@@ -53,9 +53,12 @@ public sealed class SetupPlanServiceTests
             && item.Kind == SetupPlanItemKind.Command
             && !item.RequiresAdmin
             && item.Steps.Contains("brew install cocoapods"));
-        Assert.Contains(plan.Items, item =>
-            item.DependencyName == "Android SDK"
-            && item.Kind == SetupPlanItemKind.Environment);
+        var androidSdkItem = plan.Items.Single(item => item.DependencyName == "Android SDK");
+        Assert.Equal(SetupPlanItemKind.Environment, androidSdkItem.Kind);
+        Assert.Contains(androidSdkItem.Steps, step => step.Contains("More Actions > SDK Manager", StringComparison.Ordinal));
+        Assert.Contains(androidSdkItem.Steps, step => step.Contains("Android Studio > Settings > Languages & Frameworks > Android SDK", StringComparison.Ordinal));
+        Assert.Contains("For the default macOS zsh shell, run `nano ~/.zshrc`.", androidSdkItem.Steps);
+        Assert.Contains("Verify with `echo $ANDROID_HOME` and `adb --version`.", androidSdkItem.Steps);
         Assert.Equal(1, dependencyCheckService.CoreToolsCallCount);
         Assert.Equal(1, dependencyCheckService.AppleToolsCallCount);
         Assert.Equal(1, dependencyCheckService.AndroidToolsCallCount);
