@@ -189,11 +189,39 @@ sudo gem install cocoapods
 
 Android SDK setup remains manual in the guided setup flow.
 
-Use Android Studio SDK Manager to install the required SDK packages from the plan output, then add the printed `ANDROID_HOME` and `PATH` snippets to your shell profile. Restart the terminal and verify:
+Use Android Studio SDK Manager to install the required SDK packages from the plan output.
+
+On macOS, open SDK Manager in one of these ways:
+
+- From the Android Studio welcome screen: `More Actions > SDK Manager`.
+- If a project is open: `Android Studio > Settings > Languages & Frameworks > Android SDK`.
+
+For the default macOS zsh shell, open your shell profile:
+
+```bash
+nano ~/.zshrc
+```
+
+Add these lines at the bottom:
+
+```bash
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
+```
+
+Save and exit nano with `Ctrl+O`, `Enter`, then `Ctrl+X`.
+
+Restart the terminal or load the profile in the current terminal:
+
+```bash
+source ~/.zshrc
+```
+
+Verify:
 
 ```bash
 echo "$ANDROID_HOME"
-adb version
+adb --version
 ```
 
 ## Feedback To Issue Workflow

@@ -269,8 +269,15 @@ public sealed class SetupPlanService : ISetupPlanService
             return Environment("Android SDK", "Configure Android SDK", [
                 "Install Android Studio from https://developer.android.com/studio.",
                 androidRecommendation,
-                "Add `export ANDROID_HOME=\"$HOME/Library/Android/sdk\"` to your shell profile.",
-                "Add `export PATH=\"$PATH:$ANDROID_HOME/platform-tools\"` to your shell profile."
+                "Open SDK Manager from the Android Studio welcome screen with `More Actions > SDK Manager`.",
+                "If a project is open, use `Android Studio > Settings > Languages & Frameworks > Android SDK`.",
+                "Install Android SDK Platform and Android SDK Platform-Tools.",
+                "For the default macOS zsh shell, run `nano ~/.zshrc`.",
+                "Add `export ANDROID_HOME=\"$HOME/Library/Android/sdk\"`.",
+                "Add `export PATH=\"$PATH:$ANDROID_HOME/platform-tools\"`.",
+                "Save and exit nano with `Ctrl+O`, `Enter`, then `Ctrl+X`.",
+                "Restart your terminal or run `source ~/.zshrc`.",
+                "Verify with `echo $ANDROID_HOME` and `adb --version`."
             ]);
         }
 
