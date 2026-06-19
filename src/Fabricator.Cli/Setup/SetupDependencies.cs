@@ -21,11 +21,13 @@ public static class SetupDependencies
     {
         var setupPlanService = CreateDefaultPlanService();
         var processRunner = new ProcessRunner();
-        var renderer = new SetupPlanRenderer(writer);
+        var planRenderer = new SetupPlanRenderer(writer);
+        var executionResultRenderer = new SetupExecutionResultRenderer(writer);
 
         return new SetupApplyCommandHandler(
             setupPlanService,
-            renderer,
+            planRenderer,
+            executionResultRenderer,
             processRunner,
             reader,
             writer,
