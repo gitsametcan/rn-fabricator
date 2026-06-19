@@ -18,8 +18,8 @@ Do not generate React Native projects inside the rn-fabricator repository. Gener
 Download the release package into the playground:
 
 ```bash
-curl -L -o rn-fabricator.0.6.0-alpha.1.nupkg \
-  https://github.com/gitsametcan/rn-fabricator/releases/download/v0.6.0-alpha.1/rn-fabricator.0.6.0-alpha.1.nupkg
+curl -L -o rn-fabricator.0.7.0-alpha.1.nupkg \
+  https://github.com/gitsametcan/rn-fabricator/releases/download/v0.7.0-alpha.1/rn-fabricator.0.7.0-alpha.1.nupkg
 ```
 
 Install it as a local tool:
@@ -28,7 +28,7 @@ Install it as a local tool:
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source . \
-  --version 0.6.0-alpha.1
+  --version 0.7.0-alpha.1
 ```
 
 Verify the installed tool:
@@ -52,7 +52,7 @@ Install a locally packed development version from the rn-fabricator repository:
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source /Users/sametcan/Documents/GitHub/fabricator/artifacts/packages \
-  --version 0.6.0-alpha.1
+  --version 0.7.0-alpha.1
 ```
 
 Use a version override when packing an experimental build:
@@ -62,7 +62,7 @@ cd /Users/sametcan/Documents/GitHub/fabricator
 dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj \
   --configuration Release \
   --output artifacts/packages \
-  -p:VersionPrefix=0.6.0 \
+  -p:VersionPrefix=0.7.0 \
   -p:VersionSuffix=dogfood.1
 ```
 
@@ -73,7 +73,7 @@ cd ~/Documents/rn-fabricator-playground
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source /Users/sametcan/Documents/GitHub/fabricator/artifacts/packages \
-  --version 0.6.0-dogfood.1
+  --version 0.7.0-dogfood.1
 ```
 
 ## Run Dogfooding Checks
