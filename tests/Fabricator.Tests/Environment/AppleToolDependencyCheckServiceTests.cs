@@ -130,7 +130,7 @@ public sealed class AppleToolDependencyCheckServiceTests
         var runner = new FakeProcessRunner();
         runner.Enqueue(new ProcessRunResult(0, "2024.01.01.00\n", string.Empty));
         runner.Enqueue(new ProcessRunResult(1, string.Empty, "xcodebuild failed"));
-        runner.Enqueue(new ProcessRunResult(0, "1.15.2\n", string.Empty));
+        runner.Enqueue(new ProcessRunResult(1, string.Empty, "pod failed"));
         var platform = new FakeSystemPlatform { IsMacOS = true };
         var service = new DependencyCheckService(runner, platform);
 
@@ -143,6 +143,10 @@ public sealed class AppleToolDependencyCheckServiceTests
         Assert.Equal(DependencyCheckStatus.Failed, xcodeResult.Status);
         Assert.Contains("Install Xcode from the App Store.", xcodeResult.RemediationHint);
         Assert.Contains("sudo xcode-select --switch /Applications/Xcode.app", xcodeResult.RemediationHint);
+
+        var cocoaPodsResult = summary.Results.Single(result => result.Name == "CocoaPods");
+        Assert.Equal(DependencyCheckStatus.Failed, cocoaPodsResult.Status);
+        Assert.Contains("brew install cocoapods", cocoaPodsResult.RemediationHint);
     }
 
     [Fact]

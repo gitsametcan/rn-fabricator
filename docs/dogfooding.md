@@ -171,7 +171,13 @@ Install Homebrew manually from https://brew.sh, restart the terminal, then run:
 
 ### Sudo Commands
 
-Commands such as `sudo gem install cocoapods` are skipped by policy in `setup apply` and `setup apply --yes`.
+When Homebrew is available on macOS, `setup plan` should prefer:
+
+```bash
+brew install cocoapods
+```
+
+That command is eligible for `setup apply` confirmation. Commands such as `sudo gem install cocoapods` are skipped by policy in `setup apply` and `setup apply --yes`.
 
 Review the printed command and run it manually only when you understand the system-level change:
 

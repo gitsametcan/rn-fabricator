@@ -40,6 +40,34 @@ public sealed class SetupApplyCommandHandlerTests
     }
 
     [Fact]
+    public async Task RunAsyncExecutesAcceptedHomebrewCocoaPodsCommand()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = CreatePlan([
+                new SetupPlanItem(
+                    "CocoaPods",
+                    SetupPlanItemKind.Command,
+                    "Install CocoaPods",
+                    ["brew install cocoapods"])
+            ])
+        };
+        var processRunner = new FakeProcessRunner();
+        processRunner.Enqueue(new ProcessRunResult(ExitCodes.Success, "installed", string.Empty));
+        using var writer = new StringWriter();
+        using var reader = new StringReader("y\n");
+        var handler = CreateHandler(setupPlanService, processRunner, reader, writer);
+
+        var exitCode = await handler.RunAsync();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        var request = Assert.Single(processRunner.Requests);
+        Assert.Equal("brew", request.FileName);
+        Assert.Equal(["install", "cocoapods"], request.Arguments);
+        Assert.Contains("[succeeded] CocoaPods", writer.ToString());
+    }
+
+    [Fact]
     public async Task RunAsyncSkipsDeclinedCommand()
     {
         var setupPlanService = new FakeSetupPlanService

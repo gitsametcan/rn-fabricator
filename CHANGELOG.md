@@ -6,6 +6,10 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+### Changed
+
+- Prefer `brew install cocoapods` for macOS CocoaPods setup when Homebrew is available.
+
 ## 0.7.0-alpha.1 - 2026-06-19
 
 ### Added

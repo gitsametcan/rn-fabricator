@@ -76,7 +76,7 @@ public sealed class SetupPlanService : ISetupPlanService
             "Watchman" => CreateWatchmanPlanItem(packageManager, profile),
             "Xcode" when _systemPlatform.IsMacOS => CreateXcodePlanItem(profile),
             "Xcode" => null,
-            "CocoaPods" when _systemPlatform.IsMacOS => CreateCocoaPodsPlanItem(profile),
+            "CocoaPods" when _systemPlatform.IsMacOS => CreateCocoaPodsPlanItem(packageManager, profile),
             "CocoaPods" => null,
             "Java" => CreateJavaPlanItem(packageManager, profile),
             "Android SDK" => CreateAndroidSdkPlanItem(profile),
@@ -201,14 +201,26 @@ public sealed class SetupPlanService : ISetupPlanService
         ]);
     }
 
-    private static SetupPlanItem CreateCocoaPodsPlanItem(ToolchainProfile profile)
+    private static SetupPlanItem CreateCocoaPodsPlanItem(
+        PackageManagerInfo packageManager,
+        ToolchainProfile profile)
     {
+        var recommendation = FormatRequirementRecommendation(profile.CocoaPods, profile);
+
+        if (packageManager.IsAvailable)
+        {
+            return Command("CocoaPods", "Install CocoaPods", [
+                "brew install cocoapods",
+                recommendation
+            ]);
+        }
+
         return Command(
             "CocoaPods",
             "Install CocoaPods",
             [
                 "sudo gem install cocoapods",
-                FormatRequirementRecommendation(profile.CocoaPods, profile)
+                recommendation
             ],
             requiresAdmin: true);
     }
