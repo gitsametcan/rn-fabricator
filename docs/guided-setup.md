@@ -129,6 +129,22 @@ Use `setup apply --yes` only after reviewing `setup apply --dry-run`. Even in ye
 
 Detailed repo-external testing steps are defined in [Dogfooding Workflow](dogfooding.md).
 
+## Future Work: Deeper Environment Automation
+
+The current `setup apply` flow is intentionally conservative. It can run safe allowlisted commands after confirmation, while elevated commands, GUI installers, license prompts, and shell profile changes remain manual.
+
+Future versions may explore deeper environment automation without assigning it to a current milestone. Potential directions include:
+
+- Opt-in elevated command execution for supported commands.
+- Shell profile updates with backup and restore support.
+- Android SDK command-line tools installation.
+- CocoaPods installation automation.
+- Post-install `doctor` verification loops.
+- Rollback behavior for files modified by setup automation.
+- Clearer boundaries for Xcode, Android Studio, and other GUI or license-gated installers.
+
+These improvements should be designed as explicit opt-in behavior with clear prompts, auditable commands, and platform-specific safety rules.
+
 ## Confirmation Rules
 
 Before any install command runs, the CLI should print:

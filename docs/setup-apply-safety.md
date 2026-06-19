@@ -99,6 +99,23 @@ Initial Linux allowlist:
 
 Commands not on the allowlist must be skipped by policy, even if they appear in a setup plan.
 
+## Future Elevated Automation Policy
+
+Deeper setup automation is not part of the current `setup apply` safety contract, but future versions may evaluate opt-in support for elevated commands and local environment modifications.
+
+Any future elevated automation should follow these rules:
+
+- Require an explicit flag or command; default `setup apply` behavior must remain conservative.
+- Print the exact command or file change before execution.
+- Ask for confirmation before running an elevated command or modifying a shell profile.
+- Never collect, store, log, or replay administrator passwords.
+- Back up user-editable files before modifying them.
+- Provide restore instructions or rollback behavior for changed files.
+- Re-run `doctor` after automation to show what improved and what remains manual.
+- Keep Xcode, Android Studio, license acceptance, and GUI-only flows clearly separated from non-interactive package manager commands.
+
+This future work should remain auditable and platform-specific. A command that is safe on one operating system or package manager must not automatically become safe everywhere.
+
 ## Explicitly Manual In First Implementation
 
 These steps must remain manual:
