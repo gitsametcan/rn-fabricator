@@ -112,6 +112,23 @@ Avoid silently editing shell profile files in the first implementation. Print en
 
 Detailed execution rules are defined in [Setup Apply Safety Policy](setup-apply-safety.md).
 
+## Dogfooding Workflow
+
+Test guided setup from a repo-external playground directory, not from the rn-fabricator repository. Generated React Native apps and local tool installs should stay outside the tool repository so `git status` remains clean.
+
+Recommended order:
+
+```bash
+rn-fabricator doctor
+rn-fabricator setup plan
+rn-fabricator setup apply --dry-run
+rn-fabricator setup apply
+```
+
+Use `setup apply --yes` only after reviewing `setup apply --dry-run`. Even in yes mode, elevated commands, manual GUI installs, and environment changes remain skipped by policy.
+
+Detailed repo-external testing steps are defined in [Dogfooding Workflow](dogfooding.md).
+
 ## Confirmation Rules
 
 Before any install command runs, the CLI should print:

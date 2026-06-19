@@ -77,25 +77,25 @@ Check the local React Native CLI development environment:
 rn-fabricator doctor
 ```
 
-Print a guided setup plan without running install commands:
+Print a guided setup plan without running install commands. This command is read-only and is safe to run before changing your machine:
 
 ```bash
 rn-fabricator setup plan
 ```
 
-Apply safe setup commands with per-step confirmation:
+Apply safe setup commands with per-step confirmation. The CLI prints each executable command and waits for `y` or `yes`; empty input or any other response skips that command:
 
 ```bash
 rn-fabricator setup apply
 ```
 
-Preview setup execution without running commands:
+Preview setup execution without prompts or installs:
 
 ```bash
 rn-fabricator setup apply --dry-run
 ```
 
-Run only safe allowlisted setup commands without prompts:
+Run only safe allowlisted setup commands without prompts. Elevated commands such as `sudo`, GUI installs, and environment variable edits remain manual:
 
 ```bash
 rn-fabricator setup apply --yes
@@ -138,6 +138,10 @@ rn-fabricator create --help
 - Prepare React Native CLI dependencies: [Set up your environment](https://reactnative.dev/docs/environment-setup)
 - Check project-specific development steps: [Local Development](docs/development.md)
 - Review release readiness checks: [Release Checklist](docs/release-checklist.md)
+- If `setup plan` says the package manager is not detected, install the platform package manager first, for example Homebrew on macOS, or follow the printed manual steps.
+- If you decline a `setup apply` prompt, rn-fabricator skips that command and continues with the rest of the plan.
+- `sudo` commands, Xcode, Android Studio, shell profile edits, and Android SDK environment variables are intentionally not automated in the first guided setup implementation.
+- Use [Dogfooding Workflow](docs/dogfooding.md) to test rn-fabricator from a repo-external playground directory.
 
 ## Documentation
 

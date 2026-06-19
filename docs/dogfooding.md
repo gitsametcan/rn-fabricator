@@ -84,11 +84,24 @@ Run the diagnostic command:
 ./.tools/rn-fabricator doctor
 ```
 
-Preview guided setup actions without installing dependencies:
+Preview guided setup actions without installing dependencies. This command is read-only; it should print the platform, package manager, selected toolchain profile, React Native version, and planned steps:
 
 ```bash
 ./.tools/rn-fabricator setup plan
 ```
+
+Preview setup execution without prompts or installs. Start here when testing setup behavior on a machine you do not want to mutate:
+
+```bash
+./.tools/rn-fabricator setup apply --dry-run
+```
+
+Expected dry-run behavior:
+
+- The setup plan is printed first.
+- Safe allowlisted commands are shown as `[dry-run] ... would run ...`.
+- Manual, elevated, and environment steps are not executed.
+- The final summary can include `would run`, `skipped by policy`, and `manual` counts.
 
 Run safe setup commands only after per-step confirmation:
 
@@ -96,17 +109,23 @@ Run safe setup commands only after per-step confirmation:
 ./.tools/rn-fabricator setup apply
 ```
 
-Preview setup execution without prompts or installs:
+Expected prompt format:
 
-```bash
-./.tools/rn-fabricator setup apply --dry-run
+```text
+[command] Watchman
+Command: brew install watchman
+Run this command? [y/N]:
 ```
 
-Run only safe allowlisted setup commands without prompts:
+Answer `y` or `yes` only when you want that command to run. Press Enter, type `n`, or type anything else to skip the command and continue the plan.
+
+Run only safe allowlisted setup commands without prompts. Use this only after reviewing `setup apply --dry-run`:
 
 ```bash
 ./.tools/rn-fabricator setup apply --yes
 ```
+
+`--yes` does not run `sudo` commands, install Xcode or Android Studio, edit shell profiles, accept licenses, or configure Android SDK environment variables.
 
 Create a sample React Native project:
 
@@ -126,6 +145,49 @@ When the generated app is no longer needed, remove it from the playground:
 ```bash
 cd ~/Documents/rn-fabricator-playground
 rm -rf FabricatorBabyStep
+```
+
+## Setup Troubleshooting Notes
+
+### Declined Commands
+
+If you decline a prompt, the command is recorded as skipped by user. This is expected and should not fail the whole run.
+
+Run the command again when you want to approve a skipped step:
+
+```bash
+./.tools/rn-fabricator setup apply
+```
+
+### Missing Homebrew
+
+On macOS, if Homebrew is missing, `setup plan` falls back to manual guidance instead of printing `brew install ...` commands.
+
+Install Homebrew manually from https://brew.sh, restart the terminal, then run:
+
+```bash
+./.tools/rn-fabricator setup plan
+```
+
+### Sudo Commands
+
+Commands such as `sudo gem install cocoapods` are skipped by policy in `setup apply` and `setup apply --yes`.
+
+Review the printed command and run it manually only when you understand the system-level change:
+
+```bash
+sudo gem install cocoapods
+```
+
+### Android SDK Manual Steps
+
+Android SDK setup remains manual in the guided setup flow.
+
+Use Android Studio SDK Manager to install the required SDK packages from the plan output, then add the printed `ANDROID_HOME` and `PATH` snippets to your shell profile. Restart the terminal and verify:
+
+```bash
+echo "$ANDROID_HOME"
+adb version
 ```
 
 ## Feedback To Issue Workflow
