@@ -225,6 +225,7 @@ public sealed class CliInvocationSmokeTests
             () => new SetupApplyCommandHandler(
                 setupPlanService,
                 new SetupPlanRenderer(Console.Out),
+                new SetupExecutionResultRenderer(Console.Out),
                 processRunner,
                 reader,
                 Console.Out,
@@ -252,6 +253,7 @@ public sealed class CliInvocationSmokeTests
             () => new SetupApplyCommandHandler(
                 setupPlanService,
                 new SetupPlanRenderer(Console.Out),
+                new SetupExecutionResultRenderer(Console.Out),
                 processRunner,
                 reader,
                 Console.Out,
@@ -290,6 +292,7 @@ public sealed class CliInvocationSmokeTests
             () => new SetupApplyCommandHandler(
                 setupPlanService,
                 new SetupPlanRenderer(Console.Out),
+                new SetupExecutionResultRenderer(Console.Out),
                 processRunner,
                 reader,
                 Console.Out,

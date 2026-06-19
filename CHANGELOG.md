@@ -14,6 +14,7 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 - Setup apply safety policy for future user-confirmed dependency installation.
 - `setup apply` command with per-step confirmation for safe allowlisted setup commands.
 - `setup apply --dry-run` and `setup apply --yes` modes with conservative safety boundaries.
+- Setup execution result model and renderer for stable apply summaries.
 
 ## 0.6.0-alpha.1 - 2026-06-17
 

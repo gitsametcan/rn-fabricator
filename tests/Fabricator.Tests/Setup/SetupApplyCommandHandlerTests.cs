@@ -153,6 +153,40 @@ public sealed class SetupApplyCommandHandlerTests
     }
 
     [Fact]
+    public async Task RunAsyncContinuesRenderingManualWorkAfterFailedCommand()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = CreatePlan([
+                new SetupPlanItem(
+                    "Watchman",
+                    SetupPlanItemKind.Command,
+                    "Install Watchman",
+                    ["brew install watchman"]),
+                new SetupPlanItem(
+                    "Xcode",
+                    SetupPlanItemKind.Manual,
+                    "Install Xcode",
+                    ["Install Xcode from the App Store."])
+            ])
+        };
+        var processRunner = new FakeProcessRunner();
+        processRunner.Enqueue(new ProcessRunResult(42, string.Empty, "install failed"));
+        using var writer = new StringWriter();
+        using var reader = new StringReader("yes\n");
+        var handler = CreateHandler(setupPlanService, processRunner, reader, writer);
+
+        var exitCode = await handler.RunAsync();
+
+        Assert.Equal(ExitCodes.GeneralFailure, exitCode);
+        var output = writer.ToString();
+        Assert.Contains("[failed] Watchman: exit code 42", output);
+        Assert.Contains("[manual] Xcode: review plan output.", output);
+        Assert.Contains("Apply summary: 0 succeeded, 1 failed, 0 skipped by user, 0 skipped by policy, 1 manual.", output);
+        Assert.Contains("Manual or skipped steps may still be required", output);
+    }
+
+    [Fact]
     public async Task RunAsyncSkipsElevatedAndManualSteps()
     {
         var setupPlanService = new FakeSetupPlanService
@@ -268,6 +302,7 @@ public sealed class SetupApplyCommandHandlerTests
         return new SetupApplyCommandHandler(
             setupPlanService,
             new SetupPlanRenderer(writer),
+            new SetupExecutionResultRenderer(writer),
             processRunner,
             reader,
             writer,

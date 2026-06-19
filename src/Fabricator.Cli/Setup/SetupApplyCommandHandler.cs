@@ -19,6 +19,7 @@ public sealed class SetupApplyCommandHandler
 
     private readonly ISetupPlanService _setupPlanService;
     private readonly SetupPlanRenderer _planRenderer;
+    private readonly SetupExecutionResultRenderer _executionResultRenderer;
     private readonly IProcessRunner _processRunner;
     private readonly TextReader _reader;
     private readonly TextWriter _writer;
@@ -27,6 +28,7 @@ public sealed class SetupApplyCommandHandler
     public SetupApplyCommandHandler(
         ISetupPlanService setupPlanService,
         SetupPlanRenderer planRenderer,
+        SetupExecutionResultRenderer executionResultRenderer,
         IProcessRunner processRunner,
         TextReader reader,
         TextWriter writer,
@@ -34,6 +36,7 @@ public sealed class SetupApplyCommandHandler
     {
         _setupPlanService = setupPlanService;
         _planRenderer = planRenderer;
+        _executionResultRenderer = executionResultRenderer;
         _processRunner = processRunner;
         _reader = reader;
         _writer = writer;
@@ -92,63 +95,68 @@ public sealed class SetupApplyCommandHandler
             _writer.WriteLine("Mode: yes (safe allowlisted commands will run without prompts).");
         }
 
-        var summary = new SetupApplySummary();
+        var stepResults = new List<SetupExecutionStepResult>();
 
         foreach (var item in plan.Items)
         {
-            await ApplyItemAsync(item, summary, dryRun, yes, cancellationToken);
+            stepResults.Add(await ApplyItemAsync(item, dryRun, yes, cancellationToken));
         }
 
-        RenderSummary(summary);
+        var executionResult = new SetupExecutionResult(stepResults);
+        _executionResultRenderer.RenderSummary(executionResult);
 
-        return summary.Failed > 0 ? ExitCodes.GeneralFailure : ExitCodes.Success;
+        return executionResult.HasFailures ? ExitCodes.GeneralFailure : ExitCodes.Success;
     }
 
-    private async Task ApplyItemAsync(
+    private async Task<SetupExecutionStepResult> ApplyItemAsync(
         SetupPlanItem item,
-        SetupApplySummary summary,
         bool dryRun,
         bool yes,
         CancellationToken cancellationToken)
     {
         if (item.Kind != SetupPlanItemKind.Command)
         {
-            summary.Manual++;
-            _writer.WriteLine($"[manual] {item.DependencyName}: review plan output.");
-            return;
+            return RenderStep(new SetupExecutionStepResult(
+                item.DependencyName,
+                SetupExecutionStepStatus.ManualOnly));
         }
 
         var commandText = item.Steps.FirstOrDefault();
         if (string.IsNullOrWhiteSpace(commandText))
         {
-            summary.SkippedByPolicy++;
-            _writer.WriteLine($"[skipped by policy] {item.DependencyName}: no executable command was found.");
-            return;
+            return RenderStep(new SetupExecutionStepResult(
+                item.DependencyName,
+                SetupExecutionStepStatus.SkippedByPolicy,
+                Reason: "no executable command was found."));
         }
 
         if (item.RequiresAdmin)
         {
-            summary.SkippedByPolicy++;
-            _writer.WriteLine($"[skipped by policy] {item.DependencyName}: command requires admin privileges.");
-            return;
+            return RenderStep(new SetupExecutionStepResult(
+                item.DependencyName,
+                SetupExecutionStepStatus.SkippedByPolicy,
+                CommandText: commandText,
+                Reason: "command requires admin privileges."));
         }
 
         if (!SafeCommandAllowlist.Contains(commandText))
         {
-            summary.SkippedByPolicy++;
-            _writer.WriteLine($"[skipped by policy] {item.DependencyName}: command is not allowlisted.");
-            return;
+            return RenderStep(new SetupExecutionStepResult(
+                item.DependencyName,
+                SetupExecutionStepStatus.SkippedByPolicy,
+                CommandText: commandText,
+                Reason: "command is not allowlisted."));
         }
 
         if (dryRun)
         {
-            summary.WouldRun++;
-            _writer.WriteLine($"[dry-run] {item.DependencyName}: would run {commandText}");
-            return;
+            return RenderStep(new SetupExecutionStepResult(
+                item.DependencyName,
+                SetupExecutionStepStatus.WouldRun,
+                CommandText: commandText));
         }
 
-        _writer.WriteLine($"[command] {item.DependencyName}");
-        _writer.WriteLine($"Command: {commandText}");
+        _executionResultRenderer.RenderCommandStart(item.DependencyName, commandText);
         if (!yes)
         {
             _writer.Write("Run this command? [y/N]: ");
@@ -156,9 +164,10 @@ public sealed class SetupApplyCommandHandler
             var response = await _reader.ReadLineAsync(cancellationToken);
             if (!IsAccepted(response))
             {
-                summary.SkippedByUser++;
-                _writer.WriteLine($"[skipped by user] {item.DependencyName}");
-                return;
+                return RenderStep(new SetupExecutionStepResult(
+                    item.DependencyName,
+                    SetupExecutionStepStatus.SkippedByUser,
+                    CommandText: commandText));
             }
         }
 
@@ -167,40 +176,26 @@ public sealed class SetupApplyCommandHandler
 
         if (result.Succeeded)
         {
-            summary.Succeeded++;
-            _writer.WriteLine($"[succeeded] {item.DependencyName}");
-            WriteTrimmedOutput(result.StandardOutput);
-            return;
+            return RenderStep(new SetupExecutionStepResult(
+                item.DependencyName,
+                SetupExecutionStepStatus.Succeeded,
+                CommandText: commandText,
+                ExitCode: result.ExitCode,
+                DiagnosticOutput: result.StandardOutput));
         }
 
-        summary.Failed++;
-        _writer.WriteLine($"[failed] {item.DependencyName}: exit code {result.ExitCode}");
-        WriteTrimmedOutput(result.StandardError);
+        return RenderStep(new SetupExecutionStepResult(
+            item.DependencyName,
+            SetupExecutionStepStatus.Failed,
+            CommandText: commandText,
+            ExitCode: result.ExitCode,
+            DiagnosticOutput: result.StandardError));
     }
 
-    private void RenderSummary(SetupApplySummary summary)
+    private SetupExecutionStepResult RenderStep(SetupExecutionStepResult step)
     {
-        _writer.WriteLine();
-        var summaryText =
-            $"Apply summary: {summary.Succeeded} succeeded, {summary.Failed} failed, {summary.SkippedByUser} skipped by user, {summary.SkippedByPolicy} skipped by policy, {summary.Manual} manual";
-        if (summary.WouldRun > 0)
-        {
-            summaryText += $", {summary.WouldRun} would run";
-        }
-
-        _writer.WriteLine($"{summaryText}.");
-        if (summary.Manual > 0 || summary.SkippedByPolicy > 0)
-        {
-            _writer.WriteLine("Manual or skipped steps may still be required before React Native development works.");
-        }
-    }
-
-    private void WriteTrimmedOutput(string value)
-    {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            _writer.WriteLine(value.Trim());
-        }
+        _executionResultRenderer.RenderStep(step);
+        return step;
     }
 
     private static ProcessRunRequest CreateProcessRequest(string commandText)
@@ -218,20 +213,5 @@ public sealed class SetupApplyCommandHandler
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
-
-    private sealed class SetupApplySummary
-    {
-        public int Succeeded { get; set; }
-
-        public int Failed { get; set; }
-
-        public int SkippedByUser { get; set; }
-
-        public int SkippedByPolicy { get; set; }
-
-        public int Manual { get; set; }
-
-        public int WouldRun { get; set; }
     }
 }
