@@ -299,7 +299,8 @@ public sealed class DependencyCheckService : IDependencyCheckService
     private static string CreateCocoaPodsHint()
     {
         return CreateHint(
-            "Install CocoaPods with `sudo gem install cocoapods` or your preferred Ruby environment.",
+            "Install CocoaPods with `brew install cocoapods` on macOS when Homebrew is available.",
+            "Alternatively install with `sudo gem install cocoapods` or your preferred Ruby environment.",
             "Verify with `pod --version`.");
     }
 

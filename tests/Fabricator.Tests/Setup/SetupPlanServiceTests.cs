@@ -19,6 +19,7 @@ public sealed class SetupPlanServiceTests
             AppleToolsSummary = new DependencyCheckSummary(
             [
                 DependencyCheckResult.Failed("Xcode", null, "Xcode missing.", "Install Xcode."),
+                DependencyCheckResult.Failed("CocoaPods", null, "CocoaPods missing.", "Install CocoaPods."),
                 DependencyCheckResult.Warning("Watchman", null, "Watchman missing.", "Install Watchman.")
             ]),
             AndroidToolsSummary = new DependencyCheckSummary(
@@ -48,11 +49,41 @@ public sealed class SetupPlanServiceTests
             item.DependencyName == "Xcode"
             && item.Kind == SetupPlanItemKind.Manual);
         Assert.Contains(plan.Items, item =>
+            item.DependencyName == "CocoaPods"
+            && item.Kind == SetupPlanItemKind.Command
+            && !item.RequiresAdmin
+            && item.Steps.Contains("brew install cocoapods"));
+        Assert.Contains(plan.Items, item =>
             item.DependencyName == "Android SDK"
             && item.Kind == SetupPlanItemKind.Environment);
         Assert.Equal(1, dependencyCheckService.CoreToolsCallCount);
         Assert.Equal(1, dependencyCheckService.AppleToolsCallCount);
         Assert.Equal(1, dependencyCheckService.AndroidToolsCallCount);
+    }
+
+    [Fact]
+    public async Task BuildPlanAsyncFallsBackToElevatedCocoaPodsCommandWhenHomebrewIsMissing()
+    {
+        var dependencyCheckService = new FakeDependencyCheckService
+        {
+            AppleToolsSummary = new DependencyCheckSummary(
+            [
+                DependencyCheckResult.Failed("CocoaPods", null, "CocoaPods missing.", "Install CocoaPods.")
+            ])
+        };
+        var service = new SetupPlanService(
+            dependencyCheckService,
+            new FakeSystemPlatform { IsMacOS = true },
+            new FixedPackageManagerDetector(PackageManagerInfo.NotDetected()),
+            new FixedToolchainProfileProvider(CreateProfile()));
+
+        var plan = await service.BuildPlanAsync(SetupPlanRequest.Default);
+
+        var item = Assert.Single(plan.Items);
+        Assert.Equal("CocoaPods", item.DependencyName);
+        Assert.Equal(SetupPlanItemKind.Command, item.Kind);
+        Assert.True(item.RequiresAdmin);
+        Assert.Contains("sudo gem install cocoapods", item.Steps);
     }
 
     [Fact]

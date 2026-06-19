@@ -138,7 +138,6 @@ Future versions may explore deeper environment automation without assigning it t
 - Opt-in elevated command execution for supported commands.
 - Shell profile updates with backup and restore support.
 - Android SDK command-line tools installation.
-- CocoaPods installation automation.
 - Post-install `doctor` verification loops.
 - Rollback behavior for files modified by setup automation.
 - Clearer boundaries for Xcode, Android Studio, and other GUI or license-gated installers.

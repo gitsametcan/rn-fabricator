@@ -85,6 +85,7 @@ Initial macOS allowlist:
 - `brew install watchman`
 - `brew install git`
 - `brew install node`
+- `brew install cocoapods`
 - `brew install --cask temurin`
 
 Initial Windows allowlist:

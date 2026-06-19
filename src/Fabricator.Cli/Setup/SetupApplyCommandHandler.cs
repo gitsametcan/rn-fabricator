@@ -11,6 +11,7 @@ public sealed class SetupApplyCommandHandler
         "brew install watchman",
         "brew install git",
         "brew install node",
+        "brew install cocoapods",
         "brew install --cask temurin",
         "winget install OpenJS.NodeJS.LTS",
         "winget install Git.Git",
