@@ -1,4 +1,5 @@
 using Fabricator.Core.Projects;
+using Fabricator.Core.Processes;
 
 namespace Fabricator.Cli.Projects;
 
@@ -24,8 +25,28 @@ public sealed class CreateCommandHandler
         string outputDirectory,
         CancellationToken cancellationToken = default)
     {
+        var commandRendered = false;
+        var streamedProcessOutput = false;
         var result = await _createProjectService.CreateAsync(
-            new CreateProjectRequest(name, template, outputDirectory),
+            new CreateProjectRequest(
+                name,
+                template,
+                outputDirectory,
+                command =>
+                {
+                    commandRendered = true;
+                    RenderCommand(command);
+                },
+                output =>
+                {
+                    streamedProcessOutput = true;
+                    _outputWriter.Write(output);
+                },
+                error =>
+                {
+                    streamedProcessOutput = true;
+                    _errorWriter.Write(error);
+                }),
             cancellationToken);
 
         if (!result.Validation.IsValid)
@@ -34,11 +55,14 @@ public sealed class CreateCommandHandler
             return result.ExitCode;
         }
 
-        RenderCommand(result);
+        if (!commandRendered && result.Command is not null)
+        {
+            RenderCommand(result.Command);
+        }
 
         if (!result.Succeeded)
         {
-            RenderProcessFailure(result);
+            RenderProcessFailure(result, streamedProcessOutput);
             return result.ExitCode;
         }
 
@@ -56,16 +80,16 @@ public sealed class CreateCommandHandler
         }
     }
 
-    private void RenderCommand(CreateProjectResult result)
+    private void RenderCommand(ProcessRunRequest command)
     {
-        if (result.Command is null)
+        _outputWriter.WriteLine($"Creating React Native project: {command.Arguments.LastOrDefault()}");
+
+        if (!string.IsNullOrWhiteSpace(command.WorkingDirectory))
         {
-            return;
+            _outputWriter.WriteLine($"Output directory: {command.WorkingDirectory}");
         }
 
-        _outputWriter.WriteLine($"Creating React Native project: {result.Validation.Request.ProjectName}");
-        _outputWriter.WriteLine($"Output directory: {result.Validation.FullOutputDirectory}");
-        _outputWriter.WriteLine($"Command: {result.Command.FileName} {string.Join(' ', result.Command.Arguments)}");
+        _outputWriter.WriteLine($"Command: {command.FileName} {string.Join(' ', command.Arguments)}");
     }
 
     private void RenderSuccess(CreateProjectResult result)
@@ -84,12 +108,13 @@ public sealed class CreateCommandHandler
         _outputWriter.WriteLine("Example config files: not generated yet; basic-auth template files are planned for v0.4.0.");
     }
 
-    private void RenderProcessFailure(CreateProjectResult result)
+    private void RenderProcessFailure(CreateProjectResult result, bool processOutputAlreadyWritten)
     {
         _errorWriter.WriteLine("React Native project creation failed.");
 
-        if (result.ProcessResult is null)
+        if (result.ProcessResult is null || processOutputAlreadyWritten)
         {
+            RenderRollback(result.Rollback);
             return;
         }
 

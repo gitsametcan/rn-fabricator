@@ -27,12 +27,17 @@ public sealed class CreateProjectServiceTests
     public async Task CreateAsyncRunsReactNativeCliInOutputDirectory()
     {
         using var outputDirectory = new TemporaryDirectory();
+        var preparedCommands = new List<ProcessRunRequest>();
         var runner = new FakeProcessRunner();
         runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
         var service = new CreateProjectService(new CreateProjectValidator(), runner);
 
         var result = await service.CreateAsync(
-            new CreateProjectRequest("MyApp", "basic-auth", outputDirectory.Path));
+            new CreateProjectRequest(
+                "MyApp",
+                "basic-auth",
+                outputDirectory.Path,
+                preparedCommands.Add));
 
         Assert.True(result.Succeeded);
         Assert.Equal(Path.Combine(outputDirectory.Path, "MyApp"), result.ProjectPath);
@@ -41,6 +46,7 @@ public sealed class CreateProjectServiceTests
         Assert.Equal(["@react-native-community/cli@latest", "init", "MyApp"], result.Command.Arguments);
         Assert.Equal(outputDirectory.Path, result.Command.WorkingDirectory);
         Assert.Collection(runner.Requests, request => Assert.Same(result.Command, request));
+        Assert.Collection(preparedCommands, command => Assert.Same(result.Command, command));
     }
 
     [Fact]

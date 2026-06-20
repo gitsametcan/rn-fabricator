@@ -28,6 +28,10 @@ public sealed class FakeProcessRunner : IProcessRunner
             return Task.FromResult(new ProcessRunResult(ExitCodes.GeneralFailure, string.Empty, "No fake result configured."));
         }
 
-        return Task.FromResult(_results.Dequeue());
+        var result = _results.Dequeue();
+        request.OnStandardOutput?.Invoke(result.StandardOutput);
+        request.OnStandardError?.Invoke(result.StandardError);
+
+        return Task.FromResult(result);
     }
 }

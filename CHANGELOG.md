@@ -6,10 +6,19 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.7.1 - 2026-06-20
+
 ### Changed
 
 - Prefer `brew install cocoapods` for macOS CocoaPods setup when Homebrew is available.
 - Clarify Android SDK Manager and shell profile setup guidance on macOS.
+
+### Fixed
+
+- Stream `create` command output while React Native CLI runs so long downloads and init steps no longer look stuck.
+- Keep captured stdout/stderr for failure diagnostics while avoiding duplicate process output in the CLI.
 
 ## 0.7.0-alpha.1 - 2026-06-19
 
