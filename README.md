@@ -109,7 +109,7 @@ rn-fabricator setup plan --react-native 0.76.x
 rn-fabricator setup apply --react-native 0.76.x
 ```
 
-Create a React Native CLI project with the default `basic-auth` template:
+Create a React Native CLI project with the default `minimal-splash` starter:
 
 ```bash
 rn-fabricator create MyApp
@@ -118,7 +118,7 @@ rn-fabricator create MyApp
 Create a project in a specific output directory:
 
 ```bash
-rn-fabricator create MyApp --output ./sandbox --template basic-auth
+rn-fabricator create MyApp --output ./sandbox
 ```
 
 Useful help commands:

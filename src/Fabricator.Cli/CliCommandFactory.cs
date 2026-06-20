@@ -1,4 +1,5 @@
 using Fabricator.Core;
+using Fabricator.Core.Projects;
 using Fabricator.Cli.Doctor;
 using Fabricator.Cli.Projects;
 using Fabricator.Cli.Setup;
@@ -170,7 +171,7 @@ public static class CliCommandFactory
         var templateOption = new Option<string>("--template", "-t")
         {
             Description = "Starter template to apply.",
-            DefaultValueFactory = _ => "basic-auth"
+            DefaultValueFactory = _ => CreateProjectService.DefaultStarterId
         };
 
         var outputOption = new Option<string>("--output", "-o")
@@ -187,7 +188,7 @@ public static class CliCommandFactory
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetRequiredValue(nameArgument);
-            var template = parseResult.GetValue(templateOption) ?? "basic-auth";
+            var template = parseResult.GetValue(templateOption) ?? CreateProjectService.DefaultStarterId;
             var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
 
             var handler = createHandlerFactory();

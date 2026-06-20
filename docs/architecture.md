@@ -62,7 +62,7 @@ Planned commands:
 rn-fabricator doctor
 rn-fabricator setup plan
 rn-fabricator setup apply
-rn-fabricator create <name> --template basic-auth
+rn-fabricator create <name>
 rn-fabricator template list
 rn-fabricator release-check
 ```

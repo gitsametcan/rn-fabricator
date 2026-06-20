@@ -94,8 +94,9 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("2. npm start", output.ToString());
         Assert.Contains("3. npm run ios", output.ToString());
         Assert.Contains("4. npm run android", output.ToString());
+        Assert.Contains("Starter applied: minimal-splash", output.ToString());
+        Assert.Contains("Starter files generated:", output.ToString());
         Assert.Contains("Template selected: basic-auth", output.ToString());
-        Assert.Contains("Example config files: not generated yet", output.ToString());
     }
 
     [Fact]
@@ -409,6 +410,9 @@ public sealed class CliInvocationSmokeTests
             validation,
             command,
             processResult ?? new ProcessRunResult(ExitCodes.Success, "created", string.Empty),
-            rollback ?? CreateProjectRollbackResult.NotRequired("Rollback was not required."));
+            rollback ?? CreateProjectRollbackResult.NotRequired("Rollback was not required."),
+            processResult is null || processResult.Succeeded
+                ? CreateProjectStarterResult.Applied(CreateProjectService.DefaultStarterId, ["App.tsx"])
+                : null);
     }
 }

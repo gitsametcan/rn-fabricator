@@ -99,7 +99,7 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
-    public void CreateCommandDefaultsToBasicAuthTemplate()
+    public void CreateCommandDefaultsToMinimalSplashTemplate()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
         var parseResult = rootCommand.Parse(["create", "MyApp"]);
