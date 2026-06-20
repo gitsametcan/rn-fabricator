@@ -3,6 +3,7 @@ using Fabricator.Core.Projects;
 using Fabricator.Cli.Doctor;
 using Fabricator.Cli.Projects;
 using Fabricator.Cli.Setup;
+using Fabricator.Cli.Templates;
 using System.CommandLine;
 
 namespace Fabricator.Cli;
@@ -62,6 +63,7 @@ public static class CliCommandFactory
         rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
         rootCommand.Subcommands.Add(CreateSetupCommand(setupPlanHandlerFactory, setupApplyHandlerFactory));
         rootCommand.Subcommands.Add(CreateCreateCommand(createHandlerFactory));
+        rootCommand.Subcommands.Add(CreateTemplatesCommand());
 
         return rootCommand;
     }
@@ -201,6 +203,28 @@ public static class CliCommandFactory
             return await handler.RunAsync(name, template, outputDirectory, templateSource, cancellationToken);
         });
 
+        return command;
+    }
+
+    private static Command CreateTemplatesCommand()
+    {
+        var command = new Command("templates", "List and copy Fabricator templates from a catalog source.");
+        var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
+        var sourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path."
+        };
+
+        listCommand.Options.Add(sourceOption);
+        listCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var source = parseResult.GetValue(sourceOption) ?? string.Empty;
+            var handler = TemplatesDependencies.CreateDefaultListHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(source, cancellationToken);
+        });
+
+        command.Subcommands.Add(listCommand);
         return command;
     }
 }

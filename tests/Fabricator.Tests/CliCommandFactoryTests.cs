@@ -22,6 +22,7 @@ public sealed class CliCommandFactoryTests
         Assert.Contains("doctor", commandNames);
         Assert.Contains("setup", commandNames);
         Assert.Contains("create", commandNames);
+        Assert.Contains("templates", commandNames);
     }
 
     [Fact]
@@ -125,6 +126,16 @@ public sealed class CliCommandFactoryTests
         Assert.Contains(
             createCommand.Options,
             option => option.Name == "--template-source");
+    }
+
+    [Fact]
+    public void TemplatesListCommandAcceptsSourceOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(["templates", "list", "--source", "templates/catalog.fabricator.json"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("list", parseResult.CommandResult.Command.Name);
     }
 
     [Fact]
