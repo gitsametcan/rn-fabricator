@@ -154,6 +154,7 @@ rn-fabricator create --help
 - [Architecture Decisions](docs/decisions.md)
 - [Guided Setup Design](docs/guided-setup.md)
 - [Setup Apply Safety Policy](docs/setup-apply-safety.md)
+- [Template Catalog](docs/template-catalog.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
 - [v0.7.1 Release Notes](docs/releases/v0.7.1.md)
