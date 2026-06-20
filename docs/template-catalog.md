@@ -6,7 +6,9 @@ This document defines the planned rn-fabricator template workflow.
 
 `create` should stay small and predictable. It should create a React Native CLI app and apply only the minimal starter experience needed to prove the generated app works.
 
-Additional starter features should live in the template catalog and be copied explicitly by the user after project creation.
+Additional starter features should live in a Fabricator template catalog and be copied explicitly by the user after project creation.
+
+Templates are not bundled into the installed CLI package by default. The CLI should read a catalog URL or a local catalog file, then use that catalog to list and copy available templates.
 
 ## Planned User Flow
 
@@ -26,13 +28,13 @@ Expected result:
 List available templates:
 
 ```bash
-rn-fabricator templates list
+rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
 Copy a template into the current project:
 
 ```bash
-rn-fabricator templates copy basic-auth
+rn-fabricator templates copy basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
 Expected copy behavior:
@@ -41,26 +43,35 @@ Expected copy behavior:
 - Existing files are not overwritten unless the user passes an explicit overwrite option.
 - The command prints generated, skipped, and next-step output.
 
-## Template Storage
+## Template Source
 
-Packaged template assets live in:
+The first catalog source lives in the repository root:
 
 ```text
-src/Fabricator.Core/TemplateAssets/
+templates/
+  catalog.fabricator.json
+  minimal-splash/
+    fabricator-template.json
+  basic-auth/
+    fabricator-template.json
 ```
 
-Each template directory should contain:
+`catalog.fabricator.json` is the public entry point. The CLI can list templates from this file without downloading or bundling every template in the .NET tool package.
 
-- `template.json`
-- source files to copy
+Each template directory should contain a Fabricator-specific manifest:
+
+- `fabricator-template.json`
+- source file definitions or remote file references
 - optional documentation such as `README.md` or `CONFIGURATION.md`
+
+The manifest name intentionally includes `fabricator` so users can recognize that the file is meant for rn-fabricator.
 
 ## Initial Templates
 
 | Template | Type | Status | Purpose |
 | --- | --- | --- | --- |
-| `minimal-splash` | create default | Planned | Minimal app shell with a splash screen and base folders. |
-| `basic-auth` | optional copy | Existing assets, not wired | Splash, loading, login, home, auth provider, env examples, and credential example. |
+| `minimal-splash` | create default | Planned catalog entry | Minimal app shell with a splash screen and base folders. |
+| `basic-auth` | optional copy | Planned catalog entry | Splash, loading, login, home, auth provider, env examples, and credential example. |
 
 ## Generated Folder Structure
 
@@ -92,8 +103,8 @@ Notes:
 Planned command family:
 
 ```text
-rn-fabricator templates list
-rn-fabricator templates copy <template>
+rn-fabricator templates list --source <catalog-url-or-path>
+rn-fabricator templates copy <template> --source <catalog-url-or-path>
 ```
 
 Future options:
@@ -102,6 +113,23 @@ Future options:
 --output <path>
 --overwrite
 --dry-run
+--source <catalog-url-or-path>
 ```
 
 The first implementation should keep copy behavior conservative and transparent.
+
+## Source Defaults
+
+For local dogfooding, `--source` can point to:
+
+```text
+/Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json
+```
+
+For GitHub-hosted usage, `--source` can point to the raw catalog file:
+
+```text
+https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+```
+
+The CLI may later add a default catalog URL, but the first implementation should keep the source explicit so behavior is easy to inspect and test.

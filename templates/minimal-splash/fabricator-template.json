@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "kind": "fabricator-template",
+  "id": "minimal-splash",
+  "displayName": "Minimal Splash",
+  "description": "Minimal React Native starter with a splash screen and base source folders.",
+  "version": "0.1.0",
+  "mode": "starter",
+  "files": [
+    {
+      "path": "App.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/SplashScreen.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/app/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/components/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/config/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/constants/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/services/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/storage/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/theme/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/types/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/utils/index.ts",
+      "type": "file"
+    }
+  ]
+}

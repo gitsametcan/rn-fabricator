@@ -48,7 +48,7 @@
 ## Phase 6: Template Catalog Workflow
 
 - Make `create` apply only a minimal splash starter.
-- Add a packaged template catalog.
+- Add a repository-hosted Fabricator template catalog.
 - Add commands to list and copy templates after project creation.
 - Keep optional templates explicit and non-destructive by default.
 
