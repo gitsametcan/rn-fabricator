@@ -10,4 +10,11 @@ public static class TemplatesDependencies
     {
         return new TemplatesListCommandHandler(new TemplateCatalogProvider(), outputWriter, errorWriter);
     }
+
+    public static TemplatesCopyCommandHandler CreateDefaultCopyHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesCopyCommandHandler(new TemplateCatalogProvider(), outputWriter, errorWriter);
+    }
 }

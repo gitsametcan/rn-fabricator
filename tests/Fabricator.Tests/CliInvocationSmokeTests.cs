@@ -115,6 +115,81 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Basic Auth", output.ToString());
     }
 
+    [Fact]
+    public void TemplatesCopyCommandCopiesTemplateFilesToOutputDirectory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "copy", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template copied: basic-auth", output.ToString());
+            Assert.Contains("Generated:", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCopyCommandSkipsExistingFilesByDefault()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+        var appPath = Path.Combine(outputDirectory, "App.tsx");
+        File.WriteAllText(appPath, "existing app\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "copy", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Skipped:", output.ToString());
+            Assert.Contains("- App.tsx", output.ToString());
+            Assert.Equal("existing app\n", File.ReadAllText(appPath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCopyCommandReturnsInvalidInputForUnknownTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "copy", "missing-template", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.InvalidInput, exitCode);
+            Assert.Contains("Template could not be read.", output.ErrorOutput);
+            Assert.Contains("missing-template", output.ErrorOutput);
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
     private static string FindRepositoryFile(string relativePath)
     {
         var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -131,6 +206,21 @@ public sealed class CliInvocationSmokeTests
         }
 
         throw new FileNotFoundException($"Could not find repository file: {relativePath}");
+    }
+
+    private static string CreateTemporaryDirectory()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"rn-fabricator-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static void DeleteTemporaryDirectory(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            Directory.Delete(path, recursive: true);
+        }
     }
 
     [Fact]

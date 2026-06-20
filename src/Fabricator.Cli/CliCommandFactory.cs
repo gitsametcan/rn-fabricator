@@ -210,9 +210,27 @@ public static class CliCommandFactory
     {
         var command = new Command("templates", "List and copy Fabricator templates from a catalog source.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
+        var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
+        var templateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to copy."
+        };
         var sourceOption = new Option<string>("--source")
         {
             Description = "Fabricator template catalog URL or local catalog file path."
+        };
+        var copySourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path."
+        };
+        var outputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Directory where template files will be copied.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
+        };
+        var overwriteOption = new Option<bool>("--overwrite")
+        {
+            Description = "Overwrite existing files instead of skipping them."
         };
 
         listCommand.Options.Add(sourceOption);
@@ -224,7 +242,23 @@ public static class CliCommandFactory
             return await handler.RunAsync(source, cancellationToken);
         });
 
+        copyCommand.Arguments.Add(templateArgument);
+        copyCommand.Options.Add(copySourceOption);
+        copyCommand.Options.Add(outputOption);
+        copyCommand.Options.Add(overwriteOption);
+        copyCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(templateArgument);
+            var source = parseResult.GetValue(copySourceOption) ?? string.Empty;
+            var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
+            var overwrite = parseResult.GetValue(overwriteOption);
+            var handler = TemplatesDependencies.CreateDefaultCopyHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, outputDirectory, overwrite, cancellationToken);
+        });
+
         command.Subcommands.Add(listCommand);
+        command.Subcommands.Add(copyCommand);
         return command;
     }
 }

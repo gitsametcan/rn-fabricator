@@ -142,6 +142,14 @@ List templates from the local Fabricator template catalog:
   --source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json
 ```
 
+Copy an optional template into the generated project:
+
+```bash
+./.tools/rn-fabricator templates copy basic-auth \
+  --source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json \
+  --output ./FabricatorBabyStep
+```
+
 Inspect the generated project:
 
 ```bash
