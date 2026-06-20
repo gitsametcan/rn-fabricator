@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "kind": "fabricator-template",
+  "id": "basic-auth",
+  "displayName": "Basic Auth",
+  "description": "Optional auth starter with splash, loading, login, home, auth provider, and example configuration files.",
+  "version": "0.1.0",
+  "mode": "copy",
+  "files": [
+    {
+      "path": ".env.example",
+      "type": "file"
+    },
+    {
+      "path": "credentials.example.json",
+      "type": "file"
+    },
+    {
+      "path": "CONFIGURATION.md",
+      "type": "file"
+    },
+    {
+      "path": "App.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/auth/AuthProvider.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/auth/index.ts",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/SplashScreen.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/LoadingScreen.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/LoginScreen.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/HomeScreen.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/index.ts",
+      "type": "file"
+    }
+  ]
+}

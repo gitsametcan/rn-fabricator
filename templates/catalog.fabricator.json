@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "kind": "fabricator-template-catalog",
+  "displayName": "rn-fabricator template catalog",
+  "description": "Repository-hosted template catalog for rn-fabricator dogfooding and early template workflow development.",
+  "templates": [
+    {
+      "id": "minimal-splash",
+      "displayName": "Minimal Splash",
+      "description": "Minimal React Native starter with a splash screen and base source folders.",
+      "version": "0.1.0",
+      "manifest": "minimal-splash/fabricator-template.json",
+      "tags": [
+        "starter",
+        "splash"
+      ]
+    },
+    {
+      "id": "basic-auth",
+      "displayName": "Basic Auth",
+      "description": "Optional auth starter with splash, loading, login, home, auth provider, and example configuration files.",
+      "version": "0.1.0",
+      "manifest": "basic-auth/fabricator-template.json",
+      "tags": [
+        "auth",
+        "starter"
+      ]
+    }
+  ]
+}
