@@ -121,6 +121,12 @@ Create a project in a specific output directory:
 rn-fabricator create MyApp --output ./sandbox
 ```
 
+Create with an explicit Fabricator template catalog source:
+
+```bash
+rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
+```
+
 Useful help commands:
 
 ```bash

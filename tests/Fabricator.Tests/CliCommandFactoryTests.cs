@@ -92,7 +92,8 @@ public sealed class CliCommandFactoryTests
     public void CreateCommandAcceptsProjectNameAndTemplateOption()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
-        var parseResult = rootCommand.Parse(["create", "MyApp", "--template", "basic-auth"]);
+        var parseResult = rootCommand.Parse(
+            ["create", "MyApp", "--template", "minimal-splash", "--template-source", "templates/catalog.fabricator.json"]);
 
         Assert.Empty(parseResult.Errors);
         Assert.Equal("create", parseResult.CommandResult.Command.Name);
@@ -121,6 +122,9 @@ public sealed class CliCommandFactoryTests
         Assert.Contains(
             createCommand.Options,
             option => option.Name == "--output" && option.Aliases.Contains("-o"));
+        Assert.Contains(
+            createCommand.Options,
+            option => option.Name == "--template-source");
     }
 
     [Fact]

@@ -43,6 +43,12 @@ Example:
 rn-fabricator create MyApp
 ```
 
+Use a local Fabricator template catalog while dogfooding:
+
+```bash
+rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
+```
+
 ### template: basic-auth
 
 The `basic-auth` template adds a simple authentication starter flow. It is planned as an optional catalog template that users copy after project creation.

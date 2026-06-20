@@ -15,13 +15,13 @@ Templates are not bundled into the installed CLI package by default. The CLI sho
 Create a new app with the default minimal starter:
 
 ```bash
-rn-fabricator create FabricatorBabyStep --output .
+rn-fabricator create FabricatorBabyStep --output . --template-source ./templates/catalog.fabricator.json
 ```
 
 Expected result:
 
 - React Native CLI project is created.
-- A minimal splash screen is applied.
+- A minimal splash screen is resolved from the Fabricator template catalog and applied.
 - No auth flow is applied automatically.
 - The generated app has a predictable `src` structure.
 
