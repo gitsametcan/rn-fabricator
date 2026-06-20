@@ -1,4 +1,5 @@
 using Fabricator.Core.Processes;
+using Fabricator.Core.Templates;
 
 namespace Fabricator.Core.Projects;
 
@@ -80,12 +81,13 @@ public sealed class CreateProjectService : ICreateProjectService
 
     private readonly IProjectFileSystem _fileSystem;
     private readonly IProcessRunner _processRunner;
+    private readonly ITemplateCatalogProvider _templateCatalogProvider;
     private readonly CreateProjectValidator _validator;
 
     public CreateProjectService(
         CreateProjectValidator validator,
         IProcessRunner processRunner)
-        : this(validator, processRunner, new SystemProjectFileSystem())
+        : this(validator, processRunner, new SystemProjectFileSystem(), new TemplateCatalogProvider())
     {
     }
 
@@ -93,10 +95,20 @@ public sealed class CreateProjectService : ICreateProjectService
         CreateProjectValidator validator,
         IProcessRunner processRunner,
         IProjectFileSystem fileSystem)
+        : this(validator, processRunner, fileSystem, new TemplateCatalogProvider())
+    {
+    }
+
+    public CreateProjectService(
+        CreateProjectValidator validator,
+        IProcessRunner processRunner,
+        IProjectFileSystem fileSystem,
+        ITemplateCatalogProvider templateCatalogProvider)
     {
         _validator = validator;
         _processRunner = processRunner;
         _fileSystem = fileSystem;
+        _templateCatalogProvider = templateCatalogProvider;
     }
 
     public async Task<CreateProjectResult> CreateAsync(
@@ -128,7 +140,7 @@ public sealed class CreateProjectService : ICreateProjectService
                 RollBackPartialProject(validation));
         }
 
-        var starterResult = ApplyMinimalSplashStarter(validation.FullProjectPath);
+        var starterResult = await ApplyStarterAsync(validation, cancellationToken);
         var rollback = starterResult.Succeeded
             ? CreateProjectRollbackResult.NotRequired("Rollback was not required because project creation succeeded.")
             : RollBackPartialProject(validation);
@@ -147,6 +159,55 @@ public sealed class CreateProjectService : ICreateProjectService
             starterResult);
     }
 
+    private async Task<CreateProjectStarterResult> ApplyStarterAsync(
+        CreateProjectValidationResult validation,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(validation.Request.TemplateSource))
+        {
+            return ApplyMinimalSplashStarter(validation.FullProjectPath);
+        }
+
+        try
+        {
+            var package = await _templateCatalogProvider.GetTemplateAsync(
+                validation.Request.TemplateSource,
+                validation.Request.TemplateName,
+                cancellationToken);
+
+            if (!string.Equals(package.Manifest.Mode, "starter", StringComparison.OrdinalIgnoreCase))
+            {
+                return CreateProjectStarterResult.Failed(
+                    package.Manifest.Id,
+                    [],
+                    [$"Template '{package.Manifest.Id}' is not a create starter. Use a template copy command for mode '{package.Manifest.Mode}'."]);
+            }
+
+            return ApplyStarterFiles(validation.FullProjectPath, package.Manifest.Id, package.Files);
+        }
+        catch (TemplatePackageException exception)
+        {
+            return CreateProjectStarterResult.Failed(
+                validation.Request.TemplateName,
+                [],
+                [exception.Message]);
+        }
+        catch (HttpRequestException exception)
+        {
+            return CreateProjectStarterResult.Failed(
+                validation.Request.TemplateName,
+                [],
+                [$"Template catalog request failed: {exception.Message}"]);
+        }
+        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return CreateProjectStarterResult.Failed(
+                validation.Request.TemplateName,
+                [],
+                [$"Template catalog request timed out: {exception.Message}"]);
+        }
+    }
+
     private CreateProjectStarterResult ApplyMinimalSplashStarter(string projectPath)
     {
         var generatedFiles = new List<string>();
@@ -160,13 +221,35 @@ public sealed class CreateProjectService : ICreateProjectService
                 [$"Generated project directory was not found before applying starter: {projectPath}"]);
         }
 
-        foreach (var file in MinimalSplashStarterFiles)
+        return ApplyStarterFiles(
+            projectPath,
+            DefaultStarterId,
+            MinimalSplashStarterFiles.ToDictionary(file => file.RelativePath, file => file.Contents, StringComparer.Ordinal));
+    }
+
+    private CreateProjectStarterResult ApplyStarterFiles(
+        string projectPath,
+        string starterId,
+        IReadOnlyDictionary<string, string> files)
+    {
+        var generatedFiles = new List<string>();
+        var errors = new List<string>();
+
+        if (!_fileSystem.DirectoryExists(projectPath))
         {
-            var targetPath = Path.GetFullPath(Path.Combine(projectPath, file.RelativePath));
+            return CreateProjectStarterResult.Failed(
+                starterId,
+                generatedFiles,
+                [$"Generated project directory was not found before applying starter: {projectPath}"]);
+        }
+
+        foreach (var file in files)
+        {
+            var targetPath = Path.GetFullPath(Path.Combine(projectPath, file.Key));
 
             if (!IsSafeGeneratedProjectPath(projectPath, targetPath))
             {
-                errors.Add($"Starter file resolved outside the generated project: {file.RelativePath}");
+                errors.Add($"Starter file resolved outside the generated project: {file.Key}");
                 continue;
             }
 
@@ -179,18 +262,18 @@ public sealed class CreateProjectService : ICreateProjectService
                     _fileSystem.CreateDirectory(targetDirectory);
                 }
 
-                _fileSystem.WriteAllText(targetPath, file.Contents);
-                generatedFiles.Add(file.RelativePath);
+                _fileSystem.WriteAllText(targetPath, file.Value);
+                generatedFiles.Add(file.Key);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
-                errors.Add($"Failed to write starter file {file.RelativePath}: {exception.Message}");
+                errors.Add($"Failed to write starter file {file.Key}: {exception.Message}");
             }
         }
 
         return errors.Count == 0
-            ? CreateProjectStarterResult.Applied(DefaultStarterId, generatedFiles)
-            : CreateProjectStarterResult.Failed(DefaultStarterId, generatedFiles, errors);
+            ? CreateProjectStarterResult.Applied(starterId, generatedFiles)
+            : CreateProjectStarterResult.Failed(starterId, generatedFiles, errors);
     }
 
     private CreateProjectRollbackResult RollBackPartialProject(CreateProjectValidationResult validation)

@@ -179,20 +179,26 @@ public static class CliCommandFactory
             Description = "Directory where the React Native project will be created.",
             DefaultValueFactory = _ => Directory.GetCurrentDirectory()
         };
+        var templateSourceOption = new Option<string>("--template-source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path."
+        };
 
         var command = new Command("create", "Create a new React Native CLI project.");
         command.Arguments.Add(nameArgument);
         command.Options.Add(templateOption);
         command.Options.Add(outputOption);
+        command.Options.Add(templateSourceOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetRequiredValue(nameArgument);
             var template = parseResult.GetValue(templateOption) ?? CreateProjectService.DefaultStarterId;
             var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
+            var templateSource = parseResult.GetValue(templateSourceOption);
 
             var handler = createHandlerFactory();
-            return await handler.RunAsync(name, template, outputDirectory, cancellationToken);
+            return await handler.RunAsync(name, template, outputDirectory, templateSource, cancellationToken);
         });
 
         return command;

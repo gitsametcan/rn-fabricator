@@ -8,4 +8,5 @@ public sealed record CreateProjectRequest(
     string OutputDirectory,
     Action<ProcessRunRequest>? OnCommandPrepared = null,
     Action<string>? OnStandardOutput = null,
-    Action<string>? OnStandardError = null);
+    Action<string>? OnStandardError = null,
+    string? TemplateSource = null);

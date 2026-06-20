@@ -80,6 +80,60 @@ public sealed class CreateProjectServiceTests
     }
 
     [Fact]
+    public async Task CreateAsyncAppliesStarterFromTemplateCatalogSource()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
+        var catalogPath = WriteMinimalCatalog(outputDirectory.Path, mode: "starter");
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ => Directory.CreateDirectory(projectPath)
+        };
+        runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest(
+                "MyApp",
+                CreateProjectService.DefaultStarterId,
+                outputDirectory.Path,
+                TemplateSource: catalogPath));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.StarterResult);
+        Assert.Equal(CreateProjectService.DefaultStarterId, result.StarterResult.StarterId);
+        Assert.Contains("App.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Equal("catalog app\n", File.ReadAllText(Path.Combine(projectPath, "App.tsx")));
+    }
+
+    [Fact]
+    public async Task CreateAsyncFailsWhenCatalogTemplateIsNotAStarter()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
+        var catalogPath = WriteMinimalCatalog(outputDirectory.Path, mode: "copy");
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ => Directory.CreateDirectory(projectPath)
+        };
+        runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest(
+                "MyApp",
+                CreateProjectService.DefaultStarterId,
+                outputDirectory.Path,
+                TemplateSource: catalogPath));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(ExitCodes.GeneralFailure, result.ExitCode);
+        Assert.False(Directory.Exists(projectPath));
+        Assert.Contains("not a create starter", result.ProcessResult?.StandardError);
+        Assert.True(result.Rollback.Attempted);
+    }
+
+    [Fact]
     public async Task CreateAsyncPreservesReactNativeCliFailureDetails()
     {
         using var outputDirectory = new TemporaryDirectory();
@@ -159,5 +213,61 @@ public sealed class CreateProjectServiceTests
                 Directory.Delete(Path, recursive: true);
             }
         }
+    }
+
+    private static string WriteMinimalCatalog(string root, string mode)
+    {
+        var templateRoot = Path.Combine(root, "minimal-splash");
+        Directory.CreateDirectory(Path.Combine(templateRoot, "src", "screens"));
+
+        File.WriteAllText(
+            Path.Combine(root, "catalog.fabricator.json"),
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template-catalog",
+              "displayName": "Test catalog",
+              "description": "Test catalog.",
+              "templates": [
+                {
+                  "id": "minimal-splash",
+                  "displayName": "Minimal Splash",
+                  "description": "Minimal starter.",
+                  "version": "0.1.0",
+                  "manifest": "minimal-splash/fabricator-template.json",
+                  "tags": ["starter"]
+                }
+              ]
+            }
+            """);
+
+        File.WriteAllText(
+            Path.Combine(templateRoot, "fabricator-template.json"),
+            $$"""
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template",
+              "id": "minimal-splash",
+              "displayName": "Minimal Splash",
+              "description": "Minimal starter.",
+              "version": "0.1.0",
+              "mode": "{{mode}}",
+              "files": [
+                {
+                  "path": "App.tsx",
+                  "type": "file"
+                },
+                {
+                  "path": "src/screens/index.ts",
+                  "type": "file"
+                }
+              ]
+            }
+            """);
+
+        File.WriteAllText(Path.Combine(templateRoot, "App.tsx"), "catalog app\n");
+        File.WriteAllText(Path.Combine(templateRoot, "src", "screens", "index.ts"), "export {};\n");
+
+        return Path.Combine(root, "catalog.fabricator.json");
     }
 }

@@ -23,6 +23,7 @@ public sealed class CreateCommandHandler
         string name,
         string template,
         string outputDirectory,
+        string? templateSource = null,
         CancellationToken cancellationToken = default)
     {
         var commandRendered = false;
@@ -46,7 +47,8 @@ public sealed class CreateCommandHandler
                 {
                     streamedProcessOutput = true;
                     _errorWriter.Write(error);
-                }),
+                },
+                templateSource),
             cancellationToken);
 
         if (!result.Validation.IsValid)
