@@ -104,8 +104,13 @@ public sealed class CreateCommandHandler
         _outputWriter.WriteLine("3. npm run ios");
         _outputWriter.WriteLine("4. npm run android");
         _outputWriter.WriteLine();
+        if (result.StarterResult is not null)
+        {
+            _outputWriter.WriteLine($"Starter applied: {result.StarterResult.StarterId}");
+            _outputWriter.WriteLine($"Starter files generated: {result.StarterResult.GeneratedFiles.Count}");
+        }
+
         _outputWriter.WriteLine($"Template selected: {result.Validation.Request.TemplateName}");
-        _outputWriter.WriteLine("Example config files: not generated yet; basic-auth template files are planned for v0.4.0.");
     }
 
     private void RenderProcessFailure(CreateProjectResult result, bool processOutputAlreadyWritten)

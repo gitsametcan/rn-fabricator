@@ -130,7 +130,7 @@ Run only safe allowlisted setup commands without prompts. Use this only after re
 Create a sample React Native project:
 
 ```bash
-./.tools/rn-fabricator create FabricatorBabyStep --template basic-auth --output .
+./.tools/rn-fabricator create FabricatorBabyStep --output .
 ```
 
 Inspect the generated project:

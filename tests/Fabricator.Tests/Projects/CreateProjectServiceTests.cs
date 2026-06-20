@@ -27,8 +27,12 @@ public sealed class CreateProjectServiceTests
     public async Task CreateAsyncRunsReactNativeCliInOutputDirectory()
     {
         using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
         var preparedCommands = new List<ProcessRunRequest>();
-        var runner = new FakeProcessRunner();
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ => Directory.CreateDirectory(projectPath)
+        };
         runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
         var service = new CreateProjectService(new CreateProjectValidator(), runner);
 
@@ -40,13 +44,39 @@ public sealed class CreateProjectServiceTests
                 preparedCommands.Add));
 
         Assert.True(result.Succeeded);
-        Assert.Equal(Path.Combine(outputDirectory.Path, "MyApp"), result.ProjectPath);
+        Assert.Equal(projectPath, result.ProjectPath);
         Assert.NotNull(result.Command);
         Assert.Equal("npx", result.Command.FileName);
         Assert.Equal(["@react-native-community/cli@latest", "init", "MyApp"], result.Command.Arguments);
         Assert.Equal(outputDirectory.Path, result.Command.WorkingDirectory);
+        Assert.NotNull(result.StarterResult);
+        Assert.Equal(CreateProjectService.DefaultStarterId, result.StarterResult.StarterId);
+        Assert.Contains("App.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Contains("src/screens/SplashScreen.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Contains("src/utils/index.ts", result.StarterResult.GeneratedFiles);
+        Assert.Contains("SplashScreen", File.ReadAllText(Path.Combine(projectPath, "App.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "screens", "SplashScreen.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "utils", "index.ts")));
         Assert.Collection(runner.Requests, request => Assert.Same(result.Command, request));
         Assert.Collection(preparedCommands, command => Assert.Same(result.Command, command));
+    }
+
+    [Fact]
+    public async Task CreateAsyncFailsWhenReactNativeCliDoesNotCreateProjectDirectory()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var runner = new FakeProcessRunner();
+        runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest("MyApp", CreateProjectService.DefaultStarterId, outputDirectory.Path));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(ExitCodes.GeneralFailure, result.ExitCode);
+        Assert.NotNull(result.StarterResult);
+        Assert.False(result.StarterResult.Succeeded);
+        Assert.Contains("Generated project directory was not found", result.ProcessResult?.StandardError);
     }
 
     [Fact]

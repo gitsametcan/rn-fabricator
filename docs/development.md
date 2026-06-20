@@ -76,7 +76,7 @@ Run current commands:
 
 ```bash
 dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- doctor
-dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- create MyApp --template basic-auth
+dotnet run --project src/Fabricator.Cli/Fabricator.Cli.csproj -- create MyApp
 ```
 
 The `create` command prints the generated project path, `cd` guidance, Metro start command, and iOS/Android run commands after successful project creation.

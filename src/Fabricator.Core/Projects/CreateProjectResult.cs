@@ -8,12 +8,14 @@ public sealed class CreateProjectResult
         CreateProjectValidationResult validation,
         ProcessRunRequest? command,
         ProcessRunResult? processResult,
-        CreateProjectRollbackResult rollback)
+        CreateProjectRollbackResult rollback,
+        CreateProjectStarterResult? starterResult)
     {
         Validation = validation;
         Command = command;
         ProcessResult = processResult;
         Rollback = rollback;
+        StarterResult = starterResult;
     }
 
     public CreateProjectValidationResult Validation { get; }
@@ -24,7 +26,11 @@ public sealed class CreateProjectResult
 
     public CreateProjectRollbackResult Rollback { get; }
 
-    public bool Succeeded => Validation.IsValid && ProcessResult?.Succeeded == true;
+    public CreateProjectStarterResult? StarterResult { get; }
+
+    public bool Succeeded => Validation.IsValid &&
+                             ProcessResult?.Succeeded == true &&
+                             (StarterResult?.Succeeded ?? true);
 
     public int ExitCode
     {
@@ -47,7 +53,8 @@ public sealed class CreateProjectResult
             validation,
             null,
             null,
-            CreateProjectRollbackResult.NotRequired("Rollback was not required because validation failed before project creation."));
+            CreateProjectRollbackResult.NotRequired("Rollback was not required because validation failed before project creation."),
+            null);
     }
 
     public static CreateProjectResult Completed(
@@ -68,6 +75,16 @@ public sealed class CreateProjectResult
         ProcessRunResult processResult,
         CreateProjectRollbackResult rollback)
     {
-        return new CreateProjectResult(validation, command, processResult, rollback);
+        return new CreateProjectResult(validation, command, processResult, rollback, null);
+    }
+
+    public static CreateProjectResult Completed(
+        CreateProjectValidationResult validation,
+        ProcessRunRequest command,
+        ProcessRunResult processResult,
+        CreateProjectRollbackResult rollback,
+        CreateProjectStarterResult? starterResult)
+    {
+        return new CreateProjectResult(validation, command, processResult, rollback, starterResult);
     }
 }
