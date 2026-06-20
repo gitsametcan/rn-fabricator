@@ -127,27 +127,105 @@ Run only safe allowlisted setup commands without prompts. Use this only after re
 
 `--yes` does not run `sudo` commands, install Xcode or Android Studio, edit shell profiles, accept licenses, or configure Android SDK environment variables.
 
-Create a sample React Native project:
+## Template Catalog Dogfooding
+
+Use the local repository catalog while testing unreleased template behavior:
+
+```bash
+export RN_FABRICATOR_TEMPLATE_SOURCE="/Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json"
+```
+
+Use the GitHub raw catalog only after the relevant changes are pushed:
+
+```bash
+export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json"
+```
+
+Create a sample React Native project with the minimal splash starter:
 
 ```bash
 ./.tools/rn-fabricator create FabricatorBabyStep \
   --output . \
-  --template-source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json
+  --template-source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected generated starter files:
+
+```text
+FabricatorBabyStep/App.tsx
+FabricatorBabyStep/src/screens/SplashScreen.tsx
+FabricatorBabyStep/src/screens/index.ts
+FabricatorBabyStep/src/app/index.ts
+FabricatorBabyStep/src/components/index.ts
+FabricatorBabyStep/src/config/index.ts
+FabricatorBabyStep/src/constants/index.ts
+FabricatorBabyStep/src/hooks/index.ts
+FabricatorBabyStep/src/services/index.ts
+FabricatorBabyStep/src/storage/index.ts
+FabricatorBabyStep/src/theme/index.ts
+FabricatorBabyStep/src/types/index.ts
+FabricatorBabyStep/src/utils/index.ts
 ```
 
 List templates from the local Fabricator template catalog:
 
 ```bash
 ./.tools/rn-fabricator templates list \
-  --source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected list output includes:
+
+```text
+basic-auth
+minimal-splash
 ```
 
 Copy an optional template into the generated project:
 
 ```bash
 ./.tools/rn-fabricator templates copy basic-auth \
-  --source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
   --output ./FabricatorBabyStep
+```
+
+Expected copied files:
+
+```text
+FabricatorBabyStep/.env.example
+FabricatorBabyStep/credentials.example.json
+FabricatorBabyStep/CONFIGURATION.md
+FabricatorBabyStep/App.tsx
+FabricatorBabyStep/src/auth/AuthProvider.tsx
+FabricatorBabyStep/src/auth/index.ts
+FabricatorBabyStep/src/screens/SplashScreen.tsx
+FabricatorBabyStep/src/screens/LoadingScreen.tsx
+FabricatorBabyStep/src/screens/LoginScreen.tsx
+FabricatorBabyStep/src/screens/HomeScreen.tsx
+FabricatorBabyStep/src/screens/index.ts
+```
+
+Run the same copy command again to verify non-destructive behavior:
+
+```bash
+./.tools/rn-fabricator templates copy basic-auth \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep
+```
+
+Expected repeat-copy behavior:
+
+- Exit code stays successful.
+- Existing files are reported under `Skipped`.
+- Existing files are not overwritten.
+
+Use overwrite only after reviewing skipped files:
+
+```bash
+./.tools/rn-fabricator templates copy basic-auth \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --overwrite
 ```
 
 Inspect the generated project:
