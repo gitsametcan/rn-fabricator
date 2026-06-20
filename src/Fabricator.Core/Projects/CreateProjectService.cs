@@ -41,7 +41,11 @@ public sealed class CreateProjectService : ICreateProjectService
         var command = new ProcessRunRequest(
             "npx",
             [.. ReactNativeCliArguments, validation.Request.ProjectName],
-            validation.FullOutputDirectory);
+            validation.FullOutputDirectory,
+            validation.Request.OnStandardOutput,
+            validation.Request.OnStandardError);
+        validation.Request.OnCommandPrepared?.Invoke(command);
+
         var processResult = await _processRunner.RunAsync(command, cancellationToken);
         var rollback = processResult.Succeeded
             ? CreateProjectRollbackResult.NotRequired("Rollback was not required because project creation succeeded.")

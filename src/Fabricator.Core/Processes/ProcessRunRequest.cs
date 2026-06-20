@@ -3,7 +3,9 @@ namespace Fabricator.Core.Processes;
 public sealed record ProcessRunRequest(
     string FileName,
     IReadOnlyList<string> Arguments,
-    string? WorkingDirectory = null)
+    string? WorkingDirectory = null,
+    Action<string>? OnStandardOutput = null,
+    Action<string>? OnStandardError = null)
 {
     public static ProcessRunRequest Create(
         string fileName,
