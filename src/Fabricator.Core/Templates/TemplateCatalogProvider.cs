@@ -18,6 +18,17 @@ public sealed class TemplateCatalogProvider : ITemplateCatalogProvider
         _httpClient = httpClient;
     }
 
+    public async Task<FabricatorTemplateCatalog> ListTemplatesAsync(
+        string source,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+
+        return IsHttpSource(source)
+            ? await GetRemoteCatalogAsync(source, cancellationToken)
+            : await GetLocalCatalogAsync(source, cancellationToken);
+    }
+
     public async Task<FabricatorTemplatePackage> GetTemplateAsync(
         string source,
         string templateId,
@@ -38,12 +49,7 @@ public sealed class TemplateCatalogProvider : ITemplateCatalogProvider
     {
         var catalogPath = Path.GetFullPath(source);
 
-        if (!File.Exists(catalogPath))
-        {
-            throw new TemplatePackageException($"Template catalog was not found: {catalogPath}");
-        }
-
-        var catalog = DeserializeCatalog(await File.ReadAllTextAsync(catalogPath, cancellationToken), catalogPath);
+        var catalog = await GetLocalCatalogAsync(source, cancellationToken);
         var entry = FindCatalogEntry(catalog, templateId);
         var catalogDirectory = Path.GetDirectoryName(catalogPath) ?? Directory.GetCurrentDirectory();
         var manifestPath = Path.GetFullPath(Path.Combine(catalogDirectory, entry.Manifest));
@@ -90,7 +96,7 @@ public sealed class TemplateCatalogProvider : ITemplateCatalogProvider
         CancellationToken cancellationToken)
     {
         var catalogUri = new Uri(source, UriKind.Absolute);
-        var catalog = DeserializeCatalog(await _httpClient.GetStringAsync(catalogUri, cancellationToken), source);
+        var catalog = await GetRemoteCatalogAsync(source, cancellationToken);
         var entry = FindCatalogEntry(catalog, templateId);
         var manifestUri = new Uri(catalogUri, entry.Manifest);
         var manifest = DeserializeManifest(await _httpClient.GetStringAsync(manifestUri, cancellationToken), manifestUri.ToString());
@@ -105,6 +111,27 @@ public sealed class TemplateCatalogProvider : ITemplateCatalogProvider
         }
 
         return new FabricatorTemplatePackage(manifest, files);
+    }
+
+    private static async Task<FabricatorTemplateCatalog> GetLocalCatalogAsync(
+        string source,
+        CancellationToken cancellationToken)
+    {
+        var catalogPath = Path.GetFullPath(source);
+
+        if (!File.Exists(catalogPath))
+        {
+            throw new TemplatePackageException($"Template catalog was not found: {catalogPath}");
+        }
+
+        return DeserializeCatalog(await File.ReadAllTextAsync(catalogPath, cancellationToken), catalogPath);
+    }
+
+    private async Task<FabricatorTemplateCatalog> GetRemoteCatalogAsync(
+        string source,
+        CancellationToken cancellationToken)
+    {
+        return DeserializeCatalog(await _httpClient.GetStringAsync(new Uri(source, UriKind.Absolute), cancellationToken), source);
     }
 
     private static FabricatorTemplateCatalog DeserializeCatalog(string json, string source)

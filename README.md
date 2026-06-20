@@ -127,6 +127,12 @@ Create with an explicit Fabricator template catalog source:
 rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
 ```
 
+List templates from a Fabricator template catalog:
+
+```bash
+rn-fabricator templates list --source ./templates/catalog.fabricator.json
+```
+
 Useful help commands:
 
 ```bash
@@ -135,6 +141,7 @@ rn-fabricator doctor --help
 rn-fabricator setup plan --help
 rn-fabricator setup apply --help
 rn-fabricator create --help
+rn-fabricator templates list --help
 ```
 
 ## Troubleshooting

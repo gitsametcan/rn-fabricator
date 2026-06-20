@@ -5,6 +5,22 @@ namespace Fabricator.Tests.Templates;
 public sealed class TemplateCatalogProviderTests
 {
     [Fact]
+    public async Task ListTemplatesAsyncReadsLocalCatalog()
+    {
+        using var directory = new TemporaryDirectory();
+        var catalogPath = WriteCatalog(directory.Path, mode: "starter");
+        var provider = new TemplateCatalogProvider();
+
+        var catalog = await provider.ListTemplatesAsync(catalogPath);
+
+        Assert.Equal("fabricator-template-catalog", catalog.Kind);
+        var template = Assert.Single(catalog.Templates);
+        Assert.Equal("minimal-splash", template.Id);
+        Assert.Equal("Minimal Splash", template.DisplayName);
+        Assert.Equal("0.1.0", template.Version);
+    }
+
+    [Fact]
     public async Task GetTemplateAsyncReadsLocalCatalogManifestAndFiles()
     {
         using var directory = new TemporaryDirectory();

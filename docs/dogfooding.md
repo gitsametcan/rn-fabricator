@@ -135,6 +135,13 @@ Create a sample React Native project:
   --template-source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json
 ```
 
+List templates from the local Fabricator template catalog:
+
+```bash
+./.tools/rn-fabricator templates list \
+  --source /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json
+```
+
 Inspect the generated project:
 
 ```bash

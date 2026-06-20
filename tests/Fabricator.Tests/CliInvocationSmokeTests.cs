@@ -100,6 +100,40 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesListCommandReturnsSuccessAndWritesCatalogTemplates()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Fabricator templates", output.ToString());
+        Assert.Contains($"Source: {source}", output.ToString());
+        Assert.Contains("minimal-splash (0.1.0)", output.ToString());
+        Assert.Contains("Basic Auth", output.ToString());
+    }
+
+    private static string FindRepositoryFile(string relativePath)
+    {
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException($"Could not find repository file: {relativePath}");
+    }
+
+    [Fact]
     public void SetupPlanCommandReturnsSuccessAndWritesPlanOutput()
     {
         var setupPlanService = new FakeSetupPlanService
