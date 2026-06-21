@@ -65,7 +65,7 @@ Install from a local package while developing the repository:
 
 ```bash
 dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages
-dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.7.1
+dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.8.0
 ./.tools/rn-fabricator --help
 ```
 
@@ -177,6 +177,7 @@ rn-fabricator templates copy --help
 - [Template Catalog](docs/template-catalog.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
+- [v0.8.0 Release Notes](docs/releases/v0.8.0.md)
 - [v0.7.1 Release Notes](docs/releases/v0.7.1.md)
 - [v0.7.0-alpha.1 Release Notes](docs/releases/v0.7.0-alpha.1.md)
 - [v0.6.0-alpha.1 Release Notes](docs/releases/v0.6.0-alpha.1.md)
