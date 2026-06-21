@@ -8,6 +8,22 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 No unreleased changes.
 
+## 0.8.0 - 2026-06-21
+
+### Added
+
+- Default `minimal-splash` starter application flow for `create`.
+- External Fabricator template catalog support for `create --template-source`.
+- `templates list` command for inspecting a Fabricator template catalog.
+- `templates copy` command for applying optional catalog templates into an existing project.
+- Repository-level `templates/catalog.fabricator.json` with `minimal-splash` and `basic-auth` entries.
+- Template catalog documentation and dogfooding workflow for create/list/copy validation.
+
+### Changed
+
+- `create` now treats the generated project starter separately from optional templates.
+- Optional templates can be copied after project creation instead of being coupled to `create`.
+
 ## 0.7.1 - 2026-06-20
 
 ### Changed
