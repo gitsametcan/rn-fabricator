@@ -118,6 +118,23 @@ A project is compatible when:
 
 If any rule fails, template commands must stop before writing files and explain what is missing.
 
+## Compatibility Validator
+
+Core validation is provided by `FabricatorProjectCompatibilityValidator`.
+
+The validator is read-only. It checks the target project before future template apply/capture commands mutate files:
+
+- The project directory exists.
+- `.fabricator/project.json` exists and can be parsed.
+- `schemaVersion`, `kind`, and `projectType` match supported values.
+- `sourceRoot` exists and stays inside the project root.
+- Every declared folder path exists and stays inside the project root.
+- Every declared integration point path stays inside the project root.
+- `barrel-export` integration points point to existing files.
+- Unsupported integration point types are reported as compatibility errors until the tool knows how to handle them.
+
+The existing `templates copy` command remains a low-level copy operation. Smart template application should use this validator before writing files.
+
 ## Supported Integration Point Types
 
 Initial supported type:
