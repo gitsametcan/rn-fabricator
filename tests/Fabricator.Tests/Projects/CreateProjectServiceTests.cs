@@ -1,6 +1,7 @@
 using Fabricator.Core;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
+using System.Text.Json;
 
 namespace Fabricator.Tests.Projects;
 
@@ -53,10 +54,16 @@ public sealed class CreateProjectServiceTests
         Assert.Equal(CreateProjectService.DefaultStarterId, result.StarterResult.StarterId);
         Assert.Contains("App.tsx", result.StarterResult.GeneratedFiles);
         Assert.Contains("src/screens/SplashScreen.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Contains("src/screens/MainScreen.tsx", result.StarterResult.GeneratedFiles);
         Assert.Contains("src/utils/index.ts", result.StarterResult.GeneratedFiles);
-        Assert.Contains("SplashScreen", File.ReadAllText(Path.Combine(projectPath, "App.tsx")));
+        Assert.Contains(".fabricator/project.json", result.StarterResult.GeneratedFiles);
+        var appContent = File.ReadAllText(Path.Combine(projectPath, "App.tsx"));
+        Assert.Contains("SplashScreen", appContent);
+        Assert.Contains("MainScreen", appContent);
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "screens", "SplashScreen.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "screens", "MainScreen.tsx")));
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "utils", "index.ts")));
+        AssertProjectManifest(projectPath);
         Assert.Collection(runner.Requests, request => Assert.Same(result.Command, request));
         Assert.Collection(preparedCommands, command => Assert.Same(result.Command, command));
     }
@@ -103,7 +110,9 @@ public sealed class CreateProjectServiceTests
         Assert.NotNull(result.StarterResult);
         Assert.Equal(CreateProjectService.DefaultStarterId, result.StarterResult.StarterId);
         Assert.Contains("App.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Contains(".fabricator/project.json", result.StarterResult.GeneratedFiles);
         Assert.Equal("catalog app\n", File.ReadAllText(Path.Combine(projectPath, "App.tsx")));
+        AssertProjectManifest(projectPath);
     }
 
     [Fact]
@@ -269,5 +278,28 @@ public sealed class CreateProjectServiceTests
         File.WriteAllText(Path.Combine(templateRoot, "src", "screens", "index.ts"), "export {};\n");
 
         return Path.Combine(root, "catalog.fabricator.json");
+    }
+
+    private static void AssertProjectManifest(string projectPath)
+    {
+        var manifestPath = Path.Combine(projectPath, ".fabricator", "project.json");
+
+        Assert.True(File.Exists(manifestPath));
+
+        using var document = JsonDocument.Parse(File.ReadAllText(manifestPath));
+        var root = document.RootElement;
+
+        Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal("fabricator-react-native-project", root.GetProperty("kind").GetString());
+        Assert.Equal("react-native-cli", root.GetProperty("projectType").GetString());
+        Assert.Equal("src", root.GetProperty("sourceRoot").GetString());
+        Assert.Contains(
+            root.GetProperty("folders").EnumerateArray(),
+            folder => folder.GetProperty("key").GetString() == "screens" &&
+                      folder.GetProperty("path").GetString() == "src/screens");
+        Assert.Contains(
+            root.GetProperty("integrationPoints").EnumerateArray(),
+            point => point.GetProperty("key").GetString() == "screensBarrel" &&
+                     point.GetProperty("type").GetString() == "barrel-export");
     }
 }

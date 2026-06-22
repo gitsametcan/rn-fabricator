@@ -3,7 +3,7 @@
   "kind": "fabricator-template",
   "id": "minimal-splash",
   "displayName": "Minimal Splash",
-  "description": "Minimal React Native starter with a splash screen and base source folders.",
+  "description": "Minimal React Native starter with splash and main screens plus base source folders.",
   "version": "0.1.0",
   "mode": "starter",
   "files": [
@@ -13,6 +13,10 @@
     },
     {
       "path": "src/screens/SplashScreen.tsx",
+      "type": "file"
+    },
+    {
+      "path": "src/screens/MainScreen.tsx",
       "type": "file"
     },
     {
