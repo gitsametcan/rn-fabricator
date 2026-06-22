@@ -183,6 +183,23 @@ basic-auth
 minimal-splash
 ```
 
+Inspect a template before copying it:
+
+```bash
+./.tools/rn-fabricator templates info basic-auth \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected info output includes:
+
+```text
+Template: basic-auth (0.1.0)
+Category: auth
+Files: 11
+Exports: 4
+Integration hints: 2
+```
+
 Copy an optional template into the generated project:
 
 ```bash

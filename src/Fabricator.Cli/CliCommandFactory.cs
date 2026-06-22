@@ -208,14 +208,23 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List and copy Fabricator templates from a catalog source.");
+        var command = new Command("templates", "List, inspect, and copy Fabricator templates from a catalog source.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
+        var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
         var templateArgument = new Argument<string>("template")
         {
             Description = "Template id to copy."
         };
+        var infoTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to inspect."
+        };
         var sourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path."
+        };
+        var infoSourceOption = new Option<string>("--source")
         {
             Description = "Fabricator template catalog URL or local catalog file path."
         };
@@ -242,6 +251,17 @@ public static class CliCommandFactory
             return await handler.RunAsync(source, cancellationToken);
         });
 
+        infoCommand.Arguments.Add(infoTemplateArgument);
+        infoCommand.Options.Add(infoSourceOption);
+        infoCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(infoTemplateArgument);
+            var source = parseResult.GetValue(infoSourceOption) ?? string.Empty;
+            var handler = TemplatesDependencies.CreateDefaultInfoHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, cancellationToken);
+        });
+
         copyCommand.Arguments.Add(templateArgument);
         copyCommand.Options.Add(copySourceOption);
         copyCommand.Options.Add(outputOption);
@@ -258,6 +278,7 @@ public static class CliCommandFactory
         });
 
         command.Subcommands.Add(listCommand);
+        command.Subcommands.Add(infoCommand);
         command.Subcommands.Add(copyCommand);
         return command;
     }
