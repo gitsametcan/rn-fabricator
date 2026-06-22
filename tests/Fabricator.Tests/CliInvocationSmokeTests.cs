@@ -116,6 +116,39 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesInfoCommandReturnsSuccessAndWritesTemplateDetails()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "basic-auth", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template: basic-auth (0.1.0)", output.ToString());
+        Assert.Contains("Category: auth", output.ToString());
+        Assert.Contains("Tags: auth, screen, config", output.ToString());
+        Assert.Contains("Files: 11", output.ToString());
+        Assert.Contains("Target path: src/auth/AuthProvider.tsx", output.ToString());
+        Assert.Contains("Exports: 4", output.ToString());
+        Assert.Contains("Integration hints: 2", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsInvalidInputForUnknownTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "missing-template", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Contains("Template could not be read.", output.ErrorOutput);
+        Assert.Contains("missing-template", output.ErrorOutput);
+    }
+
+    [Fact]
     public void TemplatesCopyCommandCopiesTemplateFilesToOutputDirectory()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

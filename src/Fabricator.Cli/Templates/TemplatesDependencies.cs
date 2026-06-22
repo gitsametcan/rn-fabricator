@@ -17,4 +17,11 @@ public static class TemplatesDependencies
     {
         return new TemplatesCopyCommandHandler(new TemplateCatalogProvider(), outputWriter, errorWriter);
     }
+
+    public static TemplatesInfoCommandHandler CreateDefaultInfoHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesInfoCommandHandler(new TemplateCatalogProvider(), outputWriter, errorWriter);
+    }
 }
