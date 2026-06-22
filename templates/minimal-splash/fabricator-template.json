@@ -1,67 +1,116 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "fabricator-template",
   "id": "minimal-splash",
   "displayName": "Minimal Splash",
   "description": "Minimal React Native starter with splash and main screens plus base source folders.",
   "version": "0.1.0",
   "mode": "starter",
+  "category": "starter",
+  "tags": [
+    "starter",
+    "screen",
+    "splash"
+  ],
   "files": [
     {
       "path": "App.tsx",
-      "type": "file"
+      "type": "file",
+      "targetPath": "App.tsx",
+      "description": "Application entry point that transitions from SplashScreen to MainScreen."
     },
     {
       "path": "src/screens/SplashScreen.tsx",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/SplashScreen.tsx",
+      "description": "Initial splash screen."
     },
     {
       "path": "src/screens/MainScreen.tsx",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/MainScreen.tsx",
+      "description": "Minimal main screen."
     },
     {
       "path": "src/screens/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/index.ts",
+      "description": "Screen barrel exports."
     },
     {
       "path": "src/app/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "app",
+      "targetPath": "src/app/index.ts"
     },
     {
       "path": "src/components/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "components",
+      "targetPath": "src/components/index.ts"
     },
     {
       "path": "src/config/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "config",
+      "targetPath": "src/config/index.ts"
     },
     {
       "path": "src/constants/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "constants",
+      "targetPath": "src/constants/index.ts"
     },
     {
       "path": "src/hooks/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "hooks",
+      "targetPath": "src/hooks/index.ts"
     },
     {
       "path": "src/services/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "services",
+      "targetPath": "src/services/index.ts"
     },
     {
       "path": "src/storage/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "storage",
+      "targetPath": "src/storage/index.ts"
     },
     {
       "path": "src/theme/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "theme",
+      "targetPath": "src/theme/index.ts"
     },
     {
       "path": "src/types/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "types",
+      "targetPath": "src/types/index.ts"
     },
     {
       "path": "src/utils/index.ts",
-      "type": "file"
+      "type": "file",
+      "targetFolder": "utils",
+      "targetPath": "src/utils/index.ts"
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { MainScreen } from './MainScreen';",
+      "source": "src/screens/MainScreen.tsx"
+    },
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { SplashScreen } from './SplashScreen';",
+      "source": "src/screens/SplashScreen.tsx"
     }
   ]
 }

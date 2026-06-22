@@ -8,4 +8,9 @@ public sealed record FabricatorTemplateManifest(
     string Description,
     string Version,
     string Mode,
-    IReadOnlyList<FabricatorTemplateFile> Files);
+    IReadOnlyList<FabricatorTemplateFile> Files,
+    string? Category = null,
+    IReadOnlyList<string>? Tags = null,
+    IReadOnlyList<FabricatorTemplateDependency>? Dependencies = null,
+    IReadOnlyList<FabricatorTemplateExport>? Exports = null,
+    IReadOnlyList<FabricatorTemplateIntegrationHint>? IntegrationHints = null);

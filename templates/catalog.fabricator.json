@@ -9,6 +9,7 @@
       "displayName": "Minimal Splash",
       "description": "Minimal React Native starter with splash and main screens plus base source folders.",
       "version": "0.1.0",
+      "category": "starter",
       "manifest": "minimal-splash/fabricator-template.json",
       "tags": [
         "starter",
@@ -20,6 +21,7 @@
       "displayName": "Basic Auth",
       "description": "Optional auth starter with splash, loading, login, home, auth provider, and example configuration files.",
       "version": "0.1.0",
+      "category": "auth",
       "manifest": "basic-auth/fabricator-template.json",
       "tags": [
         "auth",
