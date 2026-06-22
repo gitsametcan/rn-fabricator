@@ -141,7 +141,7 @@ Use the GitHub raw catalog only after the relevant changes are pushed:
 export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json"
 ```
 
-Create a sample React Native project with the minimal splash starter:
+Create a sample React Native project with the minimal splash and main starter:
 
 ```bash
 ./.tools/rn-fabricator create FabricatorBabyStep \
@@ -153,7 +153,9 @@ Expected generated starter files:
 
 ```text
 FabricatorBabyStep/App.tsx
+FabricatorBabyStep/.fabricator/project.json
 FabricatorBabyStep/src/screens/SplashScreen.tsx
+FabricatorBabyStep/src/screens/MainScreen.tsx
 FabricatorBabyStep/src/screens/index.ts
 FabricatorBabyStep/src/app/index.ts
 FabricatorBabyStep/src/components/index.ts

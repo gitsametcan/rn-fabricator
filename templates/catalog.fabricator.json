@@ -7,7 +7,7 @@
     {
       "id": "minimal-splash",
       "displayName": "Minimal Splash",
-      "description": "Minimal React Native starter with a splash screen and base source folders.",
+      "description": "Minimal React Native starter with splash and main screens plus base source folders.",
       "version": "0.1.0",
       "manifest": "minimal-splash/fabricator-template.json",
       "tags": [

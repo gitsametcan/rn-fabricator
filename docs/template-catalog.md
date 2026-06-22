@@ -23,7 +23,7 @@ rn-fabricator create FabricatorBabyStep --output . --template-source ./templates
 Expected result:
 
 - React Native CLI project is created.
-- A minimal splash screen is resolved from the Fabricator template catalog and applied.
+- A minimal splash and main screen starter is resolved from the Fabricator template catalog and applied.
 - No auth flow is applied automatically.
 - The generated app has a predictable `src` structure.
 - The generated app can declare Fabricator compatibility with `.fabricator/project.json`.
@@ -73,7 +73,7 @@ The manifest name intentionally includes `fabricator` so users can recognize tha
 
 | Template | Type | Status | Purpose |
 | --- | --- | --- | --- |
-| `minimal-splash` | create default | Planned catalog entry | Minimal app shell with a splash screen and base folders. |
+| `minimal-splash` | create default | Planned catalog entry | Minimal app shell with splash and main screens plus base folders. |
 | `basic-auth` | optional copy | Planned catalog entry | Splash, loading, login, home, auth provider, env examples, and credential example. |
 
 ## Generated Folder Structure

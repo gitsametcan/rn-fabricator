@@ -1,5 +1,7 @@
+using Fabricator.Core;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Templates;
+using System.Text.Json;
 
 namespace Fabricator.Core.Projects;
 
@@ -7,15 +9,29 @@ public sealed class CreateProjectService : ICreateProjectService
 {
     public const string DefaultStarterId = "minimal-splash";
 
+    private static readonly JsonSerializerOptions ManifestJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
     private static readonly string[] ReactNativeCliArguments = ["@react-native-community/cli@latest", "init"];
     private static readonly IReadOnlyList<StarterFile> MinimalSplashStarterFiles =
     [
         new("App.tsx", """
-            import React from 'react';
-            import { SplashScreen } from './src/screens';
+            import React, { useEffect, useState } from 'react';
+            import { MainScreen, SplashScreen } from './src/screens';
 
             export default function App() {
-              return <SplashScreen />;
+              const [isReady, setIsReady] = useState(false);
+
+              useEffect(() => {
+                const timer = setTimeout(() => setIsReady(true), 900);
+
+                return () => clearTimeout(timer);
+              }, []);
+
+              return isReady ? <MainScreen /> : <SplashScreen />;
             }
             """),
         new("src/screens/SplashScreen.tsx", """
@@ -66,7 +82,62 @@ public sealed class CreateProjectService : ICreateProjectService
               },
             });
             """),
-        new("src/screens/index.ts", "export { SplashScreen } from './SplashScreen';\n"),
+        new("src/screens/MainScreen.tsx", """
+            import React from 'react';
+            import { SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+
+            export function MainScreen() {
+              return (
+                <SafeAreaView style={styles.safeArea}>
+                  <StatusBar barStyle="dark-content" />
+                  <View style={styles.container}>
+                    <Text style={styles.eyebrow}>Main</Text>
+                    <Text style={styles.title}>Build your app from here.</Text>
+                    <Text style={styles.subtitle}>
+                      Add screens, services, utils, and integrations with Fabricator templates.
+                    </Text>
+                  </View>
+                </SafeAreaView>
+              );
+            }
+
+            const styles = StyleSheet.create({
+              safeArea: {
+                flex: 1,
+                backgroundColor: '#FFFFFF',
+              },
+              container: {
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 24,
+              },
+              eyebrow: {
+                color: '#2563EB',
+                fontSize: 14,
+                fontWeight: '700',
+                marginBottom: 12,
+                textTransform: 'uppercase',
+              },
+              title: {
+                color: '#111827',
+                fontSize: 28,
+                fontWeight: '700',
+                textAlign: 'center',
+              },
+              subtitle: {
+                color: '#4B5563',
+                fontSize: 16,
+                lineHeight: 24,
+                marginTop: 12,
+                textAlign: 'center',
+              },
+            });
+            """),
+        new("src/screens/index.ts", """
+            export { MainScreen } from './MainScreen';
+            export { SplashScreen } from './SplashScreen';
+            """),
         new("src/app/index.ts", "export {};\n"),
         new("src/components/index.ts", "export {};\n"),
         new("src/config/index.ts", "export {};\n"),
@@ -141,6 +212,11 @@ public sealed class CreateProjectService : ICreateProjectService
         }
 
         var starterResult = await ApplyStarterAsync(validation, cancellationToken);
+        if (starterResult.Succeeded)
+        {
+            starterResult = ApplyProjectContractManifest(validation.FullProjectPath, starterResult);
+        }
+
         var rollback = starterResult.Succeeded
             ? CreateProjectRollbackResult.NotRequired("Rollback was not required because project creation succeeded.")
             : RollBackPartialProject(validation);
@@ -274,6 +350,32 @@ public sealed class CreateProjectService : ICreateProjectService
         return errors.Count == 0
             ? CreateProjectStarterResult.Applied(starterId, generatedFiles)
             : CreateProjectStarterResult.Failed(starterId, generatedFiles, errors);
+    }
+
+    private CreateProjectStarterResult ApplyProjectContractManifest(
+        string projectPath,
+        CreateProjectStarterResult starterResult)
+    {
+        var manifest = FabricatorProjectContract.CreateManifest(ProductInfo.Version);
+        var manifestContents = JsonSerializer.Serialize(manifest, ManifestJsonOptions) + System.Environment.NewLine;
+        var contractResult = ApplyStarterFiles(
+            projectPath,
+            starterResult.StarterId,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                [FabricatorProjectContract.ManifestRelativePath] = manifestContents
+            });
+
+        var generatedFiles = starterResult.GeneratedFiles
+            .Concat(contractResult.GeneratedFiles)
+            .ToArray();
+        var errors = starterResult.Errors
+            .Concat(contractResult.Errors)
+            .ToArray();
+
+        return errors.Length == 0
+            ? CreateProjectStarterResult.Applied(starterResult.StarterId, generatedFiles)
+            : CreateProjectStarterResult.Failed(starterResult.StarterId, generatedFiles, errors);
     }
 
     private CreateProjectRollbackResult RollBackPartialProject(CreateProjectValidationResult validation)
