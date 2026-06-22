@@ -36,6 +36,40 @@ public sealed class TemplateCatalogProviderTests
     }
 
     [Fact]
+    public async Task GetTemplateAsyncReadsSchemaV2Metadata()
+    {
+        using var directory = new TemporaryDirectory();
+        var catalogPath = WriteSchemaV2Catalog(directory.Path);
+        var provider = new TemplateCatalogProvider();
+
+        var catalog = await provider.ListTemplatesAsync(catalogPath);
+        var package = await provider.GetTemplateAsync(catalogPath, "screen/main-menu");
+
+        var entry = Assert.Single(catalog.Templates);
+        Assert.Equal("screen", entry.Category);
+        Assert.Equal(2, package.Manifest.SchemaVersion);
+        Assert.Equal("screen", package.Manifest.Category);
+        Assert.Contains("menu", package.Manifest.Tags ?? []);
+
+        var file = Assert.Single(package.Manifest.Files);
+        Assert.Equal("src/screens/MainMenuScreen.tsx", file.Path);
+        Assert.Equal("screens", file.TargetFolder);
+        Assert.Equal("src/screens/MainMenuScreen.tsx", file.TargetPath);
+
+        var dependency = Assert.Single(package.Manifest.Dependencies ?? []);
+        Assert.Equal("npm", dependency.Type);
+        Assert.Equal("@react-navigation/native", dependency.Name);
+
+        var export = Assert.Single(package.Manifest.Exports ?? []);
+        Assert.Equal("screensBarrel", export.IntegrationPoint);
+        Assert.Contains("MainMenuScreen", export.Statement);
+
+        var hint = Assert.Single(package.Manifest.IntegrationHints ?? []);
+        Assert.Equal("manual", hint.Type);
+        Assert.Equal("navigation", hint.Target);
+    }
+
+    [Fact]
     public async Task GetTemplateAsyncThrowsWhenTemplateIsMissing()
     {
         using var directory = new TemporaryDirectory();
@@ -100,6 +134,87 @@ public sealed class TemplateCatalogProviderTests
 
         File.WriteAllText(Path.Combine(templateRoot, "App.tsx"), "export default function App() {}\n");
         File.WriteAllText(Path.Combine(templateRoot, "src", "screens", "index.ts"), "export {};\n");
+
+        return Path.Combine(root, "catalog.fabricator.json");
+    }
+
+    private static string WriteSchemaV2Catalog(string root)
+    {
+        var templateRoot = Path.Combine(root, "screen", "main-menu");
+        Directory.CreateDirectory(Path.Combine(templateRoot, "src", "screens"));
+
+        File.WriteAllText(
+            Path.Combine(root, "catalog.fabricator.json"),
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template-catalog",
+              "displayName": "Test catalog",
+              "description": "Test catalog.",
+              "templates": [
+                {
+                  "id": "screen/main-menu",
+                  "displayName": "Main Menu Screen",
+                  "description": "Reusable main menu screen.",
+                  "version": "0.1.0",
+                  "category": "screen",
+                  "manifest": "screen/main-menu/fabricator-template.json",
+                  "tags": ["screen", "menu"]
+                }
+              ]
+            }
+            """);
+
+        File.WriteAllText(
+            Path.Combine(templateRoot, "fabricator-template.json"),
+            """
+            {
+              "schemaVersion": 2,
+              "kind": "fabricator-template",
+              "id": "screen/main-menu",
+              "displayName": "Main Menu Screen",
+              "description": "Reusable main menu screen.",
+              "version": "0.1.0",
+              "mode": "apply",
+              "category": "screen",
+              "tags": ["screen", "menu"],
+              "files": [
+                {
+                  "path": "src/screens/MainMenuScreen.tsx",
+                  "type": "file",
+                  "targetFolder": "screens",
+                  "targetPath": "src/screens/MainMenuScreen.tsx",
+                  "description": "Main menu screen component."
+                }
+              ],
+              "dependencies": [
+                {
+                  "type": "npm",
+                  "name": "@react-navigation/native",
+                  "version": "^7.0.0",
+                  "reason": "Required when wired into navigation."
+                }
+              ],
+              "exports": [
+                {
+                  "integrationPoint": "screensBarrel",
+                  "statement": "export { MainMenuScreen } from './MainMenuScreen';",
+                  "source": "src/screens/MainMenuScreen.tsx"
+                }
+              ],
+              "integrationHints": [
+                {
+                  "type": "manual",
+                  "target": "navigation",
+                  "message": "Add MainMenuScreen to navigation if needed."
+                }
+              ]
+            }
+            """);
+
+        File.WriteAllText(
+            Path.Combine(templateRoot, "src", "screens", "MainMenuScreen.tsx"),
+            "export function MainMenuScreen() { return null; }\n");
 
         return Path.Combine(root, "catalog.fabricator.json");
     }

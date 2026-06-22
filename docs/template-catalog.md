@@ -69,6 +69,101 @@ Each template directory should contain a Fabricator-specific manifest:
 
 The manifest name intentionally includes `fabricator` so users can recognize that the file is meant for rn-fabricator.
 
+## Template Schema v2
+
+Schema v2 keeps the existing v1 fields and adds metadata needed for reusable template apply and capture workflows.
+
+Catalog entries may include a top-level category so large catalogs can be filtered without downloading every manifest:
+
+```json
+{
+  "id": "service/api-client",
+  "displayName": "API Client",
+  "description": "Fetch-based API client starter.",
+  "version": "0.1.0",
+  "category": "service",
+  "manifest": "service/api-client/fabricator-template.json",
+  "tags": ["service", "api", "network"]
+}
+```
+
+Template manifests use this shape:
+
+```json
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "screen/main-menu",
+  "displayName": "Main Menu Screen",
+  "description": "Reusable main menu screen.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "screen",
+  "tags": ["screen", "menu"],
+  "files": [
+    {
+      "path": "src/screens/MainMenuScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/MainMenuScreen.tsx",
+      "description": "Main menu screen component."
+    }
+  ],
+  "dependencies": [
+    {
+      "type": "npm",
+      "name": "@react-navigation/native",
+      "version": "^7.0.0",
+      "reason": "Required when the template is wired into navigation."
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { MainMenuScreen } from './MainMenuScreen';",
+      "source": "src/screens/MainMenuScreen.tsx"
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "navigation",
+      "message": "Add MainMenuScreen to your navigation stack if needed."
+    }
+  ]
+}
+```
+
+### Categories
+
+Initial categories:
+
+| Category | Purpose |
+| --- | --- |
+| `starter` | Create-time starter templates. |
+| `screen` | Screen-level mobile views. |
+| `component` | Reusable UI components. |
+| `service` | API clients and external service adapters. |
+| `util` | Reusable utility functions. |
+| `integration` | Third-party integration setup. |
+| `layout` | Shared shell, header, footer, or structural UI. |
+| `navigation` | Navigation/menu-related files. |
+| `auth` | Authentication flows and helpers. |
+| `config` | Configuration examples or setup helpers. |
+
+### Apply Rules
+
+Schema v2 separates source paths from target intent:
+
+- `path`: file location inside the template folder.
+- `targetPath`: destination path relative to the target project.
+- `targetFolder`: optional key from `.fabricator/project.json` such as `screens`, `services`, or `utils`.
+- `exports`: idempotent barrel export statements that future apply commands may add safely.
+- `dependencies`: package or tool requirements the CLI can report before applying.
+- `integrationHints`: manual or future automated follow-up instructions.
+
+Current copy behavior still reads `path` and writes files to the same relative location. Future apply behavior should prefer `targetPath` and validate `targetFolder` against the Fabricator project contract.
+
 ## Initial Templates
 
 | Template | Type | Status | Purpose |

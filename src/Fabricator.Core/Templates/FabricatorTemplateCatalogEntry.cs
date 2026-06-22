@@ -6,4 +6,5 @@ public sealed record FabricatorTemplateCatalogEntry(
     string Description,
     string Version,
     string Manifest,
-    IReadOnlyList<string> Tags);
+    IReadOnlyList<string> Tags,
+    string? Category = null);
