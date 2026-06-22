@@ -85,35 +85,39 @@ External process execution should be wrapped behind an abstraction so it can be 
 
 ## Templates
 
-Templates are stored in the repository and shipped with the CLI package as copied local assets.
+Templates are stored in repository-hosted catalogs and can be consumed from explicit local paths or raw GitHub URLs. The early package still contains legacy built-in template assets for compatibility, but the forward path is catalog-based template discovery and application.
 
-Runtime template layout:
+Catalog source layout:
 
 ```text
-Templates/
+templates/
+  catalog.fabricator.json
+  minimal-splash/
+    fabricator-template.json
   basic-auth/
-    template.json
-    ...
+    fabricator-template.json
 ```
-
-Source template layout:
-
-```text
-src/Fabricator.Core/
-  TemplateAssets/
-    basic-auth/
-      template.json
-      ...
-```
-
-`Fabricator.Core` copies `TemplateAssets/**/*` to `Templates/` in build and publish output. Runtime services resolve templates from `AppContext.BaseDirectory/Templates` by default, so local development, tests, and packaged tool usage use the same lookup strategy.
 
 Template application must:
 
-- Read template metadata from `template.json`.
+- Read catalog metadata from `catalog.fabricator.json`.
+- Read template metadata from `fabricator-template.json`.
+- Validate the target project against the Fabricator project contract before applying future smart templates.
 - Avoid overwriting user files unless explicitly allowed.
 - Generate example config files, not real secret files.
 - Keep generated React Native code readable.
+
+## Fabricator Project Contract
+
+Fabricator-created React Native projects should declare compatibility with a project manifest:
+
+```text
+.fabricator/project.json
+```
+
+The manifest defines the supported schema version, project type, source root, standard folders, and safe integration points. Future template apply and capture commands should use this contract to stop before writing files when a project is missing the expected structure.
+
+See [Fabricator Project Contract](fabricator-project-contract.md) for the manifest shape and compatibility rules.
 
 ## Error Handling
 
