@@ -10,6 +10,8 @@ Additional starter features should live in a Fabricator template catalog and be 
 
 Templates are not bundled into the installed CLI package by default. The CLI should read a catalog URL or a local catalog file, then use that catalog to list and copy available templates.
 
+Catalog templates are applied to projects that follow the [Fabricator Project Contract](fabricator-project-contract.md). The contract defines the target folder layout, project manifest, and safe integration points that future apply/capture commands can rely on.
+
 ## Planned User Flow
 
 Create a new app with the default minimal starter:
@@ -24,6 +26,7 @@ Expected result:
 - A minimal splash screen is resolved from the Fabricator template catalog and applied.
 - No auth flow is applied automatically.
 - The generated app has a predictable `src` structure.
+- The generated app can declare Fabricator compatibility with `.fabricator/project.json`.
 
 List available templates:
 
@@ -97,6 +100,7 @@ Notes:
 - Use `screens` for mobile views instead of web-style `pages`.
 - Keep empty folders trackable with a small `index.ts` or README only when needed.
 - Avoid adding full app architecture before the template needs it.
+- Future template apply commands should validate `.fabricator/project.json` before mutating the project.
 
 ## Command Design Notes
 
