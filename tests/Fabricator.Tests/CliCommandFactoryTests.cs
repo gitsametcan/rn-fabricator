@@ -132,7 +132,8 @@ public sealed class CliCommandFactoryTests
     public void TemplatesListCommandAcceptsSourceOption()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
-        var parseResult = rootCommand.Parse(["templates", "list", "--source", "templates/catalog.fabricator.json"]);
+        var parseResult = rootCommand.Parse(
+            ["templates", "list", "--source", "templates/catalog.fabricator.json", "--category", "auth"]);
 
         Assert.Empty(parseResult.Errors);
         Assert.Equal("list", parseResult.CommandResult.Command.Name);

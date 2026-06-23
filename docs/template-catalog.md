@@ -32,6 +32,7 @@ List available templates:
 
 ```bash
 rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+rn-fabricator templates list --category auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
 Inspect a template before copying or applying it:
@@ -209,6 +210,7 @@ Planned command family:
 
 ```text
 rn-fabricator templates list --source <catalog-url-or-path>
+rn-fabricator templates list --category <category> --source <catalog-url-or-path>
 rn-fabricator templates info <template> --source <catalog-url-or-path>
 rn-fabricator templates copy <template> --source <catalog-url-or-path>
 ```

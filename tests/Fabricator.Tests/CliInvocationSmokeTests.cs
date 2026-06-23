@@ -113,6 +113,49 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains($"Source: {source}", output.ToString());
         Assert.Contains("minimal-splash (0.1.0)", output.ToString());
         Assert.Contains("Basic Auth", output.ToString());
+        Assert.Contains("Category: starter", output.ToString());
+        Assert.Contains("Category: auth", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "auth"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Category: auth", output.ToString());
+        Assert.Contains("basic-auth (0.1.0)", output.ToString());
+        Assert.DoesNotContain("minimal-splash (0.1.0)", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandReturnsClearOutputWhenCategoryHasNoMatches()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "screen"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("No templates found for category: screen", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandReturnsInvalidInputForEmptyCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", string.Empty]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Contains("Template category cannot be empty", output.ErrorOutput);
     }
 
     [Fact]
