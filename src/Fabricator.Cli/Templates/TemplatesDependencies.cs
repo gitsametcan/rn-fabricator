@@ -18,6 +18,17 @@ public static class TemplatesDependencies
         return new TemplatesCopyCommandHandler(new TemplateCatalogProvider(), outputWriter, errorWriter);
     }
 
+    public static TemplatesApplyCommandHandler CreateDefaultApplyHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesApplyCommandHandler(
+            new TemplateCatalogProvider(),
+            new FabricatorTemplateApplyService(),
+            outputWriter,
+            errorWriter);
+    }
+
     public static TemplatesInfoCommandHandler CreateDefaultInfoHandler(
         TextWriter outputWriter,
         TextWriter errorWriter)

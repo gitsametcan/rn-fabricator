@@ -1,0 +1,112 @@
+using Fabricator.Core;
+using Fabricator.Core.Templates;
+
+namespace Fabricator.Cli.Templates;
+
+public sealed class TemplatesApplyCommandHandler
+{
+    private readonly FabricatorTemplateApplyService _applyService;
+    private readonly TextWriter _errorWriter;
+    private readonly TextWriter _outputWriter;
+    private readonly ITemplateCatalogProvider _templateCatalogProvider;
+
+    public TemplatesApplyCommandHandler(
+        ITemplateCatalogProvider templateCatalogProvider,
+        FabricatorTemplateApplyService applyService,
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        _templateCatalogProvider = templateCatalogProvider;
+        _applyService = applyService;
+        _outputWriter = outputWriter;
+        _errorWriter = errorWriter;
+    }
+
+    public async Task<int> RunAsync(
+        string templateId,
+        string source,
+        string outputDirectory,
+        bool overwrite,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(templateId))
+        {
+            _errorWriter.WriteLine("Template id is required.");
+            return ExitCodes.InvalidInput;
+        }
+
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            _errorWriter.WriteLine("Template source is required. Pass --source <catalog-url-or-path>.");
+            return ExitCodes.InvalidInput;
+        }
+
+        try
+        {
+            var package = await _templateCatalogProvider.GetTemplateAsync(source, templateId, cancellationToken);
+            var result = await _applyService.ApplyAsync(
+                new FabricatorTemplateApplyRequest(package, outputDirectory, overwrite),
+                cancellationToken);
+
+            RenderResult(source, outputDirectory, overwrite, package, result);
+
+            return result.Succeeded ? ExitCodes.Success : ExitCodes.GeneralFailure;
+        }
+        catch (TemplatePackageException exception)
+        {
+            _errorWriter.WriteLine("Template could not be read.");
+            _errorWriter.WriteLine(exception.Message);
+            return ExitCodes.InvalidInput;
+        }
+        catch (HttpRequestException exception)
+        {
+            _errorWriter.WriteLine("Template catalog request failed.");
+            _errorWriter.WriteLine(exception.Message);
+            return ExitCodes.GeneralFailure;
+        }
+        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _errorWriter.WriteLine("Template catalog request timed out.");
+            _errorWriter.WriteLine(exception.Message);
+            return ExitCodes.GeneralFailure;
+        }
+    }
+
+    private void RenderResult(
+        string source,
+        string outputDirectory,
+        bool overwrite,
+        FabricatorTemplatePackage package,
+        FabricatorTemplateApplyResult result)
+    {
+        _outputWriter.WriteLine($"Template applied: {package.Manifest.Id}");
+        _outputWriter.WriteLine($"Source: {source}");
+        _outputWriter.WriteLine($"Output directory: {Path.GetFullPath(outputDirectory)}");
+        _outputWriter.WriteLine($"Overwrite: {(overwrite ? "yes" : "no")}");
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine($"Generated: {result.GeneratedFiles.Count}");
+
+        foreach (var file in result.GeneratedFiles)
+        {
+            _outputWriter.WriteLine($"  + {file}");
+        }
+
+        _outputWriter.WriteLine($"Skipped: {result.SkippedFiles.Count}");
+
+        foreach (var file in result.SkippedFiles)
+        {
+            _outputWriter.WriteLine($"  - {file}");
+        }
+
+        if (result.Succeeded)
+        {
+            return;
+        }
+
+        _errorWriter.WriteLine("Template apply failed.");
+        foreach (var error in result.Errors)
+        {
+            _errorWriter.WriteLine($"- {error}");
+        }
+    }
+}

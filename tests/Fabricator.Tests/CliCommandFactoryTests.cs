@@ -170,6 +170,26 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void TemplatesApplyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "apply",
+                "basic-auth",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--output",
+                "MyApp",
+                "--overwrite"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("apply", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
     public void RootCommandAcceptsHelpAndVersionOptions()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

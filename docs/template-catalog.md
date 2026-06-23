@@ -6,9 +6,9 @@ This document defines the planned rn-fabricator template workflow.
 
 `create` should stay small and predictable. It should create a React Native CLI app and apply only the minimal starter experience needed to prove the generated app works.
 
-Additional starter features should live in a Fabricator template catalog and be copied explicitly by the user after project creation.
+Additional starter features should live in a Fabricator template catalog and be applied explicitly by the user after project creation.
 
-Templates are not bundled into the installed CLI package by default. The CLI should read a catalog URL or a local catalog file, then use that catalog to list and copy available templates.
+Templates are not bundled into the installed CLI package by default. The CLI reads a catalog URL or a local catalog file, then uses that catalog to list, inspect, copy, or apply available templates.
 
 Catalog templates are applied to projects that follow the [Fabricator Project Contract](fabricator-project-contract.md). The contract defines the target folder layout, project manifest, and safe integration points that future apply/capture commands can rely on.
 
@@ -41,17 +41,32 @@ Inspect a template before copying or applying it:
 rn-fabricator templates info basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
-Copy a template into the current project:
+Apply a template into a compatible Fabricator project:
+
+```bash
+rn-fabricator templates apply basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+```
+
+Copy a template into the current directory without Fabricator project validation:
 
 ```bash
 rn-fabricator templates copy basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
+Expected apply behavior:
+
+- Apply is explicit; `create` does not apply optional templates.
+- The target directory must follow the Fabricator project contract and include `.fabricator/project.json`.
+- Template files are written to `targetPath` when the manifest defines it.
+- `targetFolder` is validated against the Fabricator project contract before writing.
+- Existing files are not overwritten unless the user passes an explicit overwrite option.
+- The command prints generated and skipped file output.
+
 Expected copy behavior:
 
-- Copy is explicit; `create` does not apply optional templates.
-- Existing files are not overwritten unless the user passes an explicit overwrite option.
-- The command prints generated, skipped, and next-step output.
+- Copy remains a lower-level escape hatch.
+- It writes template source paths directly to the output directory.
+- It does not require a Fabricator project manifest.
 
 ## Template Source
 
@@ -169,7 +184,7 @@ Schema v2 separates source paths from target intent:
 - `dependencies`: package or tool requirements the CLI can report before applying.
 - `integrationHints`: manual or future automated follow-up instructions.
 
-Current copy behavior still reads `path` and writes files to the same relative location. Future apply behavior should prefer `targetPath` and validate `targetFolder` against the Fabricator project contract.
+`templates apply` prefers `targetPath` and validates `targetFolder` against the Fabricator project contract. `templates copy` still reads `path` and writes files to the same relative location.
 
 ## Initial Templates
 
@@ -212,19 +227,19 @@ Planned command family:
 rn-fabricator templates list --source <catalog-url-or-path>
 rn-fabricator templates list --category <category> --source <catalog-url-or-path>
 rn-fabricator templates info <template> --source <catalog-url-or-path>
+rn-fabricator templates apply <template> --source <catalog-url-or-path>
 rn-fabricator templates copy <template> --source <catalog-url-or-path>
 ```
 
-Future options:
+Options:
 
 ```text
 --output <path>
 --overwrite
---dry-run
 --source <catalog-url-or-path>
 ```
 
-The first implementation should keep copy behavior conservative and transparent.
+Copy and apply behavior should remain conservative and transparent. Existing files are skipped unless `--overwrite` is provided.
 
 ## Source Defaults
 

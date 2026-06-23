@@ -208,9 +208,10 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List, inspect, and copy Fabricator templates from a catalog source.");
+        var command = new Command("templates", "List, inspect, copy, and apply Fabricator templates from a catalog source.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
         var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
+        var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
         var templateArgument = new Argument<string>("template")
         {
@@ -219,6 +220,10 @@ public static class CliCommandFactory
         var infoTemplateArgument = new Argument<string>("template")
         {
             Description = "Template id to inspect."
+        };
+        var applyTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to apply."
         };
         var sourceOption = new Option<string>("--source")
         {
@@ -236,12 +241,25 @@ public static class CliCommandFactory
         {
             Description = "Fabricator template catalog URL or local catalog file path."
         };
+        var applySourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path."
+        };
         var outputOption = new Option<string>("--output", "-o")
         {
             Description = "Directory where template files will be copied.",
             DefaultValueFactory = _ => Directory.GetCurrentDirectory()
         };
+        var applyOutputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Compatible Fabricator project directory where template files will be applied.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
+        };
         var overwriteOption = new Option<bool>("--overwrite")
+        {
+            Description = "Overwrite existing files instead of skipping them."
+        };
+        var applyOverwriteOption = new Option<bool>("--overwrite")
         {
             Description = "Overwrite existing files instead of skipping them."
         };
@@ -268,6 +286,21 @@ public static class CliCommandFactory
             return await handler.RunAsync(template, source, cancellationToken);
         });
 
+        applyCommand.Arguments.Add(applyTemplateArgument);
+        applyCommand.Options.Add(applySourceOption);
+        applyCommand.Options.Add(applyOutputOption);
+        applyCommand.Options.Add(applyOverwriteOption);
+        applyCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(applyTemplateArgument);
+            var source = parseResult.GetValue(applySourceOption) ?? string.Empty;
+            var outputDirectory = parseResult.GetValue(applyOutputOption) ?? Directory.GetCurrentDirectory();
+            var overwrite = parseResult.GetValue(applyOverwriteOption);
+            var handler = TemplatesDependencies.CreateDefaultApplyHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, outputDirectory, overwrite, cancellationToken);
+        });
+
         copyCommand.Arguments.Add(templateArgument);
         copyCommand.Options.Add(copySourceOption);
         copyCommand.Options.Add(outputOption);
@@ -285,6 +318,7 @@ public static class CliCommandFactory
 
         command.Subcommands.Add(listCommand);
         command.Subcommands.Add(infoCommand);
+        command.Subcommands.Add(applyCommand);
         command.Subcommands.Add(copyCommand);
         return command;
     }
