@@ -224,6 +224,10 @@ public static class CliCommandFactory
         {
             Description = "Fabricator template catalog URL or local catalog file path."
         };
+        var categoryOption = new Option<string>("--category")
+        {
+            Description = "Filter listed templates by category."
+        };
         var infoSourceOption = new Option<string>("--source")
         {
             Description = "Fabricator template catalog URL or local catalog file path."
@@ -243,12 +247,14 @@ public static class CliCommandFactory
         };
 
         listCommand.Options.Add(sourceOption);
+        listCommand.Options.Add(categoryOption);
         listCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var source = parseResult.GetValue(sourceOption) ?? string.Empty;
+            var category = parseResult.GetValue(categoryOption);
             var handler = TemplatesDependencies.CreateDefaultListHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(source, cancellationToken);
+            return await handler.RunAsync(source, category, cancellationToken);
         });
 
         infoCommand.Arguments.Add(infoTemplateArgument);

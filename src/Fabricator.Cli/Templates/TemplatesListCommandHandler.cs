@@ -21,6 +21,7 @@ public sealed class TemplatesListCommandHandler
 
     public async Task<int> RunAsync(
         string source,
+        string? category = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(source))
@@ -29,10 +30,16 @@ public sealed class TemplatesListCommandHandler
             return ExitCodes.InvalidInput;
         }
 
+        if (category is not null && string.IsNullOrWhiteSpace(category))
+        {
+            _errorWriter.WriteLine("Template category cannot be empty when --category is provided.");
+            return ExitCodes.InvalidInput;
+        }
+
         try
         {
             var catalog = await _templateCatalogProvider.ListTemplatesAsync(source, cancellationToken);
-            RenderCatalog(source, catalog);
+            RenderCatalog(source, catalog, category);
             return ExitCodes.Success;
         }
         catch (TemplatePackageException exception)
@@ -55,23 +62,55 @@ public sealed class TemplatesListCommandHandler
         }
     }
 
-    private void RenderCatalog(string source, FabricatorTemplateCatalog catalog)
+    private void RenderCatalog(
+        string source,
+        FabricatorTemplateCatalog catalog,
+        string? category)
     {
         _outputWriter.WriteLine("Fabricator templates");
         _outputWriter.WriteLine($"Source: {source}");
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            _outputWriter.WriteLine($"Category: {category}");
+        }
+
         _outputWriter.WriteLine();
 
-        if (catalog.Templates.Count == 0)
+        var templates = FilterTemplates(catalog, category);
+        if (templates.Count == 0)
         {
-            _outputWriter.WriteLine("No templates found.");
+            _outputWriter.WriteLine(string.IsNullOrWhiteSpace(category)
+                ? "No templates found."
+                : $"No templates found for category: {category}");
             return;
         }
 
-        foreach (var template in catalog.Templates.OrderBy(template => template.Id, StringComparer.Ordinal))
+        foreach (var template in templates.OrderBy(template => template.Id, StringComparer.Ordinal))
         {
             _outputWriter.WriteLine($"- {template.Id} ({template.Version})");
             _outputWriter.WriteLine($"  Name: {template.DisplayName}");
+            _outputWriter.WriteLine($"  Category: {RenderValue(template.Category)}");
             _outputWriter.WriteLine($"  Description: {template.Description}");
         }
+    }
+
+    private static IReadOnlyList<FabricatorTemplateCatalogEntry> FilterTemplates(
+        FabricatorTemplateCatalog catalog,
+        string? category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return catalog.Templates;
+        }
+
+        return catalog.Templates
+            .Where(template => string.Equals(template.Category, category, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+    }
+
+    private static string RenderValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "-" : value;
     }
 }

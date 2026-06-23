@@ -131,6 +131,7 @@ List templates from a Fabricator template catalog:
 
 ```bash
 rn-fabricator templates list --source ./templates/catalog.fabricator.json
+rn-fabricator templates list --category auth --source ./templates/catalog.fabricator.json
 ```
 
 Inspect a template before copying or applying it:

@@ -176,12 +176,22 @@ List templates from the local Fabricator template catalog:
   --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
 ```
 
+List templates by category:
+
+```bash
+./.tools/rn-fabricator templates list \
+  --category auth \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
 Expected list output includes:
 
 ```text
 basic-auth
 minimal-splash
 ```
+
+Expected category output includes `basic-auth` and excludes `minimal-splash`.
 
 Inspect a template before copying it:
 
