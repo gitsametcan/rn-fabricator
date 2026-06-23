@@ -193,7 +193,7 @@ minimal-splash
 
 Expected category output includes `basic-auth` and excludes `minimal-splash`.
 
-Inspect a template before copying it:
+Inspect a template before applying or copying it:
 
 ```bash
 ./.tools/rn-fabricator templates info basic-auth \
@@ -210,15 +210,15 @@ Exports: 4
 Integration hints: 2
 ```
 
-Copy an optional template into the generated project:
+Apply an optional template into the generated project:
 
 ```bash
-./.tools/rn-fabricator templates copy basic-auth \
+./.tools/rn-fabricator templates apply basic-auth \
   --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
   --output ./FabricatorBabyStep
 ```
 
-Expected copied files:
+Expected applied files:
 
 ```text
 FabricatorBabyStep/.env.example
@@ -234,15 +234,15 @@ FabricatorBabyStep/src/screens/HomeScreen.tsx
 FabricatorBabyStep/src/screens/index.ts
 ```
 
-Run the same copy command again to verify non-destructive behavior:
+Run the same apply command again to verify non-destructive behavior:
 
 ```bash
-./.tools/rn-fabricator templates copy basic-auth \
+./.tools/rn-fabricator templates apply basic-auth \
   --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
   --output ./FabricatorBabyStep
 ```
 
-Expected repeat-copy behavior:
+Expected repeat-apply behavior:
 
 - Exit code stays successful.
 - Existing files are reported under `Skipped`.
@@ -251,10 +251,18 @@ Expected repeat-copy behavior:
 Use overwrite only after reviewing skipped files:
 
 ```bash
-./.tools/rn-fabricator templates copy basic-auth \
+./.tools/rn-fabricator templates apply basic-auth \
   --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
   --output ./FabricatorBabyStep \
   --overwrite
+```
+
+Use low-level copy only when you intentionally want to copy template source paths without Fabricator project validation:
+
+```bash
+./.tools/rn-fabricator templates copy basic-auth \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep
 ```
 
 Inspect the generated project:

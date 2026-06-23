@@ -146,6 +146,12 @@ Copy a template from a Fabricator template catalog into an existing project:
 rn-fabricator templates copy basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
 ```
 
+Apply a template to a compatible Fabricator project:
+
+```bash
+rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
+```
+
 Useful help commands:
 
 ```bash
@@ -156,6 +162,7 @@ rn-fabricator setup apply --help
 rn-fabricator create --help
 rn-fabricator templates list --help
 rn-fabricator templates info --help
+rn-fabricator templates apply --help
 rn-fabricator templates copy --help
 ```
 

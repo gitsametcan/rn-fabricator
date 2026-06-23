@@ -9,12 +9,18 @@ using Fabricator.Core.Projects;
 using Fabricator.Core.Setup;
 using System.CommandLine;
 using System.Reflection;
+using System.Text.Json;
 
 namespace Fabricator.Tests;
 
 [Collection("ConsoleOutput")]
 public sealed class CliInvocationSmokeTests
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
+
     [Fact]
     public void VersionOptionWritesCleanPackageVersion()
     {
@@ -244,6 +250,82 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesApplyCommandAppliesTemplateFilesToCompatibleProject()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template applied: basic-auth", output.ToString());
+            Assert.Contains("Generated:", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "screens", "HomeScreen.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandSkipsExistingFilesByDefault()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+        var appPath = Path.Combine(outputDirectory, "App.tsx");
+        File.WriteAllText(appPath, "existing app\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Skipped:", output.ToString());
+            Assert.Contains("- App.tsx", output.ToString());
+            Assert.Equal("existing app\n", File.ReadAllText(appPath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandReturnsFailureForNonFabricatorProject()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.GeneralFailure, exitCode);
+            Assert.Contains("Template apply failed.", output.ErrorOutput);
+            Assert.Contains("Fabricator project manifest was not found", output.ErrorOutput);
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCopyCommandReturnsInvalidInputForUnknownTemplate()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
@@ -288,6 +370,39 @@ public sealed class CliInvocationSmokeTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"rn-fabricator-tests-{Guid.NewGuid():N}");
         Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static string CreateCompatibleFabricatorProject()
+    {
+        var path = CreateTemporaryDirectory();
+        var manifest = FabricatorProjectContract.CreateManifest(ProductInfo.Version);
+
+        Directory.CreateDirectory(Path.Combine(path, ".fabricator"));
+        Directory.CreateDirectory(Path.Combine(path, "src"));
+
+        foreach (var folder in manifest.Folders)
+        {
+            Directory.CreateDirectory(Path.Combine(path, folder.Path));
+        }
+
+        foreach (var integrationPoint in manifest.IntegrationPoints)
+        {
+            var integrationPath = Path.Combine(path, integrationPoint.Path);
+            var directory = Path.GetDirectoryName(integrationPath);
+
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(integrationPath, "export {};\n");
+        }
+
+        File.WriteAllText(
+            Path.Combine(path, FabricatorProjectContract.ManifestRelativePath),
+            JsonSerializer.Serialize(manifest, JsonOptions));
+
         return path;
     }
 
