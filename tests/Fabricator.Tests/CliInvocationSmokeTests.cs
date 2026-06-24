@@ -357,6 +357,41 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesApplyCommandOverwritesExistingFilesWhenRequested()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+        var buttonPath = Path.Combine(outputDirectory, "src", "components", "PrimaryButton.tsx");
+        File.WriteAllText(buttonPath, "existing button\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "apply",
+                    "component/primary-button",
+                    "--source",
+                    source,
+                    "--output",
+                    outputDirectory,
+                    "--overwrite"
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Overwrite: yes", output.ToString());
+            Assert.Contains("Exports applied: 1", output.ToString());
+            Assert.Contains("export function PrimaryButton", File.ReadAllText(buttonPath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesApplyCommandReturnsFailureForNonFabricatorProject()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
@@ -410,6 +445,41 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains("Captured files:", output.ToString());
             Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCaptureCommandReturnsInvalidInputForUnknownCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "capture",
+                    "auth-template",
+                    "--category",
+                    "auth",
+                    "--from",
+                    projectDirectory,
+                    "--output",
+                    outputDirectory
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.InvalidInput, exitCode);
+            Assert.Contains("Template capture failed.", output.ErrorOutput);
+            Assert.Contains("Category must match a Fabricator project folder key", output.ErrorOutput);
+            Assert.False(Directory.Exists(Path.Combine(outputDirectory, "auth-template")));
         }
         finally
         {

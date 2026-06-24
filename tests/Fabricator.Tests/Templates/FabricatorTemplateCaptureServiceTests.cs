@@ -50,6 +50,38 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task CaptureAsyncCreatesTemplateThatCanBeAppliedToAnotherProject()
+    {
+        using var sourceProject = CreateCompatibleProject();
+        using var targetProject = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(sourceProject.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        var captureService = new FabricatorTemplateCaptureService();
+
+        var captureResult = await captureService.CaptureAsync(new FabricatorTemplateCaptureRequest(
+            "profile-screen",
+            "screens",
+            sourceProject.Path,
+            output.Path));
+        WriteCatalog(output.Path);
+
+        var package = await new TemplateCatalogProvider()
+            .GetTemplateAsync(Path.Combine(output.Path, "catalog.fabricator.json"), "profile-screen");
+        var applyResult = await new FabricatorTemplateApplyService()
+            .ApplyAsync(new FabricatorTemplateApplyRequest(
+                package,
+                targetProject.Path,
+                OverwriteExistingFiles: false));
+
+        Assert.True(captureResult.Succeeded);
+        Assert.True(applyResult.Succeeded);
+        Assert.True(File.Exists(Path.Combine(targetProject.Path, "src", "screens", "ProfileScreen.tsx")));
+        Assert.Contains("ProfileScreen", File.ReadAllText(Path.Combine(targetProject.Path, "src", "screens", "ProfileScreen.tsx")));
+    }
+
+    [Fact]
     public async Task CaptureAsyncRejectsUnknownCategoryWithoutWritingTemplate()
     {
         using var project = CreateCompatibleProject();
@@ -83,6 +115,27 @@ public sealed class FabricatorTemplateCaptureServiceTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Contains("Template output already exists", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("../profile-screen")]
+    [InlineData("screen//profile")]
+    [InlineData("screen/../profile")]
+    public async Task CaptureAsyncRejectsUnsafeTemplateIdsWithoutWritingTemplate(string templateId)
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var service = new FabricatorTemplateCaptureService();
+
+        var result = await service.CaptureAsync(new FabricatorTemplateCaptureRequest(
+            templateId,
+            "screens",
+            project.Path,
+            output.Path));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, error => error.Contains("Template id must be a relative path", StringComparison.Ordinal));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(output.Path));
     }
 
     [Fact]
@@ -152,6 +205,31 @@ public sealed class FabricatorTemplateCaptureServiceTests
             JsonSerializer.Serialize(manifest, JsonOptions));
 
         return project;
+    }
+
+    private static void WriteCatalog(string outputPath)
+    {
+        File.WriteAllText(
+            Path.Combine(outputPath, "catalog.fabricator.json"),
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template-catalog",
+              "displayName": "Captured template catalog",
+              "description": "Captured template catalog.",
+              "templates": [
+                {
+                  "id": "profile-screen",
+                  "displayName": "Profile Screen",
+                  "description": "Captured profile screen.",
+                  "version": "0.1.0",
+                  "category": "screens",
+                  "manifest": "profile-screen/fabricator-template.json",
+                  "tags": ["screens"]
+                }
+              ]
+            }
+            """);
     }
 
     private sealed class TemporaryDirectory : IDisposable
