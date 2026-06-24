@@ -217,6 +217,11 @@ public sealed class CreateProjectService : ICreateProjectService
             starterResult = ApplyProjectContractManifest(validation.FullProjectPath, starterResult);
         }
 
+        if (starterResult.Succeeded)
+        {
+            starterResult = ApplyProjectStateFile(validation, starterResult);
+        }
+
         var rollback = starterResult.Succeeded
             ? CreateProjectRollbackResult.NotRequired("Rollback was not required because project creation succeeded.")
             : RollBackPartialProject(validation);
@@ -255,11 +260,18 @@ public sealed class CreateProjectService : ICreateProjectService
             {
                 return CreateProjectStarterResult.Failed(
                     package.Manifest.Id,
+                    package.Manifest.Version,
+                    package.Manifest.Category ?? "starter",
                     [],
                     [$"Template '{package.Manifest.Id}' is not a create starter. Use a template copy command for mode '{package.Manifest.Mode}'."]);
             }
 
-            return ApplyStarterFiles(validation.FullProjectPath, package.Manifest.Id, package.Files);
+            return ApplyStarterFiles(
+                validation.FullProjectPath,
+                package.Manifest.Id,
+                package.Files,
+                package.Manifest.Version,
+                package.Manifest.Category ?? "starter");
         }
         catch (TemplatePackageException exception)
         {
@@ -306,7 +318,9 @@ public sealed class CreateProjectService : ICreateProjectService
     private CreateProjectStarterResult ApplyStarterFiles(
         string projectPath,
         string starterId,
-        IReadOnlyDictionary<string, string> files)
+        IReadOnlyDictionary<string, string> files,
+        string starterVersion = "0.1.0",
+        string category = "starter")
     {
         var generatedFiles = new List<string>();
         var errors = new List<string>();
@@ -348,8 +362,8 @@ public sealed class CreateProjectService : ICreateProjectService
         }
 
         return errors.Count == 0
-            ? CreateProjectStarterResult.Applied(starterId, generatedFiles)
-            : CreateProjectStarterResult.Failed(starterId, generatedFiles, errors);
+            ? CreateProjectStarterResult.Applied(starterId, starterVersion, category, generatedFiles)
+            : CreateProjectStarterResult.Failed(starterId, starterVersion, category, generatedFiles, errors);
     }
 
     private CreateProjectStarterResult ApplyProjectContractManifest(
@@ -374,8 +388,72 @@ public sealed class CreateProjectService : ICreateProjectService
             .ToArray();
 
         return errors.Length == 0
-            ? CreateProjectStarterResult.Applied(starterResult.StarterId, generatedFiles)
-            : CreateProjectStarterResult.Failed(starterResult.StarterId, generatedFiles, errors);
+            ? CreateProjectStarterResult.Applied(
+                starterResult.StarterId,
+                starterResult.StarterVersion,
+                starterResult.Category,
+                generatedFiles)
+            : CreateProjectStarterResult.Failed(
+                starterResult.StarterId,
+                starterResult.StarterVersion,
+                starterResult.Category,
+                generatedFiles,
+                errors);
+    }
+
+    private CreateProjectStarterResult ApplyProjectStateFile(
+        CreateProjectValidationResult validation,
+        CreateProjectStarterResult starterResult)
+    {
+        var projectPath = validation.FullProjectPath;
+        var statePath = Path.GetFullPath(Path.Combine(projectPath, FabricatorProjectStateContract.StateRelativePath));
+
+        if (!IsSafeGeneratedProjectPath(projectPath, statePath))
+        {
+            return CreateProjectStarterResult.Failed(
+                starterResult.StarterId,
+                starterResult.StarterVersion,
+                starterResult.Category,
+                starterResult.GeneratedFiles,
+                [$"Project state file resolved outside the generated project: {FabricatorProjectStateContract.StateRelativePath}"]);
+        }
+
+        if (_fileSystem.FileExists(statePath))
+        {
+            return starterResult;
+        }
+
+        try
+        {
+            var state = FabricatorProjectStateContract.CreateInitialState(
+                validation.Request.ProjectName,
+                ProductInfo.Version,
+                starterResult.StarterId,
+                starterResult.StarterVersion,
+                starterResult.Category,
+                validation.Request.TemplateSource,
+                starterResult.GeneratedFiles);
+            var stateContents = JsonSerializer.Serialize(state, ManifestJsonOptions) + System.Environment.NewLine;
+
+            _fileSystem.WriteAllText(statePath, stateContents);
+
+            return CreateProjectStarterResult.Applied(
+                starterResult.StarterId,
+                starterResult.StarterVersion,
+                starterResult.Category,
+                starterResult.GeneratedFiles
+                    .Concat([FabricatorProjectStateContract.StateRelativePath])
+                    .ToArray());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return CreateProjectStarterResult.Failed(
+                starterResult.StarterId,
+                starterResult.StarterVersion,
+                starterResult.Category,
+                starterResult.GeneratedFiles,
+                [$"Failed to write project state file {FabricatorProjectStateContract.StateRelativePath}: {exception.Message}"]);
+        }
     }
 
     private CreateProjectRollbackResult RollBackPartialProject(CreateProjectValidationResult validation)

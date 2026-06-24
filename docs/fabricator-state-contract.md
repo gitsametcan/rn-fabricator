@@ -45,9 +45,9 @@ Initial schema version:
   },
   "templateSources": [
     {
-      "name": "local",
-      "type": "local",
-      "value": "./templates/catalog.fabricator.json",
+      "name": "embedded",
+      "type": "embedded",
+      "value": "minimal-splash",
       "isDefault": true
     },
     {
@@ -145,8 +145,16 @@ Source fields:
 | --- | --- | --- |
 | `name` | Yes | Stable source name used in status and operation history. |
 | `type` | Yes | `local` or `remote`. |
-| `value` | Yes | Local path or remote URL to a Fabricator catalog. |
+| `value` | Yes | Embedded template id, local catalog path, or remote catalog URL. |
 | `isDefault` | No | Marks the preferred source when multiple sources exist. |
+
+Supported source types:
+
+| Type | Meaning |
+| --- | --- |
+| `embedded` | Template content came from the installed CLI rather than an external catalog. |
+| `local` | Template content came from a local catalog file. |
+| `remote` | Template content came from a remote catalog URL. |
 
 Local source paths should be relative to the project root whenever possible. Absolute paths are discouraged because committed project state should work on another developer machine.
 
@@ -276,6 +284,7 @@ A state file is valid when:
 - `project.type` is `react-native-cli`.
 - `templateSources` is an array.
 - `appliedTemplates` is an array.
+- Source types are `embedded`, `local`, or `remote`.
 - Local source values are relative paths or safe paths inside the intended workspace.
 - File and export paths are relative and cannot escape the project root.
 
