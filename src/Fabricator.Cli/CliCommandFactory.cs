@@ -208,9 +208,10 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List, inspect, copy, apply, and capture Fabricator templates.");
+        var command = new Command("templates", "List, inspect, validate, copy, apply, and capture Fabricator templates.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
         var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
+        var validateCommand = new Command("validate", "Validate a Fabricator template catalog.");
         var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
         var captureCommand = new Command("capture", "Capture files from a compatible Fabricator project as a reusable template.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
@@ -247,6 +248,10 @@ public static class CliCommandFactory
             Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
         };
         var applySourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var validateSourceOption = new Option<string>("--source")
         {
             Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
         };
@@ -304,6 +309,15 @@ public static class CliCommandFactory
             return await handler.RunAsync(template, source, cancellationToken);
         });
 
+        validateCommand.Options.Add(validateSourceOption);
+        validateCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var source = parseResult.GetValue(validateSourceOption) ?? string.Empty;
+            var handler = TemplatesDependencies.CreateDefaultValidateHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(source, cancellationToken);
+        });
+
         applyCommand.Arguments.Add(applyTemplateArgument);
         applyCommand.Options.Add(applySourceOption);
         applyCommand.Options.Add(applyOutputOption);
@@ -351,6 +365,7 @@ public static class CliCommandFactory
 
         command.Subcommands.Add(listCommand);
         command.Subcommands.Add(infoCommand);
+        command.Subcommands.Add(validateCommand);
         command.Subcommands.Add(applyCommand);
         command.Subcommands.Add(captureCommand);
         command.Subcommands.Add(copyCommand);

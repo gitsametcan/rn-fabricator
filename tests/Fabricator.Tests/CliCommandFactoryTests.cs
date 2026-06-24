@@ -150,6 +150,16 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void TemplatesValidateCommandAcceptsSourceOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(["templates", "validate", "--source", "templates/catalog.fabricator.json"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("validate", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
     public void TemplatesCopyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

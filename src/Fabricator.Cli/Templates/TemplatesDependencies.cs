@@ -59,4 +59,15 @@ public static class TemplatesDependencies
             outputWriter,
             errorWriter);
     }
+
+    public static TemplatesValidateCommandHandler CreateDefaultValidateHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesValidateCommandHandler(
+            new TemplateCatalogValidationService(),
+            new TemplateSourceResolver(new SystemEnvironmentVariables()),
+            outputWriter,
+            errorWriter);
+    }
 }
