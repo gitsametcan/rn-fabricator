@@ -129,6 +129,8 @@ Run only safe allowlisted setup commands without prompts. Use this only after re
 
 ## Template Catalog Dogfooding
 
+For the end-to-end reusable template user workflow, see [Reusable Template Workflow](reusable-template-workflow.md). This dogfooding section keeps the same flow in a playground-oriented checklist form.
+
 Use the local repository catalog while testing unreleased template behavior:
 
 ```bash

@@ -1,6 +1,6 @@
 # Template Catalog
 
-This document defines the planned rn-fabricator template workflow.
+This document defines the rn-fabricator template catalog model.
 
 ## Goal
 
@@ -10,9 +10,11 @@ Additional starter features should live in a Fabricator template catalog and be 
 
 Templates are not bundled into the installed CLI package by default. The CLI reads a catalog URL or a local catalog file, then uses that catalog to list, inspect, copy, or apply available templates.
 
-Catalog templates are applied to projects that follow the [Fabricator Project Contract](fabricator-project-contract.md). The contract defines the target folder layout, project manifest, and safe integration points that future apply/capture commands can rely on.
+Catalog templates are applied to projects that follow the [Fabricator Project Contract](fabricator-project-contract.md). The contract defines the target folder layout, project manifest, and safe integration points that apply/capture commands rely on.
 
-## Planned User Flow
+For developer-facing usage steps, see [Reusable Template Workflow](reusable-template-workflow.md).
+
+## User Flow
 
 Create a new app with the default minimal starter:
 
@@ -197,7 +199,7 @@ Schema v2 separates source paths from target intent:
 - `targetFolder`: optional key from `.fabricator/project.json` such as `screens`, `services`, or `utils`.
 - `exports`: idempotent barrel export statements that `templates apply` may add safely.
 - `dependencies`: package or tool requirements the CLI can report before applying.
-- `integrationHints`: manual or future automated follow-up instructions.
+- `integrationHints`: manual or later automated follow-up instructions.
 
 `templates apply` prefers `targetPath`, validates `targetFolder` against the Fabricator project contract, and appends supported barrel export statements idempotently. It skips export statements that already exist and reports unsupported integration work instead of editing user-authored files.
 
@@ -251,7 +253,7 @@ Notes:
 
 ## Command Design Notes
 
-Planned command family:
+Command family:
 
 ```text
 rn-fabricator templates list --source <catalog-url-or-path>
