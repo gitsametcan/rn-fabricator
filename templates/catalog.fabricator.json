@@ -27,6 +27,71 @@
         "auth",
         "starter"
       ]
+    },
+    {
+      "id": "screen/main-menu",
+      "displayName": "Main Menu Screen",
+      "description": "Reusable main menu screen with simple action rows.",
+      "version": "0.1.0",
+      "category": "screen",
+      "manifest": "screen/main-menu/fabricator-template.json",
+      "tags": [
+        "screen",
+        "menu",
+        "navigation"
+      ]
+    },
+    {
+      "id": "service/api-client",
+      "displayName": "API Client",
+      "description": "Small fetch-based API client with typed request helpers.",
+      "version": "0.1.0",
+      "category": "service",
+      "manifest": "service/api-client/fabricator-template.json",
+      "tags": [
+        "service",
+        "api",
+        "network"
+      ]
+    },
+    {
+      "id": "util/storage",
+      "displayName": "Storage Utilities",
+      "description": "Small JSON storage adapter for replaceable local persistence.",
+      "version": "0.1.0",
+      "category": "util",
+      "manifest": "util/storage/fabricator-template.json",
+      "tags": [
+        "util",
+        "storage",
+        "persistence"
+      ]
+    },
+    {
+      "id": "layout/app-shell",
+      "displayName": "App Shell",
+      "description": "Reusable app shell layout with header, content, and footer regions.",
+      "version": "0.1.0",
+      "category": "layout",
+      "manifest": "layout/app-shell/fabricator-template.json",
+      "tags": [
+        "layout",
+        "app",
+        "shell"
+      ]
+    },
+    {
+      "id": "component/primary-button",
+      "displayName": "Primary Button",
+      "description": "Reusable React Native primary button component.",
+      "version": "0.1.0",
+      "category": "component",
+      "manifest": "component/primary-button/fabricator-template.json",
+      "tags": [
+        "component",
+        "button",
+        "ui"
+      ]
     }
   ]
 }

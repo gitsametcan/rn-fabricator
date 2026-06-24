@@ -188,10 +188,25 @@ Expected list output includes:
 
 ```text
 basic-auth
+component/primary-button
+layout/app-shell
 minimal-splash
+screen/main-menu
+service/api-client
+util/storage
 ```
 
 Expected category output includes `basic-auth` and excludes `minimal-splash`.
+
+List component templates:
+
+```bash
+./.tools/rn-fabricator templates list \
+  --category component \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected component category output includes `component/primary-button`.
 
 Inspect a template before applying or copying it:
 
@@ -208,6 +223,22 @@ Category: auth
 Files: 11
 Exports: 4
 Integration hints: 2
+```
+
+Inspect a reusable example template:
+
+```bash
+./.tools/rn-fabricator templates info component/primary-button \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected reusable example info output includes:
+
+```text
+Template: component/primary-button (0.1.0)
+Category: component
+Files: 1
+Exports: 1
 ```
 
 Apply an optional template into the generated project:
@@ -269,6 +300,26 @@ Use overwrite only after reviewing skipped files:
   --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
   --output ./FabricatorBabyStep \
   --overwrite
+```
+
+Apply a reusable example template:
+
+```bash
+./.tools/rn-fabricator templates apply component/primary-button \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep
+```
+
+Expected generated file:
+
+```text
+FabricatorBabyStep/src/components/PrimaryButton.tsx
+```
+
+`src/components/index.ts` should include:
+
+```ts
+export { PrimaryButton } from './PrimaryButton';
 ```
 
 Capture a reusable template from the generated project's screen folder:

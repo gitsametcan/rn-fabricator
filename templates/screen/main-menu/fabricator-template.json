@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "screen/main-menu",
+  "displayName": "Main Menu Screen",
+  "description": "Reusable main menu screen with simple action rows.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "screen",
+  "tags": [
+    "screen",
+    "menu",
+    "navigation"
+  ],
+  "files": [
+    {
+      "path": "src/screens/MainMenuScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/MainMenuScreen.tsx",
+      "description": "Main menu screen component."
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { MainMenuScreen } from './MainMenuScreen';",
+      "source": "src/screens/MainMenuScreen.tsx"
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "navigation",
+      "message": "Add MainMenuScreen to your navigator or route registry if the project uses navigation."
+    }
+  ]
+}

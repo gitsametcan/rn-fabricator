@@ -132,12 +132,14 @@ List templates from a Fabricator template catalog:
 ```bash
 rn-fabricator templates list --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source ./templates/catalog.fabricator.json
+rn-fabricator templates list --category component --source ./templates/catalog.fabricator.json
 ```
 
 Inspect a template before copying or applying it:
 
 ```bash
 rn-fabricator templates info basic-auth --source ./templates/catalog.fabricator.json
+rn-fabricator templates info component/primary-button --source ./templates/catalog.fabricator.json
 ```
 
 Copy a template from a Fabricator template catalog into an existing project:

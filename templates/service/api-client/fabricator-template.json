@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "service/api-client",
+  "displayName": "API Client",
+  "description": "Small fetch-based API client with typed request helpers.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "service",
+  "tags": [
+    "service",
+    "api",
+    "network"
+  ],
+  "files": [
+    {
+      "path": "src/services/apiClient.ts",
+      "type": "file",
+      "targetFolder": "services",
+      "targetPath": "src/services/apiClient.ts",
+      "description": "Fetch-based API client helper."
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "servicesBarrel",
+      "statement": "export { createApiClient } from './apiClient';",
+      "source": "src/services/apiClient.ts"
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "environment",
+      "message": "Pass the project API base URL from your environment configuration when creating the client."
+    }
+  ]
+}
