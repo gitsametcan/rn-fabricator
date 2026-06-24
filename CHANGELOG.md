@@ -8,6 +8,25 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 No unreleased changes.
 
+## 0.9.0 - 2026-06-24
+
+### Added
+
+- Fabricator project contract manifest generation for projects created with the minimal starter.
+- `templates info` command for inspecting template files, dependencies, exports, and integration hints.
+- `templates list --category` filtering for larger template catalogs.
+- `templates apply` command for applying catalog templates to Fabricator-compatible projects.
+- Safe, idempotent barrel export updates for supported integration points.
+- `templates capture` command for capturing reusable templates from Fabricator project folders.
+- Reusable catalog examples for screen, service, util, layout, and component categories.
+- End-to-end reusable template workflow documentation for create, list, info, apply, and capture.
+
+### Changed
+
+- Template schema v2 now includes category, tags, dependencies, exports, integration hints, `targetPath`, and `targetFolder` metadata.
+- `templates copy` remains a low-level escape hatch, while `templates apply` validates the Fabricator project contract before mutating files.
+- Dogfooding documentation now covers reusable template list, info, apply, and capture workflows.
+
 ## 0.8.0 - 2026-06-21
 
 ### Added
