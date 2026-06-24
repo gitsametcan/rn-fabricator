@@ -12,6 +12,8 @@ Fabricator templates should only be applied to projects with a predictable struc
 
 The manifest lets future commands validate compatibility before copying files, updating exports, or applying integration rules.
 
+This internal compatibility manifest is separate from the root [Fabricator State Contract](fabricator-state-contract.md). `.fabricator/project.json` defines where template work is safe. Root `fabricator.json` tracks what template work has already happened.
+
 ## Manifest Shape
 
 Initial schema version:

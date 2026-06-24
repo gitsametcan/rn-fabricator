@@ -156,6 +156,8 @@ rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator
 
 `templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, and prints manual integration notes for anything it cannot safely automate.
 
+Future template lifecycle commands will also use root `fabricator.json` as the user-facing project state file. See [Fabricator State Contract](docs/fabricator-state-contract.md) for the planned state shape.
+
 Capture a reusable template from a compatible Fabricator project folder:
 
 ```bash
@@ -204,6 +206,7 @@ rn-fabricator templates copy --help
 - [Setup Apply Safety Policy](docs/setup-apply-safety.md)
 - [Template Catalog](docs/template-catalog.md)
 - [Fabricator Project Contract](docs/fabricator-project-contract.md)
+- [Fabricator State Contract](docs/fabricator-state-contract.md)
 - [Reusable Template Workflow](docs/reusable-template-workflow.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)

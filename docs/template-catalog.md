@@ -12,6 +12,8 @@ Templates are not bundled into the installed CLI package by default. The CLI rea
 
 Catalog templates are applied to projects that follow the [Fabricator Project Contract](fabricator-project-contract.md). The contract defines the target folder layout, project manifest, and safe integration points that apply/capture commands rely on.
 
+Template lifecycle commands also use the root [Fabricator State Contract](fabricator-state-contract.md) to track configured template sources and applied template history.
+
 For developer-facing usage steps, see [Reusable Template Workflow](reusable-template-workflow.md).
 
 ## User Flow
