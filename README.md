@@ -162,6 +162,8 @@ Capture a reusable template from a compatible Fabricator project folder:
 rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates
 ```
 
+See [Reusable Template Workflow](docs/reusable-template-workflow.md) for the full create, list, info, apply, and capture flow.
+
 Useful help commands:
 
 ```bash
@@ -202,6 +204,7 @@ rn-fabricator templates copy --help
 - [Setup Apply Safety Policy](docs/setup-apply-safety.md)
 - [Template Catalog](docs/template-catalog.md)
 - [Fabricator Project Contract](docs/fabricator-project-contract.md)
+- [Reusable Template Workflow](docs/reusable-template-workflow.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
 - [v0.8.0 Release Notes](docs/releases/v0.8.0.md)
