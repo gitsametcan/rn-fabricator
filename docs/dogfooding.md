@@ -234,6 +234,19 @@ FabricatorBabyStep/src/screens/HomeScreen.tsx
 FabricatorBabyStep/src/screens/index.ts
 ```
 
+Expected apply output includes export and integration sections:
+
+```text
+Exports applied: 4
+Integration notes: 2
+```
+
+`src/screens/index.ts` should include idempotent screen exports such as:
+
+```ts
+export { HomeScreen } from './HomeScreen';
+```
+
 Run the same apply command again to verify non-destructive behavior:
 
 ```bash
@@ -247,6 +260,7 @@ Expected repeat-apply behavior:
 - Exit code stays successful.
 - Existing files are reported under `Skipped`.
 - Existing files are not overwritten.
+- Existing barrel exports are reported under `Exports skipped`.
 
 Use overwrite only after reviewing skipped files:
 

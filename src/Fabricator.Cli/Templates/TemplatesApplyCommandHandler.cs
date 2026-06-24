@@ -98,6 +98,28 @@ public sealed class TemplatesApplyCommandHandler
             _outputWriter.WriteLine($"  - {file}");
         }
 
+        _outputWriter.WriteLine($"Exports applied: {result.AppliedExports.Count}");
+
+        foreach (var appliedExport in result.AppliedExports)
+        {
+            _outputWriter.WriteLine($"  + {appliedExport}");
+        }
+
+        _outputWriter.WriteLine($"Exports skipped: {result.SkippedExports.Count}");
+
+        foreach (var skippedExport in result.SkippedExports)
+        {
+            _outputWriter.WriteLine($"  - {skippedExport}");
+        }
+
+        _outputWriter.WriteLine($"Integration notes: {result.IntegrationReports.Count}");
+
+        foreach (var report in result.IntegrationReports)
+        {
+            var target = string.IsNullOrWhiteSpace(report.Target) ? string.Empty : $" ({report.Target})";
+            _outputWriter.WriteLine($"  - [{report.Kind}]{target} {report.Message}");
+        }
+
         if (result.Succeeded)
         {
             return;

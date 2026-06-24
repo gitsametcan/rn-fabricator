@@ -29,6 +29,10 @@ public sealed class FabricatorTemplateApplyServiceTests
         Assert.Empty(result.SkippedFiles);
         Assert.Contains("src/screens/ProfileScreen.tsx", result.GeneratedFiles);
         Assert.Contains("src/services/profileApi.ts", result.GeneratedFiles);
+        Assert.Contains("screensBarrel: export { ProfileScreen } from './ProfileScreen';", result.AppliedExports);
+        Assert.Contains(
+            "export { ProfileScreen } from './ProfileScreen';",
+            File.ReadAllText(Path.Combine(project.Path, "src", "screens", "index.ts")));
         Assert.Equal(
             "export function ProfileScreen() { return null; }\n",
             File.ReadAllText(Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx")));
@@ -141,7 +145,88 @@ public sealed class FabricatorTemplateApplyServiceTests
         Assert.False(File.Exists(Path.Combine(project.Path, "src", "unknown", "unknown.ts")));
     }
 
-    private static FabricatorTemplatePackage CreatePackage(IReadOnlyList<FabricatorTemplateFile>? files = null)
+    [Fact]
+    public async Task ApplyAsyncDoesNotDuplicateExistingBarrelExports()
+    {
+        using var project = CreateCompatibleProject();
+        var service = new FabricatorTemplateApplyService();
+
+        await service.ApplyAsync(new FabricatorTemplateApplyRequest(
+            CreatePackage(),
+            project.Path,
+            OverwriteExistingFiles: false));
+        var result = await service.ApplyAsync(new FabricatorTemplateApplyRequest(
+            CreatePackage(),
+            project.Path,
+            OverwriteExistingFiles: false));
+
+        Assert.True(result.Succeeded);
+        Assert.Contains("screensBarrel: export { ProfileScreen } from './ProfileScreen';", result.SkippedExports);
+
+        var barrel = File.ReadAllText(Path.Combine(project.Path, "src", "screens", "index.ts"));
+        Assert.Equal(1, CountOccurrences(barrel, "export { ProfileScreen } from './ProfileScreen';"));
+    }
+
+    [Fact]
+    public async Task ApplyAsyncReportsUnsupportedExportStatementsWithoutApplyingThem()
+    {
+        using var project = CreateCompatibleProject();
+        var service = new FabricatorTemplateApplyService();
+        var package = CreatePackage(
+            exports:
+            [
+                new FabricatorTemplateExport(
+                    "screensBarrel",
+                    "import { unsafe } from './unsafe';")
+            ]);
+
+        var result = await service.ApplyAsync(new FabricatorTemplateApplyRequest(
+            package,
+            project.Path,
+            OverwriteExistingFiles: false));
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.AppliedExports);
+        Assert.Contains(
+            result.IntegrationReports,
+            report => report.Kind == "unsupported-export" &&
+                report.Message.Contains("not a supported single-line barrel export", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ApplyAsyncReportsManualAndUnsupportedIntegrationHints()
+    {
+        using var project = CreateCompatibleProject();
+        var service = new FabricatorTemplateApplyService();
+        var package = CreatePackage(
+            integrationHints:
+            [
+                new FabricatorTemplateIntegrationHint("manual", "Wire this screen into navigation.", "navigation"),
+                new FabricatorTemplateIntegrationHint("registry", "Register menu entry.", "menu")
+            ]);
+
+        var result = await service.ApplyAsync(new FabricatorTemplateApplyRequest(
+            package,
+            project.Path,
+            OverwriteExistingFiles: false));
+
+        Assert.True(result.Succeeded);
+        Assert.Contains(
+            result.IntegrationReports,
+            report => report.Kind == "manual" &&
+                report.Target == "navigation" &&
+                report.Message.Contains("Wire this screen", StringComparison.Ordinal));
+        Assert.Contains(
+            result.IntegrationReports,
+            report => report.Kind == "unsupported-integration" &&
+                report.Target == "menu" &&
+                report.Message.Contains("registry", StringComparison.Ordinal));
+    }
+
+    private static FabricatorTemplatePackage CreatePackage(
+        IReadOnlyList<FabricatorTemplateFile>? files = null,
+        IReadOnlyList<FabricatorTemplateExport>? exports = null,
+        IReadOnlyList<FabricatorTemplateIntegrationHint>? integrationHints = null)
     {
         files ??=
         [
@@ -158,6 +243,13 @@ public sealed class FabricatorTemplateApplyServiceTests
                 "services",
                 "Profile API service.")
         ];
+        exports ??=
+        [
+            new FabricatorTemplateExport(
+                "screensBarrel",
+                "export { ProfileScreen } from './ProfileScreen';",
+                "src/screens/ProfileScreen.tsx")
+        ];
 
         return new FabricatorTemplatePackage(
             new FabricatorTemplateManifest(
@@ -169,7 +261,9 @@ public sealed class FabricatorTemplateApplyServiceTests
                 "1.0.0",
                 "copy",
                 files,
-                Category: "screen"),
+                Category: "screen",
+                Exports: exports,
+                IntegrationHints: integrationHints),
             files.ToDictionary(
                 file => file.Path,
                 file => file.Path.EndsWith("screen.tsx", StringComparison.Ordinal)
@@ -208,6 +302,20 @@ public sealed class FabricatorTemplateApplyServiceTests
             JsonSerializer.Serialize(manifest, JsonOptions));
 
         return project;
+    }
+
+    private static int CountOccurrences(string value, string expected)
+    {
+        var count = 0;
+        var index = 0;
+
+        while ((index = value.IndexOf(expected, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += expected.Length;
+        }
+
+        return count;
     }
 
     private sealed class TemporaryDirectory : IDisposable

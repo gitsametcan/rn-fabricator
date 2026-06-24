@@ -180,11 +180,15 @@ Schema v2 separates source paths from target intent:
 - `path`: file location inside the template folder.
 - `targetPath`: destination path relative to the target project.
 - `targetFolder`: optional key from `.fabricator/project.json` such as `screens`, `services`, or `utils`.
-- `exports`: idempotent barrel export statements that future apply commands may add safely.
+- `exports`: idempotent barrel export statements that `templates apply` may add safely.
 - `dependencies`: package or tool requirements the CLI can report before applying.
 - `integrationHints`: manual or future automated follow-up instructions.
 
-`templates apply` prefers `targetPath` and validates `targetFolder` against the Fabricator project contract. `templates copy` still reads `path` and writes files to the same relative location.
+`templates apply` prefers `targetPath`, validates `targetFolder` against the Fabricator project contract, and appends supported barrel export statements idempotently. It skips export statements that already exist and reports unsupported integration work instead of editing user-authored files.
+
+Registry-style integrations, such as menu or navigation entries, should be represented as integration hints until the project contract defines a dedicated safe integration point type. The CLI can then report them clearly without guessing where imports should be inserted.
+
+`templates copy` still reads `path` and writes files to the same relative location.
 
 ## Initial Templates
 
@@ -217,7 +221,7 @@ Notes:
 - Use `screens` for mobile views instead of web-style `pages`.
 - Keep empty folders trackable with a small `index.ts` or README only when needed.
 - Avoid adding full app architecture before the template needs it.
-- Future template apply commands should validate `.fabricator/project.json` before mutating the project.
+- Template apply commands validate `.fabricator/project.json` before mutating the project.
 
 ## Command Design Notes
 

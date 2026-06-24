@@ -265,10 +265,15 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.Success, exitCode);
             Assert.Contains("Template applied: basic-auth", output.ToString());
             Assert.Contains("Generated:", output.ToString());
+            Assert.Contains("Exports applied: 4", output.ToString());
+            Assert.Contains("Integration notes: 2", output.ToString());
             Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "screens", "HomeScreen.tsx")));
+            Assert.Contains(
+                "export { HomeScreen } from './HomeScreen';",
+                File.ReadAllText(Path.Combine(outputDirectory, "src", "screens", "index.ts")));
         }
         finally
         {
@@ -294,6 +299,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.Success, exitCode);
             Assert.Contains("Skipped:", output.ToString());
             Assert.Contains("- App.tsx", output.ToString());
+            Assert.Contains("Exports applied: 4", output.ToString());
             Assert.Equal("existing app\n", File.ReadAllText(appPath));
         }
         finally
