@@ -57,6 +57,7 @@ public sealed class CreateProjectServiceTests
         Assert.Contains("src/screens/MainScreen.tsx", result.StarterResult.GeneratedFiles);
         Assert.Contains("src/utils/index.ts", result.StarterResult.GeneratedFiles);
         Assert.Contains(".fabricator/project.json", result.StarterResult.GeneratedFiles);
+        Assert.Contains("fabricator.json", result.StarterResult.GeneratedFiles);
         var appContent = File.ReadAllText(Path.Combine(projectPath, "App.tsx"));
         Assert.Contains("SplashScreen", appContent);
         Assert.Contains("MainScreen", appContent);
@@ -64,6 +65,12 @@ public sealed class CreateProjectServiceTests
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "screens", "MainScreen.tsx")));
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "utils", "index.ts")));
         AssertProjectManifest(projectPath);
+        AssertProjectState(
+            projectPath,
+            expectedProjectName: "MyApp",
+            expectedTemplateId: CreateProjectService.DefaultStarterId,
+            expectedTemplateSourceType: "embedded",
+            expectedTemplateSourceValue: CreateProjectService.DefaultStarterId);
         Assert.Collection(runner.Requests, request => Assert.Same(result.Command, request));
         Assert.Collection(preparedCommands, command => Assert.Same(result.Command, command));
     }
@@ -111,8 +118,46 @@ public sealed class CreateProjectServiceTests
         Assert.Equal(CreateProjectService.DefaultStarterId, result.StarterResult.StarterId);
         Assert.Contains("App.tsx", result.StarterResult.GeneratedFiles);
         Assert.Contains(".fabricator/project.json", result.StarterResult.GeneratedFiles);
+        Assert.Contains("fabricator.json", result.StarterResult.GeneratedFiles);
         Assert.Equal("catalog app\n", File.ReadAllText(Path.Combine(projectPath, "App.tsx")));
         AssertProjectManifest(projectPath);
+        AssertProjectState(
+            projectPath,
+            expectedProjectName: "MyApp",
+            expectedTemplateId: CreateProjectService.DefaultStarterId,
+            expectedTemplateSourceType: "local",
+            expectedTemplateSourceValue: catalogPath);
+    }
+
+    [Fact]
+    public async Task CreateAsyncDoesNotOverwriteExistingFabricatorStateFile()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
+        var existingState = """
+            {
+              "schemaVersion": 1,
+              "kind": "custom-state"
+            }
+            """;
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ =>
+            {
+                Directory.CreateDirectory(projectPath);
+                File.WriteAllText(Path.Combine(projectPath, "fabricator.json"), existingState);
+            }
+        };
+        runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest("MyApp", CreateProjectService.DefaultStarterId, outputDirectory.Path));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.StarterResult);
+        Assert.DoesNotContain("fabricator.json", result.StarterResult.GeneratedFiles);
+        Assert.Equal(existingState, File.ReadAllText(Path.Combine(projectPath, "fabricator.json")));
     }
 
     [Fact]
@@ -301,5 +346,49 @@ public sealed class CreateProjectServiceTests
             root.GetProperty("integrationPoints").EnumerateArray(),
             point => point.GetProperty("key").GetString() == "screensBarrel" &&
                      point.GetProperty("type").GetString() == "barrel-export");
+    }
+
+    private static void AssertProjectState(
+        string projectPath,
+        string expectedProjectName,
+        string expectedTemplateId,
+        string expectedTemplateSourceType,
+        string expectedTemplateSourceValue)
+    {
+        var statePath = Path.Combine(projectPath, "fabricator.json");
+
+        Assert.True(File.Exists(statePath));
+
+        using var document = JsonDocument.Parse(File.ReadAllText(statePath));
+        var root = document.RootElement;
+
+        Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal("fabricator-project-state", root.GetProperty("kind").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("toolVersion").GetString()));
+        Assert.Equal(expectedProjectName, root.GetProperty("project").GetProperty("name").GetString());
+        Assert.Equal("react-native-cli", root.GetProperty("project").GetProperty("type").GetString());
+        Assert.True(root.GetProperty("project").GetProperty("createdAt").TryGetDateTimeOffset(out _));
+
+        var source = Assert.Single(root.GetProperty("templateSources").EnumerateArray());
+        Assert.Equal(expectedTemplateSourceType, source.GetProperty("type").GetString());
+        Assert.Equal(expectedTemplateSourceValue, source.GetProperty("value").GetString());
+        Assert.True(source.GetProperty("isDefault").GetBoolean());
+
+        var appliedTemplate = Assert.Single(root.GetProperty("appliedTemplates").EnumerateArray());
+        Assert.Equal(expectedTemplateId, appliedTemplate.GetProperty("id").GetString());
+        Assert.Equal("0.1.0", appliedTemplate.GetProperty("version").GetString());
+        Assert.Equal("starter", appliedTemplate.GetProperty("category").GetString());
+        Assert.Equal("create", appliedTemplate.GetProperty("operation").GetString());
+        Assert.Equal("applied", appliedTemplate.GetProperty("result").GetString());
+        Assert.True(appliedTemplate.GetProperty("appliedAt").TryGetDateTimeOffset(out _));
+        Assert.Equal(expectedTemplateSourceType, appliedTemplate.GetProperty("source").GetProperty("type").GetString());
+        Assert.Equal(expectedTemplateSourceValue, appliedTemplate.GetProperty("source").GetProperty("value").GetString());
+        Assert.Contains(
+            appliedTemplate.GetProperty("files").GetProperty("written").EnumerateArray(),
+            file => file.GetString() == "App.tsx");
+        Assert.Empty(appliedTemplate.GetProperty("files").GetProperty("skipped").EnumerateArray());
+        Assert.Empty(appliedTemplate.GetProperty("files").GetProperty("overwritten").EnumerateArray());
+        Assert.Empty(appliedTemplate.GetProperty("exports").EnumerateArray());
+        Assert.Empty(appliedTemplate.GetProperty("integrationNotes").EnumerateArray());
     }
 }
