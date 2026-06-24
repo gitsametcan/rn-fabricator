@@ -232,7 +232,7 @@ public static class CliCommandFactory
         };
         var sourceOption = new Option<string>("--source")
         {
-            Description = "Fabricator template catalog URL or local catalog file path."
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
         };
         var categoryOption = new Option<string>("--category")
         {
@@ -240,15 +240,15 @@ public static class CliCommandFactory
         };
         var infoSourceOption = new Option<string>("--source")
         {
-            Description = "Fabricator template catalog URL or local catalog file path."
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
         };
         var copySourceOption = new Option<string>("--source")
         {
-            Description = "Fabricator template catalog URL or local catalog file path."
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
         };
         var applySourceOption = new Option<string>("--source")
         {
-            Description = "Fabricator template catalog URL or local catalog file path."
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
         };
         var outputOption = new Option<string>("--output", "-o")
         {

@@ -8,13 +8,16 @@ public sealed class TemplatesInfoCommandHandler
     private readonly TextWriter _errorWriter;
     private readonly TextWriter _outputWriter;
     private readonly ITemplateCatalogProvider _templateCatalogProvider;
+    private readonly ITemplateSourceResolver _templateSourceResolver;
 
     public TemplatesInfoCommandHandler(
         ITemplateCatalogProvider templateCatalogProvider,
+        ITemplateSourceResolver templateSourceResolver,
         TextWriter outputWriter,
         TextWriter errorWriter)
     {
         _templateCatalogProvider = templateCatalogProvider;
+        _templateSourceResolver = templateSourceResolver;
         _outputWriter = outputWriter;
         _errorWriter = errorWriter;
     }
@@ -30,16 +33,19 @@ public sealed class TemplatesInfoCommandHandler
             return ExitCodes.InvalidInput;
         }
 
-        if (string.IsNullOrWhiteSpace(source))
+        var sourceResolution = _templateSourceResolver.Resolve(
+            new TemplateSourceResolutionRequest(source, Directory.GetCurrentDirectory()));
+
+        if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
-            _errorWriter.WriteLine("Template source is required. Pass --source <catalog-url-or-path>.");
+            _errorWriter.WriteLine(sourceResolution.ErrorMessage);
             return ExitCodes.InvalidInput;
         }
 
         try
         {
-            var package = await _templateCatalogProvider.GetTemplateAsync(source, templateId, cancellationToken);
-            RenderTemplate(source, package);
+            var package = await _templateCatalogProvider.GetTemplateAsync(sourceResolution.Source, templateId, cancellationToken);
+            RenderTemplate(sourceResolution.Source, package);
 
             return ExitCodes.Success;
         }

@@ -8,13 +8,16 @@ public sealed class TemplatesListCommandHandler
     private readonly TextWriter _errorWriter;
     private readonly TextWriter _outputWriter;
     private readonly ITemplateCatalogProvider _templateCatalogProvider;
+    private readonly ITemplateSourceResolver _templateSourceResolver;
 
     public TemplatesListCommandHandler(
         ITemplateCatalogProvider templateCatalogProvider,
+        ITemplateSourceResolver templateSourceResolver,
         TextWriter outputWriter,
         TextWriter errorWriter)
     {
         _templateCatalogProvider = templateCatalogProvider;
+        _templateSourceResolver = templateSourceResolver;
         _outputWriter = outputWriter;
         _errorWriter = errorWriter;
     }
@@ -24,22 +27,25 @@ public sealed class TemplatesListCommandHandler
         string? category = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            _errorWriter.WriteLine("Template source is required. Pass --source <catalog-url-or-path>.");
-            return ExitCodes.InvalidInput;
-        }
-
         if (category is not null && string.IsNullOrWhiteSpace(category))
         {
             _errorWriter.WriteLine("Template category cannot be empty when --category is provided.");
             return ExitCodes.InvalidInput;
         }
 
+        var sourceResolution = _templateSourceResolver.Resolve(
+            new TemplateSourceResolutionRequest(source, Directory.GetCurrentDirectory()));
+
+        if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
+        {
+            _errorWriter.WriteLine(sourceResolution.ErrorMessage);
+            return ExitCodes.InvalidInput;
+        }
+
         try
         {
-            var catalog = await _templateCatalogProvider.ListTemplatesAsync(source, cancellationToken);
-            RenderCatalog(source, catalog, category);
+            var catalog = await _templateCatalogProvider.ListTemplatesAsync(sourceResolution.Source, cancellationToken);
+            RenderCatalog(sourceResolution.Source, catalog, category);
             return ExitCodes.Success;
         }
         catch (TemplatePackageException exception)
