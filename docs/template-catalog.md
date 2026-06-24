@@ -68,6 +68,21 @@ Expected copy behavior:
 - It writes template source paths directly to the output directory.
 - It does not require a Fabricator project manifest.
 
+Capture a reusable template from a compatible Fabricator project folder:
+
+```bash
+rn-fabricator templates capture profile-screen --category screens --from ./FabricatorBabyStep --output ./templates
+```
+
+Expected capture behavior:
+
+- The source project must follow the Fabricator project contract.
+- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `services`, or `utils`.
+- Files under that folder are copied into a new template folder.
+- The generated `fabricator-template.json` includes schema v2 metadata, category, tags, `targetPath`, and `targetFolder` mappings.
+- Existing template output folders are not overwritten.
+- Invalid capture attempts fail before publishing a partial template folder.
+
 ## Template Source
 
 The first catalog source lives in the repository root:
@@ -190,6 +205,12 @@ Registry-style integrations, such as menu or navigation entries, should be repre
 
 `templates copy` still reads `path` and writes files to the same relative location.
 
+### Capture Rules
+
+`templates capture` turns a known Fabricator project folder into a reusable template source. The command intentionally captures only folders declared by the project contract; it does not scan arbitrary project paths or infer imports from user-authored files.
+
+Captured templates use the same relative `path` and `targetPath` so the generated template can be inspected, listed in a catalog, and later applied back to compatible projects. Export and registry metadata can be added manually or by later capture improvements.
+
 ## Initial Templates
 
 | Template | Type | Status | Purpose |
@@ -232,6 +253,7 @@ rn-fabricator templates list --source <catalog-url-or-path>
 rn-fabricator templates list --category <category> --source <catalog-url-or-path>
 rn-fabricator templates info <template> --source <catalog-url-or-path>
 rn-fabricator templates apply <template> --source <catalog-url-or-path>
+rn-fabricator templates capture <template> --category <category> --from <project-path>
 rn-fabricator templates copy <template> --source <catalog-url-or-path>
 ```
 
@@ -241,6 +263,8 @@ Options:
 --output <path>
 --overwrite
 --source <catalog-url-or-path>
+--category <category>
+--from <project-path>
 ```
 
 Copy and apply behavior should remain conservative and transparent. Existing files are skipped unless `--overwrite` is provided.
