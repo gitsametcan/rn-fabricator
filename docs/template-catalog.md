@@ -46,6 +46,13 @@ Inspect a template before copying or applying it:
 rn-fabricator templates info basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
+Validate a catalog before applying or publishing templates:
+
+```bash
+rn-fabricator templates validate
+rn-fabricator templates validate --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+```
+
 Apply a template into a compatible Fabricator project:
 
 ```bash
@@ -87,6 +94,13 @@ Expected copy behavior:
 - Copy remains a lower-level escape hatch.
 - It writes template source paths directly to the output directory.
 - It does not require a Fabricator project manifest.
+
+Expected validate behavior:
+
+- Resolve the catalog source with the same source precedence as list, info, copy, and apply.
+- Read the catalog and every referenced manifest.
+- Detect duplicate ids, missing manifests, missing template files, unsupported schema versions, unsupported categories, and unsafe export statements.
+- Print a clear pass/fail summary and return a non-zero exit code when issues are found.
 
 Capture a reusable template from a compatible Fabricator project folder:
 
@@ -277,6 +291,7 @@ Command family:
 rn-fabricator templates list [--source <catalog-url-or-path>]
 rn-fabricator templates list --category <category> [--source <catalog-url-or-path>]
 rn-fabricator templates info <template> [--source <catalog-url-or-path>]
+rn-fabricator templates validate [--source <catalog-url-or-path>]
 rn-fabricator templates apply <template> [--source <catalog-url-or-path>]
 rn-fabricator templates capture <template> --category <category> --from <project-path>
 rn-fabricator templates copy <template> [--source <catalog-url-or-path>]

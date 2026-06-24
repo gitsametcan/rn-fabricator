@@ -144,6 +144,13 @@ rn-fabricator templates info basic-auth --source ./templates/catalog.fabricator.
 rn-fabricator templates info component/primary-button --source ./templates/catalog.fabricator.json
 ```
 
+Validate a template catalog before applying or publishing templates:
+
+```bash
+rn-fabricator templates validate
+rn-fabricator templates validate --source ./templates/catalog.fabricator.json
+```
+
 Copy a template from a Fabricator template catalog into an existing project:
 
 ```bash
@@ -180,6 +187,7 @@ rn-fabricator setup apply --help
 rn-fabricator create --help
 rn-fabricator templates list --help
 rn-fabricator templates info --help
+rn-fabricator templates validate --help
 rn-fabricator templates apply --help
 rn-fabricator templates capture --help
 rn-fabricator templates copy --help

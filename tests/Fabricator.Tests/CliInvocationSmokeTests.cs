@@ -219,6 +219,64 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesValidateCommandReturnsSuccessForRepositoryCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "validate", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template catalog validation", output.ToString());
+        Assert.Contains($"Source: {source}", output.ToString());
+        Assert.Contains("Result: valid", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesValidateCommandReturnsInvalidInputForBrokenCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var outputDirectory = CreateTemporaryDirectory();
+        var source = Path.Combine(outputDirectory, "catalog.fabricator.json");
+
+        try
+        {
+            File.WriteAllText(
+                source,
+                """
+                {
+                  "schemaVersion": 1,
+                  "kind": "fabricator-template-catalog",
+                  "displayName": "Broken catalog",
+                  "description": "Broken catalog.",
+                  "templates": [
+                    {
+                      "id": "missing-template",
+                      "displayName": "Missing Template",
+                      "description": "Template with missing manifest.",
+                      "version": "0.1.0",
+                      "manifest": "missing-template/fabricator-template.json",
+                      "tags": ["test"]
+                    }
+                  ]
+                }
+                """);
+
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(["templates", "validate", "--source", source]).Invoke();
+
+            Assert.Equal(ExitCodes.InvalidInput, exitCode);
+            Assert.Contains("Result: invalid", output.ToString());
+            Assert.Contains("template-read-failed", output.ToString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCopyCommandCopiesTemplateFilesToOutputDirectory()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
