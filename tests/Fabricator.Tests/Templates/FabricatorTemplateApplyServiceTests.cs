@@ -146,6 +146,35 @@ public sealed class FabricatorTemplateApplyServiceTests
     }
 
     [Fact]
+    public async Task ApplyAsyncDoesNotUpdateExportsWhenFileApplicationFails()
+    {
+        using var project = CreateCompatibleProject();
+        var package = CreatePackage(
+            files:
+            [
+                new FabricatorTemplateFile(
+                    "screen.tsx",
+                    "source",
+                    "../outside.tsx",
+                    "screens",
+                    "Unsafe screen.")
+            ]);
+        var service = new FabricatorTemplateApplyService();
+
+        var result = await service.ApplyAsync(new FabricatorTemplateApplyRequest(
+            package,
+            project.Path,
+            OverwriteExistingFiles: false));
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(result.AppliedExports);
+        Assert.Empty(result.SkippedExports);
+        Assert.DoesNotContain(
+            "ProfileScreen",
+            File.ReadAllText(Path.Combine(project.Path, "src", "screens", "index.ts")));
+    }
+
+    [Fact]
     public async Task ApplyAsyncDoesNotDuplicateExistingBarrelExports()
     {
         using var project = CreateCompatibleProject();
