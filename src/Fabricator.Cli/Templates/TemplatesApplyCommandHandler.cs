@@ -9,15 +9,18 @@ public sealed class TemplatesApplyCommandHandler
     private readonly TextWriter _errorWriter;
     private readonly TextWriter _outputWriter;
     private readonly ITemplateCatalogProvider _templateCatalogProvider;
+    private readonly ITemplateSourceResolver _templateSourceResolver;
 
     public TemplatesApplyCommandHandler(
         ITemplateCatalogProvider templateCatalogProvider,
         FabricatorTemplateApplyService applyService,
+        ITemplateSourceResolver templateSourceResolver,
         TextWriter outputWriter,
         TextWriter errorWriter)
     {
         _templateCatalogProvider = templateCatalogProvider;
         _applyService = applyService;
+        _templateSourceResolver = templateSourceResolver;
         _outputWriter = outputWriter;
         _errorWriter = errorWriter;
     }
@@ -35,20 +38,26 @@ public sealed class TemplatesApplyCommandHandler
             return ExitCodes.InvalidInput;
         }
 
-        if (string.IsNullOrWhiteSpace(source))
+        var sourceResolution = _templateSourceResolver.Resolve(
+            new TemplateSourceResolutionRequest(
+                source,
+                Directory.GetCurrentDirectory(),
+                outputDirectory));
+
+        if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
-            _errorWriter.WriteLine("Template source is required. Pass --source <catalog-url-or-path>.");
+            _errorWriter.WriteLine(sourceResolution.ErrorMessage);
             return ExitCodes.InvalidInput;
         }
 
         try
         {
-            var package = await _templateCatalogProvider.GetTemplateAsync(source, templateId, cancellationToken);
+            var package = await _templateCatalogProvider.GetTemplateAsync(sourceResolution.Source, templateId, cancellationToken);
             var result = await _applyService.ApplyAsync(
                 new FabricatorTemplateApplyRequest(package, outputDirectory, overwrite),
                 cancellationToken);
 
-            RenderResult(source, outputDirectory, overwrite, package, result);
+            RenderResult(sourceResolution.Source, outputDirectory, overwrite, package, result);
 
             return result.Succeeded ? ExitCodes.Success : ExitCodes.GeneralFailure;
         }

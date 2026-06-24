@@ -35,6 +35,7 @@ Expected result:
 List available templates:
 
 ```bash
+rn-fabricator templates list
 rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
@@ -65,6 +66,21 @@ Expected apply behavior:
 - `targetFolder` is validated against the Fabricator project contract before writing.
 - Existing files are not overwritten unless the user passes an explicit overwrite option.
 - The command prints generated and skipped file output.
+
+## Template Source Resolution
+
+Template commands can read a source explicitly or resolve one from the local workspace.
+
+Source precedence:
+
+1. Explicit `--source`.
+2. `RN_FABRICATOR_TEMPLATE_SOURCE`.
+3. Default local or remote catalog source from root `fabricator.json`.
+4. Conventional local catalog at `./templates/catalog.fabricator.json`.
+
+`fabricator.json` entries with source type `embedded` are skipped for reusable template commands because they describe starter content that came from the installed CLI, not an external catalog.
+
+Relative source paths from `fabricator.json` are resolved from the directory that contains that state file. Relative environment variable sources are resolved from the current working directory. Explicit relative `--source` values keep the existing command-line behavior.
 
 Expected copy behavior:
 
@@ -258,12 +274,12 @@ Notes:
 Command family:
 
 ```text
-rn-fabricator templates list --source <catalog-url-or-path>
-rn-fabricator templates list --category <category> --source <catalog-url-or-path>
-rn-fabricator templates info <template> --source <catalog-url-or-path>
-rn-fabricator templates apply <template> --source <catalog-url-or-path>
+rn-fabricator templates list [--source <catalog-url-or-path>]
+rn-fabricator templates list --category <category> [--source <catalog-url-or-path>]
+rn-fabricator templates info <template> [--source <catalog-url-or-path>]
+rn-fabricator templates apply <template> [--source <catalog-url-or-path>]
 rn-fabricator templates capture <template> --category <category> --from <project-path>
-rn-fabricator templates copy <template> --source <catalog-url-or-path>
+rn-fabricator templates copy <template> [--source <catalog-url-or-path>]
 ```
 
 Options:
@@ -280,7 +296,7 @@ Copy and apply behavior should remain conservative and transparent. Existing fil
 
 ## Source Defaults
 
-For local dogfooding, `--source` can point to:
+For local dogfooding, `--source` can point to a catalog explicitly, or commands can resolve the conventional local catalog automatically when it exists:
 
 ```text
 /Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json

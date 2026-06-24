@@ -130,6 +130,7 @@ rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
 List templates from a Fabricator template catalog:
 
 ```bash
+rn-fabricator templates list
 rn-fabricator templates list --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category component --source ./templates/catalog.fabricator.json
@@ -138,6 +139,7 @@ rn-fabricator templates list --category component --source ./templates/catalog.f
 Inspect a template before copying or applying it:
 
 ```bash
+rn-fabricator templates info component/primary-button
 rn-fabricator templates info basic-auth --source ./templates/catalog.fabricator.json
 rn-fabricator templates info component/primary-button --source ./templates/catalog.fabricator.json
 ```
@@ -157,6 +159,8 @@ rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator
 `templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, and prints manual integration notes for anything it cannot safely automate.
 
 Future template lifecycle commands will also use root `fabricator.json` as the user-facing project state file. See [Fabricator State Contract](docs/fabricator-state-contract.md) for the planned state shape.
+
+Template commands resolve catalog sources in this order: explicit `--source`, `RN_FABRICATOR_TEMPLATE_SOURCE`, catalog sources from root `fabricator.json`, then conventional local `./templates/catalog.fabricator.json`.
 
 Capture a reusable template from a compatible Fabricator project folder:
 
