@@ -152,6 +152,8 @@ Apply a template to a compatible Fabricator project:
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
 ```
 
+`templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, and prints manual integration notes for anything it cannot safely automate.
+
 Useful help commands:
 
 ```bash

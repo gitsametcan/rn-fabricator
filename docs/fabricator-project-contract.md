@@ -133,7 +133,7 @@ The validator is read-only. It checks the target project before future template 
 - `barrel-export` integration points point to existing files.
 - Unsupported integration point types are reported as compatibility errors until the tool knows how to handle them.
 
-The existing `templates copy` command remains a low-level copy operation. Smart template application should use this validator before writing files.
+The existing `templates copy` command remains a low-level copy operation. Smart template application uses this validator before writing files.
 
 ## Supported Integration Point Types
 
@@ -145,11 +145,15 @@ Initial supported type:
 
 Unsupported integration point types must be reported as manual follow-up work instead of being silently applied.
 
+`templates apply` currently automates only `barrel-export` updates. A template export is applied only when the statement is a single-line `export ... from ...;` barrel export and the target integration point exists in `.fabricator/project.json`.
+
+Registry-style work, such as menu or navigation entries, is intentionally not automated by this integration type. Templates should expose those needs as integration hints until a dedicated registry integration point is added to the project contract.
+
 ## Relationship To Templates
 
 Template manifests describe what a template wants to add. The project manifest describes where the target project allows template work.
 
-Future apply behavior should use both inputs:
+Apply behavior uses both inputs:
 
 - Validate the project contract first.
 - Resolve template target paths against manifest folders.
