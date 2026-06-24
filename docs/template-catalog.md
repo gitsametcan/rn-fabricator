@@ -211,12 +211,17 @@ Registry-style integrations, such as menu or navigation entries, should be repre
 
 Captured templates use the same relative `path` and `targetPath` so the generated template can be inspected, listed in a catalog, and later applied back to compatible projects. Export and registry metadata can be added manually or by later capture improvements.
 
-## Initial Templates
+## Repository Templates
 
-| Template | Type | Status | Purpose |
+| Template | Category | Status | Purpose |
 | --- | --- | --- | --- |
-| `minimal-splash` | create default | Planned catalog entry | Minimal app shell with splash and main screens plus base folders. |
-| `basic-auth` | optional copy | Planned catalog entry | Splash, loading, login, home, auth provider, env examples, and credential example. |
+| `minimal-splash` | `starter` | Available | Minimal app shell with splash and main screens plus base folders. |
+| `basic-auth` | `auth` | Available | Splash, loading, login, home, auth provider, env examples, and credential example. |
+| `screen/main-menu` | `screen` | Available | Reusable main menu screen with simple action rows and a screen barrel export. |
+| `service/api-client` | `service` | Available | Fetch-based API client helper with a services barrel export. |
+| `util/storage` | `util` | Available | Replaceable JSON storage helpers for local persistence adapters. |
+| `layout/app-shell` | `layout` | Available | Header/content/footer application shell layout. |
+| `component/primary-button` | `component` | Available | Reusable React Native primary button with a components barrel export. |
 
 ## Generated Folder Structure
 

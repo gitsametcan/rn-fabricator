@@ -119,8 +119,12 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains($"Source: {source}", output.ToString());
         Assert.Contains("minimal-splash (0.1.0)", output.ToString());
         Assert.Contains("Basic Auth", output.ToString());
+        Assert.Contains("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("service/api-client (0.1.0)", output.ToString());
+        Assert.Contains("component/primary-button (0.1.0)", output.ToString());
         Assert.Contains("Category: starter", output.ToString());
         Assert.Contains("Category: auth", output.ToString());
+        Assert.Contains("Category: screen", output.ToString());
     }
 
     [Fact]
@@ -145,10 +149,10 @@ public sealed class CliInvocationSmokeTests
         var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
 
         using var output = ConsoleOutputScope.Capture();
-        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "screen"]).Invoke();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "navigation"]).Invoke();
 
         Assert.Equal(ExitCodes.Success, exitCode);
-        Assert.Contains("No templates found for category: screen", output.ToString());
+        Assert.Contains("No templates found for category: navigation", output.ToString());
     }
 
     [Fact]
@@ -181,6 +185,23 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Target path: src/auth/AuthProvider.tsx", output.ToString());
         Assert.Contains("Exports: 4", output.ToString());
         Assert.Contains("Integration hints: 2", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsSuccessForReusableExampleTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "screen/main-menu", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template: screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("Category: screen", output.ToString());
+        Assert.Contains("Target path: src/screens/MainMenuScreen.tsx", output.ToString());
+        Assert.Contains("Exports: 1", output.ToString());
+        Assert.Contains("Integration hints: 1", output.ToString());
     }
 
     [Fact]
@@ -274,6 +295,33 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains(
                 "export { HomeScreen } from './HomeScreen';",
                 File.ReadAllText(Path.Combine(outputDirectory, "src", "screens", "index.ts")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandAppliesReusableExampleTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "component/primary-button", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template applied: component/primary-button", output.ToString());
+            Assert.Contains("Exports applied: 1", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "components", "PrimaryButton.tsx")));
+            Assert.Contains(
+                "export { PrimaryButton } from './PrimaryButton';",
+                File.ReadAllText(Path.Combine(outputDirectory, "src", "components", "index.ts")));
         }
         finally
         {

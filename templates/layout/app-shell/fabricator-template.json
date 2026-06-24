@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "layout/app-shell",
+  "displayName": "App Shell",
+  "description": "Reusable app shell layout with header, content, and footer regions.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "layout",
+  "tags": [
+    "layout",
+    "app",
+    "shell"
+  ],
+  "files": [
+    {
+      "path": "src/app/AppShell.tsx",
+      "type": "file",
+      "targetFolder": "app",
+      "targetPath": "src/app/AppShell.tsx",
+      "description": "Application shell layout component."
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "App.tsx",
+      "message": "Wrap your app content with AppShell when you want shared header and footer regions."
+    }
+  ]
+}
