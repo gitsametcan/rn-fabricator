@@ -208,10 +208,11 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List, inspect, copy, and apply Fabricator templates from a catalog source.");
+        var command = new Command("templates", "List, inspect, copy, apply, and capture Fabricator templates.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
         var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
         var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
+        var captureCommand = new Command("capture", "Capture files from a compatible Fabricator project as a reusable template.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
         var templateArgument = new Argument<string>("template")
         {
@@ -224,6 +225,10 @@ public static class CliCommandFactory
         var applyTemplateArgument = new Argument<string>("template")
         {
             Description = "Template id to apply."
+        };
+        var captureTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to capture."
         };
         var sourceOption = new Option<string>("--source")
         {
@@ -263,6 +268,19 @@ public static class CliCommandFactory
         {
             Description = "Overwrite existing files instead of skipping them."
         };
+        var captureCategoryOption = new Option<string>("--category")
+        {
+            Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
+        };
+        var captureFromOption = new Option<string>("--from")
+        {
+            Description = "Compatible Fabricator project directory to capture from."
+        };
+        var captureOutputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Directory where captured template folders will be created.",
+            DefaultValueFactory = _ => Path.Combine(Directory.GetCurrentDirectory(), "templates")
+        };
 
         listCommand.Options.Add(sourceOption);
         listCommand.Options.Add(categoryOption);
@@ -301,6 +319,21 @@ public static class CliCommandFactory
             return await handler.RunAsync(template, source, outputDirectory, overwrite, cancellationToken);
         });
 
+        captureCommand.Arguments.Add(captureTemplateArgument);
+        captureCommand.Options.Add(captureCategoryOption);
+        captureCommand.Options.Add(captureFromOption);
+        captureCommand.Options.Add(captureOutputOption);
+        captureCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(captureTemplateArgument);
+            var category = parseResult.GetValue(captureCategoryOption) ?? string.Empty;
+            var sourceProjectDirectory = parseResult.GetValue(captureFromOption) ?? string.Empty;
+            var outputDirectory = parseResult.GetValue(captureOutputOption) ?? Path.Combine(Directory.GetCurrentDirectory(), "templates");
+            var handler = TemplatesDependencies.CreateDefaultCaptureHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, category, sourceProjectDirectory, outputDirectory, cancellationToken);
+        });
+
         copyCommand.Arguments.Add(templateArgument);
         copyCommand.Options.Add(copySourceOption);
         copyCommand.Options.Add(outputOption);
@@ -319,6 +352,7 @@ public static class CliCommandFactory
         command.Subcommands.Add(listCommand);
         command.Subcommands.Add(infoCommand);
         command.Subcommands.Add(applyCommand);
+        command.Subcommands.Add(captureCommand);
         command.Subcommands.Add(copyCommand);
         return command;
     }

@@ -271,6 +271,24 @@ Use overwrite only after reviewing skipped files:
   --overwrite
 ```
 
+Capture a reusable template from the generated project's screen folder:
+
+```bash
+./.tools/rn-fabricator templates capture baby-step-screens \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --output ./captured-templates
+```
+
+Expected captured template files include:
+
+```text
+captured-templates/baby-step-screens/fabricator-template.json
+captured-templates/baby-step-screens/src/screens/index.ts
+```
+
+The generated manifest should include `category: screens` and file mappings with `targetFolder: screens`.
+
 Use low-level copy only when you intentionally want to copy template source paths without Fabricator project validation:
 
 ```bash

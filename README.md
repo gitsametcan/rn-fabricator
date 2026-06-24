@@ -154,6 +154,12 @@ rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator
 
 `templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, and prints manual integration notes for anything it cannot safely automate.
 
+Capture a reusable template from a compatible Fabricator project folder:
+
+```bash
+rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates
+```
+
 Useful help commands:
 
 ```bash
@@ -165,6 +171,7 @@ rn-fabricator create --help
 rn-fabricator templates list --help
 rn-fabricator templates info --help
 rn-fabricator templates apply --help
+rn-fabricator templates capture --help
 rn-fabricator templates copy --help
 ```
 

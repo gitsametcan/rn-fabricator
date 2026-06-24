@@ -29,6 +29,16 @@ public static class TemplatesDependencies
             errorWriter);
     }
 
+    public static TemplatesCaptureCommandHandler CreateDefaultCaptureHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesCaptureCommandHandler(
+            new FabricatorTemplateCaptureService(),
+            outputWriter,
+            errorWriter);
+    }
+
     public static TemplatesInfoCommandHandler CreateDefaultInfoHandler(
         TextWriter outputWriter,
         TextWriter errorWriter)

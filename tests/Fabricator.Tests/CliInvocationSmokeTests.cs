@@ -332,6 +332,45 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesCaptureCommandCapturesProjectFolderAsTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "capture",
+                    "profile-screen",
+                    "--category",
+                    "screens",
+                    "--from",
+                    projectDirectory,
+                    "--output",
+                    outputDirectory
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template captured: profile-screen", output.ToString());
+            Assert.Contains("Captured files:", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCopyCommandReturnsInvalidInputForUnknownTemplate()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

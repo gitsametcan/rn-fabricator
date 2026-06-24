@@ -190,6 +190,27 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void TemplatesCaptureCommandAcceptsTemplateCategoryFromAndOutputOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "capture",
+                "profile-screen",
+                "--category",
+                "screens",
+                "--from",
+                "MyApp",
+                "--output",
+                "templates"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("capture", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
     public void RootCommandAcceptsHelpAndVersionOptions()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
