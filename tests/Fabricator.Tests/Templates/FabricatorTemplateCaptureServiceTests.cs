@@ -133,6 +133,76 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsyncRefreshesExistingTemplateAndReportsFileChanges()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var profilePath = Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx");
+        var keepPath = Path.Combine(project.Path, "src", "screens", "KeepScreen.tsx");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'old'; }\n");
+        File.WriteAllText(keepPath, "export function KeepScreen() { return null; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var updateService = new FabricatorTemplateUpdateService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+        PreserveCustomManifestMetadata(Path.Combine(output.Path, "profile-screen", "fabricator-template.json"));
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'new'; }\n");
+        File.Delete(keepPath);
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "SettingsScreen.tsx"),
+            "export function SettingsScreen() { return null; }\n");
+
+        var result = await updateService.UpdateAsync(new FabricatorTemplateUpdateRequest(
+            "profile-screen",
+            project.Path,
+            catalogPath));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+        Assert.Contains("src/screens/SettingsScreen.tsx", result.AddedFiles);
+        Assert.Contains("src/screens/ProfileScreen.tsx", result.ChangedFiles);
+        Assert.Contains("src/screens/KeepScreen.tsx", result.RemovedFiles);
+        Assert.Contains("src/screens/index.ts", result.UnchangedFiles);
+        Assert.Contains("displayName", result.PreservedMetadata);
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "SettingsScreen.tsx")));
+        Assert.False(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "KeepScreen.tsx")));
+        Assert.Contains(
+            "return 'new'",
+            File.ReadAllText(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+
+        var manifest = JsonSerializer.Deserialize<FabricatorTemplateManifest>(
+            File.ReadAllText(Path.Combine(output.Path, "profile-screen", "fabricator-template.json")),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(manifest);
+        Assert.Equal("Custom Profile Template", manifest.DisplayName);
+        Assert.Equal("1.2.3", manifest.Version);
+        Assert.Contains("custom", manifest.Tags ?? []);
+    }
+
+    [Fact]
+    public async Task UpdateAsyncRejectsMissingTemplateIdWithoutWritingTemplate()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        WriteCatalog(output.Path);
+        var updateService = new FabricatorTemplateUpdateService();
+
+        var result = await updateService.UpdateAsync(new FabricatorTemplateUpdateRequest(
+            "missing-template",
+            project.Path,
+            Path.Combine(output.Path, "catalog.fabricator.json")));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, error => error.Contains("Template id was not found in catalog", StringComparison.Ordinal));
+        Assert.False(Directory.Exists(Path.Combine(output.Path, "missing-template")));
+    }
+
+    [Fact]
     public async Task CaptureAsyncRejectsUnknownCategoryWithoutWritingTemplate()
     {
         using var project = CreateCompatibleProject();
@@ -281,6 +351,25 @@ public sealed class FabricatorTemplateCaptureServiceTests
               ]
             }
             """);
+    }
+
+    private static void PreserveCustomManifestMetadata(string manifestPath)
+    {
+        var manifest = JsonSerializer.Deserialize<FabricatorTemplateManifest>(
+            File.ReadAllText(manifestPath),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(manifest);
+
+        var updated = manifest with
+        {
+            DisplayName = "Custom Profile Template",
+            Description = "Custom description.",
+            Version = "1.2.3",
+            Tags = ["custom", "screens"]
+        };
+
+        File.WriteAllText(manifestPath, JsonSerializer.Serialize(updated, JsonOptions));
     }
 
     private sealed class TemporaryDirectory : IDisposable

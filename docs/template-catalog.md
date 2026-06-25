@@ -122,6 +122,12 @@ Capture and register a reusable template in a local catalog:
 rn-fabricator templates add profile-screen --category screens --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
 ```
 
+Refresh an existing local template from the current project files:
+
+```bash
+rn-fabricator templates update profile-screen --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
+```
+
 Expected capture behavior:
 
 - The source project must follow the Fabricator project contract.
@@ -137,6 +143,15 @@ Expected add behavior:
 - The local `catalog.fabricator.json` file is created when missing.
 - Existing catalog metadata is preserved and the `templates` array is sorted by template id.
 - Duplicate template ids are rejected; use the update flow for existing templates.
+
+Expected update behavior:
+
+- `templates update` requires the template id to already exist in the selected local catalog.
+- The existing manifest category decides which Fabricator project folder is captured.
+- The template files and manifest `files` array are refreshed from the source project.
+- Manifest metadata is preserved where possible: display name, description, version, mode, tags, dependencies, exports, and integration hints.
+- The command prints added, changed, removed, and unchanged file counts.
+- Remote catalog URLs are read-only and cannot be updated.
 
 ## Template Source
 

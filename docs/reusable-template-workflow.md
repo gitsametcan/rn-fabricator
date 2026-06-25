@@ -222,6 +222,16 @@ The command creates the template directory under `./captured-templates` and regi
 }
 ```
 
+When the source project changes, refresh the existing local template:
+
+```bash
+rn-fabricator templates update profile-screen \
+  --from ./FabricatorBabyStep \
+  --source ./captured-templates/catalog.fabricator.json
+```
+
+Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
+
 Then inspect and apply it like any other template:
 
 ```bash
