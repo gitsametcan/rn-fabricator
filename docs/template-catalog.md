@@ -59,6 +59,12 @@ Apply a template into a compatible Fabricator project:
 rn-fabricator templates apply basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
+Show template history for a compatible Fabricator project:
+
+```bash
+rn-fabricator templates status --project ./MyApp
+```
+
 Copy a template into the current directory without Fabricator project validation:
 
 ```bash
@@ -74,6 +80,7 @@ Expected apply behavior:
 - Existing files are not overwritten unless the user passes an explicit overwrite option.
 - The command prints generated and skipped file output.
 - Successful apply operations are appended to root `fabricator.json` so later status and lifecycle commands can inspect template history.
+- `templates status` reads root `fabricator.json`, prints applied template history, and compares versions against recorded local catalog sources when those files are available.
 
 ## Template Source Resolution
 

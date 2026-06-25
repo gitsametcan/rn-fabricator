@@ -474,6 +474,31 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesStatusCommandWritesAppliedTemplateState()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var outputDirectory = CreateCompatibleFabricatorProject();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(["templates", "status", "--project", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Fabricator template status", output.ToString());
+            Assert.Contains($"Project: {outputDirectory}", output.ToString());
+            Assert.Contains("Applied templates: 1", output.ToString());
+            Assert.Contains("minimal-splash (0.1.0)", output.ToString());
+            Assert.Contains("Operation: create", output.ToString());
+            Assert.Contains("Catalog: not checked for embedded or remote source", output.ToString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCaptureCommandCapturesProjectFolderAsTemplate()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
