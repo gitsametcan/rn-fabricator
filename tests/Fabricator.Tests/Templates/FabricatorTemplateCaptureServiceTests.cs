@@ -133,6 +133,31 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task AddAsyncDryRunReportsCapturedFilesWithoutWritingTemplateOrCatalog()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        var service = new FabricatorTemplateAddService();
+
+        var result = await service.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath,
+            DryRun: true));
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.DryRun);
+        Assert.Contains("src/screens/ProfileScreen.tsx", result.CapturedFiles);
+        Assert.False(File.Exists(catalogPath));
+        Assert.False(Directory.Exists(Path.Combine(output.Path, "profile-screen")));
+    }
+
+    [Fact]
     public async Task UpdateAsyncRefreshesExistingTemplateAndReportsFileChanges()
     {
         using var project = CreateCompatibleProject();
@@ -200,6 +225,45 @@ public sealed class FabricatorTemplateCaptureServiceTests
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Contains("Template id was not found in catalog", StringComparison.Ordinal));
         Assert.False(Directory.Exists(Path.Combine(output.Path, "missing-template")));
+    }
+
+    [Fact]
+    public async Task UpdateAsyncDryRunReportsChangesWithoutWritingTemplateOrCatalog()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var profilePath = Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'old'; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var updateService = new FabricatorTemplateUpdateService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+        var originalCatalog = File.ReadAllText(catalogPath);
+        var originalTemplate = File.ReadAllText(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx"));
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'new'; }\n");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "SettingsScreen.tsx"),
+            "export function SettingsScreen() { return null; }\n");
+
+        var result = await updateService.UpdateAsync(new FabricatorTemplateUpdateRequest(
+            "profile-screen",
+            project.Path,
+            catalogPath,
+            DryRun: true));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+        Assert.True(result.DryRun);
+        Assert.Contains("src/screens/ProfileScreen.tsx", result.ChangedFiles);
+        Assert.Contains("src/screens/SettingsScreen.tsx", result.AddedFiles);
+        Assert.Equal(originalCatalog, File.ReadAllText(catalogPath));
+        Assert.Equal(originalTemplate, File.ReadAllText(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        Assert.False(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "SettingsScreen.tsx")));
     }
 
     [Fact]
@@ -321,6 +385,40 @@ public sealed class FabricatorTemplateCaptureServiceTests
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Contains("resolved outside the catalog directory", StringComparison.Ordinal));
         Assert.Equal(originalCatalog, File.ReadAllText(catalogPath));
+    }
+
+    [Fact]
+    public async Task RemoveAsyncDryRunLeavesCatalogAndTemplateFilesUnchanged()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var removeService = new FabricatorTemplateRemoveService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+        var originalCatalog = File.ReadAllText(catalogPath);
+
+        var result = await removeService.RemoveAsync(new FabricatorTemplateRemoveRequest(
+            "profile-screen",
+            catalogPath,
+            DeleteFiles: true,
+            DryRun: true));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+        Assert.True(result.DryRun);
+        Assert.False(result.CatalogEntryRemoved);
+        Assert.False(result.TemplateFilesDeleted);
+        Assert.Equal(originalCatalog, File.ReadAllText(catalogPath));
+        Assert.True(Directory.Exists(Path.Combine(output.Path, "profile-screen")));
     }
 
     [Fact]

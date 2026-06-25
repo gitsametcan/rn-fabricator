@@ -57,6 +57,7 @@ Apply a template into a compatible Fabricator project:
 
 ```bash
 rn-fabricator templates apply basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
 ```
 
 Show template history for a compatible Fabricator project:
@@ -81,6 +82,7 @@ Expected apply behavior:
 - The command prints generated and skipped file output.
 - Successful apply operations are appended to root `fabricator.json` so later status and lifecycle commands can inspect template history.
 - `templates status` reads root `fabricator.json`, prints applied template history, and compares versions against recorded local catalog sources when those files are available.
+- `templates apply --dry-run` prints planned file writes, export updates, skips, and integration notes without writing project files, exports, or `fabricator.json`.
 
 ## Template Source Resolution
 
@@ -120,24 +122,28 @@ Capture and register a reusable template in a local catalog:
 
 ```bash
 rn-fabricator templates add profile-screen --category screens --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
+rn-fabricator templates add profile-screen --category screens --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Refresh an existing local template from the current project files:
 
 ```bash
 rn-fabricator templates update profile-screen --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
+rn-fabricator templates update profile-screen --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Remove a template entry from a local catalog:
 
 ```bash
 rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json
+rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Delete local template files only when explicitly requested:
 
 ```bash
 rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json --delete-files
+rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json --delete-files --dry-run
 ```
 
 Expected capture behavior:
@@ -155,6 +161,7 @@ Expected add behavior:
 - The local `catalog.fabricator.json` file is created when missing.
 - Existing catalog metadata is preserved and the `templates` array is sorted by template id.
 - Duplicate template ids are rejected; use the update flow for existing templates.
+- `--dry-run` previews captured files and the catalog entry without writing the template folder or catalog file.
 
 Expected update behavior:
 
@@ -164,6 +171,7 @@ Expected update behavior:
 - Manifest metadata is preserved where possible: display name, description, version, mode, tags, dependencies, exports, and integration hints.
 - The command prints added, changed, removed, and unchanged file counts.
 - Remote catalog URLs are read-only and cannot be updated.
+- `--dry-run` previews file and catalog changes without updating the template folder or catalog file.
 
 Expected remove behavior:
 
@@ -173,6 +181,7 @@ Expected remove behavior:
 - File deletion is allowed only when the manifest path resolves to a template folder under the catalog directory.
 - Target projects that previously applied the template are not modified.
 - Remote catalog URLs are read-only and cannot be updated.
+- `--dry-run` previews catalog removal and optional file deletion without changing the catalog or deleting files.
 
 ## Template Source
 

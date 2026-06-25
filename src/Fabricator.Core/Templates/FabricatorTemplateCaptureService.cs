@@ -123,6 +123,17 @@ public sealed class FabricatorTemplateCaptureService
             Category: request.Category,
             Tags: [request.Category]);
 
+        if (request.DryRun)
+        {
+            return new FabricatorTemplateCaptureResult(
+                request.TemplateId,
+                templateDirectory,
+                manifestPath,
+                templateFiles.Select(file => file.Path).ToArray(),
+                [],
+                dryRun: true);
+        }
+
         var stagingDirectory = Path.Combine(outputRoot, $".{SanitizePathSegment(request.TemplateId)}.tmp-{Guid.NewGuid():N}");
 
         try
@@ -235,7 +246,8 @@ public sealed class FabricatorTemplateCaptureService
             templateDirectory,
             manifestPath,
             [],
-            errors);
+            errors,
+            request.DryRun);
     }
 
     private static bool TryResolveProjectPath(

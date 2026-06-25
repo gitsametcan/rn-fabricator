@@ -183,7 +183,8 @@ public sealed class CliCommandFactoryTests
                 "--from",
                 "MyApp",
                 "--source",
-                "templates/catalog.fabricator.json"
+                "templates/catalog.fabricator.json",
+                "--dry-run"
             ]);
 
         Assert.Empty(parseResult.Errors);
@@ -202,7 +203,8 @@ public sealed class CliCommandFactoryTests
                 "--from",
                 "MyApp",
                 "--source",
-                "templates/catalog.fabricator.json"
+                "templates/catalog.fabricator.json",
+                "--dry-run"
             ]);
 
         Assert.Empty(parseResult.Errors);
@@ -220,7 +222,8 @@ public sealed class CliCommandFactoryTests
                 "profile-screen",
                 "--source",
                 "templates/catalog.fabricator.json",
-                "--delete-files"
+                "--delete-files",
+                "--dry-run"
             ]);
 
         Assert.Empty(parseResult.Errors);
@@ -260,7 +263,8 @@ public sealed class CliCommandFactoryTests
                 "templates/catalog.fabricator.json",
                 "--output",
                 "MyApp",
-                "--overwrite"
+                "--overwrite",
+                "--dry-run"
             ]);
 
         Assert.Empty(parseResult.Errors);

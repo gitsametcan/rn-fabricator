@@ -389,6 +389,39 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesApplyCommandDryRunDoesNotWriteFilesExportsOrState()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+        var statePath = Path.Combine(outputDirectory, FabricatorProjectStateContract.StateRelativePath);
+        var screensBarrelPath = Path.Combine(outputDirectory, "src", "screens", "index.ts");
+        var originalState = File.ReadAllText(statePath);
+        var originalScreensBarrel = File.ReadAllText(screensBarrelPath);
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory, "--dry-run"]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template apply dry-run: basic-auth", output.ToString());
+            Assert.Contains("Mode: dry-run", output.ToString());
+            Assert.Contains("Would generate:", output.ToString());
+            Assert.Contains("Exports to apply:", output.ToString());
+            Assert.False(File.Exists(Path.Combine(outputDirectory, ".env.example")));
+            Assert.False(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
+            Assert.Equal(originalScreensBarrel, File.ReadAllText(screensBarrelPath));
+            Assert.Equal(originalState, File.ReadAllText(statePath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesApplyCommandSkipsExistingFilesByDefault()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
@@ -575,6 +608,48 @@ public sealed class CliInvocationSmokeTests
             var template = Assert.Single(document.RootElement.GetProperty("templates").EnumerateArray());
             Assert.Equal("profile-screen", template.GetProperty("id").GetString());
             Assert.Equal("profile-screen/fabricator-template.json", template.GetProperty("manifest").GetString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesAddCommandDryRunDoesNotWriteTemplateOrCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "add",
+                    "profile-screen",
+                    "--category",
+                    "screens",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath,
+                    "--dry-run"
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template add dry-run: profile-screen", output.ToString());
+            Assert.Contains("Mode: dry-run", output.ToString());
+            Assert.Contains("Catalog entry would be added: yes", output.ToString());
+            Assert.False(File.Exists(catalogPath));
+            Assert.False(Directory.Exists(Path.Combine(outputDirectory, "profile-screen")));
         }
         finally
         {

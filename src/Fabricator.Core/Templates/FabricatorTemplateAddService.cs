@@ -64,7 +64,8 @@ public sealed class FabricatorTemplateAddService
                 request.TemplateId,
                 request.Category,
                 request.SourceProjectDirectory,
-                catalogDirectory),
+                catalogDirectory,
+                request.DryRun),
             cancellationToken);
 
         if (!captureResult.Succeeded)
@@ -79,11 +80,14 @@ public sealed class FabricatorTemplateAddService
 
         try
         {
-            var manifest = await ReadManifestAsync(captureResult.ManifestPath, cancellationToken);
-            catalogRead.Templates.Add(CreateCatalogEntry(manifest, catalogDirectory, captureResult.ManifestPath));
-            catalogRead.Catalog["templates"] = SortTemplates(catalogRead.Templates);
+            if (!request.DryRun)
+            {
+                var manifest = await ReadManifestAsync(captureResult.ManifestPath, cancellationToken);
+                catalogRead.Templates.Add(CreateCatalogEntry(manifest, catalogDirectory, captureResult.ManifestPath));
+                catalogRead.Catalog["templates"] = SortTemplates(catalogRead.Templates);
 
-            await WriteCatalogAsync(catalogPath, catalogRead.Catalog, cancellationToken);
+                await WriteCatalogAsync(catalogPath, catalogRead.Catalog, cancellationToken);
+            }
 
             return new FabricatorTemplateAddResult(
                 request.TemplateId,
@@ -91,7 +95,8 @@ public sealed class FabricatorTemplateAddService
                 captureResult.TemplateDirectory,
                 captureResult.ManifestPath,
                 captureResult.CapturedFiles,
-                []);
+                [],
+                request.DryRun);
         }
         catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
         {
@@ -338,7 +343,8 @@ public sealed class FabricatorTemplateAddService
             templateDirectory,
             manifestPath,
             [],
-            errors);
+            errors,
+            request.DryRun);
     }
 
     private static void DeleteCapturedTemplate(string templateDirectory)

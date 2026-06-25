@@ -294,6 +294,10 @@ public static class CliCommandFactory
         {
             Description = "Overwrite existing files instead of skipping them."
         };
+        var applyDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template apply without writing project files, exports, or fabricator.json."
+        };
         var captureCategoryOption = new Option<string>("--category")
         {
             Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
@@ -319,6 +323,10 @@ public static class CliCommandFactory
         {
             Description = "Local Fabricator template catalog file path to update."
         };
+        var addDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template add without writing template files or catalog changes."
+        };
         var updateFromOption = new Option<string>("--from")
         {
             Description = "Compatible Fabricator project directory to refresh from."
@@ -327,6 +335,10 @@ public static class CliCommandFactory
         {
             Description = "Local Fabricator template catalog file path to update."
         };
+        var updateDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template update without writing template files or catalog changes."
+        };
         var removeSourceOption = new Option<string>("--source")
         {
             Description = "Local Fabricator template catalog file path to update."
@@ -334,6 +346,10 @@ public static class CliCommandFactory
         var removeDeleteFilesOption = new Option<bool>("--delete-files")
         {
             Description = "Also delete the template folder when it can be resolved safely."
+        };
+        var removeDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template remove without writing catalog changes or deleting files."
         };
 
         listCommand.Options.Add(sourceOption);
@@ -380,56 +396,64 @@ public static class CliCommandFactory
         applyCommand.Options.Add(applySourceOption);
         applyCommand.Options.Add(applyOutputOption);
         applyCommand.Options.Add(applyOverwriteOption);
+        applyCommand.Options.Add(applyDryRunOption);
         applyCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var template = parseResult.GetRequiredValue(applyTemplateArgument);
             var source = parseResult.GetValue(applySourceOption) ?? string.Empty;
             var outputDirectory = parseResult.GetValue(applyOutputOption) ?? Directory.GetCurrentDirectory();
             var overwrite = parseResult.GetValue(applyOverwriteOption);
+            var dryRun = parseResult.GetValue(applyDryRunOption);
             var handler = TemplatesDependencies.CreateDefaultApplyHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, source, outputDirectory, overwrite, cancellationToken);
+            return await handler.RunAsync(template, source, outputDirectory, overwrite, dryRun, cancellationToken);
         });
 
         addCommand.Arguments.Add(addTemplateArgument);
         addCommand.Options.Add(addCategoryOption);
         addCommand.Options.Add(addFromOption);
         addCommand.Options.Add(addSourceOption);
+        addCommand.Options.Add(addDryRunOption);
         addCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var template = parseResult.GetRequiredValue(addTemplateArgument);
             var category = parseResult.GetValue(addCategoryOption) ?? string.Empty;
             var sourceProjectDirectory = parseResult.GetValue(addFromOption) ?? string.Empty;
             var source = parseResult.GetValue(addSourceOption) ?? string.Empty;
+            var dryRun = parseResult.GetValue(addDryRunOption);
             var handler = TemplatesDependencies.CreateDefaultAddHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, category, sourceProjectDirectory, source, cancellationToken);
+            return await handler.RunAsync(template, category, sourceProjectDirectory, source, dryRun, cancellationToken);
         });
 
         updateCommand.Arguments.Add(updateTemplateArgument);
         updateCommand.Options.Add(updateFromOption);
         updateCommand.Options.Add(updateSourceOption);
+        updateCommand.Options.Add(updateDryRunOption);
         updateCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var template = parseResult.GetRequiredValue(updateTemplateArgument);
             var sourceProjectDirectory = parseResult.GetValue(updateFromOption) ?? string.Empty;
             var source = parseResult.GetValue(updateSourceOption) ?? string.Empty;
+            var dryRun = parseResult.GetValue(updateDryRunOption);
             var handler = TemplatesDependencies.CreateDefaultUpdateHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, sourceProjectDirectory, source, cancellationToken);
+            return await handler.RunAsync(template, sourceProjectDirectory, source, dryRun, cancellationToken);
         });
 
         removeCommand.Arguments.Add(removeTemplateArgument);
         removeCommand.Options.Add(removeSourceOption);
         removeCommand.Options.Add(removeDeleteFilesOption);
+        removeCommand.Options.Add(removeDryRunOption);
         removeCommand.SetAction(async (parseResult, cancellationToken) =>
         {
             var template = parseResult.GetRequiredValue(removeTemplateArgument);
             var source = parseResult.GetValue(removeSourceOption) ?? string.Empty;
             var deleteFiles = parseResult.GetValue(removeDeleteFilesOption);
+            var dryRun = parseResult.GetValue(removeDryRunOption);
             var handler = TemplatesDependencies.CreateDefaultRemoveHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, source, deleteFiles, cancellationToken);
+            return await handler.RunAsync(template, source, deleteFiles, dryRun, cancellationToken);
         });
 
         captureCommand.Arguments.Add(captureTemplateArgument);

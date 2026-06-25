@@ -102,16 +102,19 @@ public sealed class FabricatorTemplateUpdateService
                 existingManifest.Files,
                 capture.TemplateFiles);
 
-            await ReplaceTemplateDirectoryAsync(
-                projectRoot,
-                templateDirectory,
-                updatedManifest,
-                capture.TemplateFiles,
-                cancellationToken);
+            if (!request.DryRun)
+            {
+                await ReplaceTemplateDirectoryAsync(
+                    projectRoot,
+                    templateDirectory,
+                    updatedManifest,
+                    capture.TemplateFiles,
+                    cancellationToken);
 
-            UpdateCatalogEntry(catalogEntry, updatedManifest, catalogDirectory, manifestPath);
-            catalogRead.Catalog["templates"] = SortTemplates(catalogRead.Templates);
-            await WriteCatalogAsync(catalogPath, catalogRead.Catalog, cancellationToken);
+                UpdateCatalogEntry(catalogEntry, updatedManifest, catalogDirectory, manifestPath);
+                catalogRead.Catalog["templates"] = SortTemplates(catalogRead.Templates);
+                await WriteCatalogAsync(catalogPath, catalogRead.Catalog, cancellationToken);
+            }
 
             return new FabricatorTemplateUpdateResult(
                 request.TemplateId,
@@ -132,7 +135,8 @@ public sealed class FabricatorTemplateUpdateService
                     "exports",
                     "integrationHints"
                 ],
-                []);
+                [],
+                request.DryRun);
         }
         catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
         {
@@ -581,7 +585,8 @@ public sealed class FabricatorTemplateUpdateService
             [],
             [],
             [],
-            errors);
+            errors,
+            request.DryRun);
     }
 
     private static bool IsChildPath(string parentPath, string childPath)

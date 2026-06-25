@@ -53,12 +53,15 @@ public sealed class FabricatorTemplateRemoveService
 
         try
         {
-            RemoveTemplate(catalogRead.Templates, request.TemplateId);
-            catalogRead.Catalog["templates"] = SortTemplates(catalogRead.Templates);
-            await WriteCatalogAsync(catalogPath, catalogRead.Catalog, cancellationToken);
+            if (!request.DryRun)
+            {
+                RemoveTemplate(catalogRead.Templates, request.TemplateId);
+                catalogRead.Catalog["templates"] = SortTemplates(catalogRead.Templates);
+                await WriteCatalogAsync(catalogPath, catalogRead.Catalog, cancellationToken);
+            }
 
             var deletedFiles = false;
-            if (request.DeleteFiles)
+            if (request.DeleteFiles && !request.DryRun)
             {
                 if (string.IsNullOrWhiteSpace(templateDirectory))
                 {
@@ -76,9 +79,10 @@ public sealed class FabricatorTemplateRemoveService
                 request.TemplateId,
                 catalogPath,
                 templateDirectory,
-                catalogEntryRemoved: true,
+                catalogEntryRemoved: !request.DryRun,
                 templateFilesDeleted: deletedFiles,
-                []);
+                [],
+                request.DryRun);
         }
         catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
         {
@@ -342,7 +346,8 @@ public sealed class FabricatorTemplateRemoveService
             templateDirectory,
             catalogEntryRemoved: false,
             templateFilesDeleted: false,
-            errors);
+            errors,
+            request.DryRun);
     }
 
     private static bool IsChildPath(string parentPath, string childPath)

@@ -205,10 +205,11 @@ To reuse a captured template through catalog commands, add it to a catalog file:
 rn-fabricator templates add profile-screen \
   --category screens \
   --from ./FabricatorBabyStep \
-  --source ./captured-templates/catalog.fabricator.json
+  --source ./captured-templates/catalog.fabricator.json \
+  --dry-run
 ```
 
-The command creates the template directory under `./captured-templates` and registers a catalog entry like this:
+Drop `--dry-run` to create the template directory under `./captured-templates` and register a catalog entry like this:
 
 ```json
 {
@@ -227,16 +228,18 @@ When the source project changes, refresh the existing local template:
 ```bash
 rn-fabricator templates update profile-screen \
   --from ./FabricatorBabyStep \
-  --source ./captured-templates/catalog.fabricator.json
+  --source ./captured-templates/catalog.fabricator.json \
+  --dry-run
 ```
 
-Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
+Drop `--dry-run` to apply the update. Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
 
 Remove a template from the local catalog without deleting the template folder:
 
 ```bash
 rn-fabricator templates remove profile-screen \
-  --source ./captured-templates/catalog.fabricator.json
+  --source ./captured-templates/catalog.fabricator.json \
+  --dry-run
 ```
 
 To also delete the local template folder, opt in explicitly:
@@ -244,10 +247,11 @@ To also delete the local template folder, opt in explicitly:
 ```bash
 rn-fabricator templates remove profile-screen \
   --source ./captured-templates/catalog.fabricator.json \
-  --delete-files
+  --delete-files \
+  --dry-run
 ```
 
-Remove does not modify projects that previously applied the template.
+Drop `--dry-run` to apply removal. Remove does not modify projects that previously applied the template.
 
 Then inspect and apply it like any other template:
 

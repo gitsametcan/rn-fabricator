@@ -77,6 +77,28 @@ public sealed class FabricatorTemplateApplyServiceTests
     }
 
     [Fact]
+    public async Task ApplyAsyncDryRunReportsPlannedChangesWithoutWritingFilesOrExports()
+    {
+        using var project = CreateCompatibleProject();
+        var barrelPath = Path.Combine(project.Path, "src", "screens", "index.ts");
+        var originalBarrel = File.ReadAllText(barrelPath);
+        var service = new FabricatorTemplateApplyService();
+
+        var result = await service.ApplyAsync(new FabricatorTemplateApplyRequest(
+            CreatePackage(),
+            project.Path,
+            OverwriteExistingFiles: false,
+            DryRun: true));
+
+        Assert.True(result.Succeeded);
+        Assert.True(result.DryRun);
+        Assert.Contains("src/screens/ProfileScreen.tsx", result.GeneratedFiles);
+        Assert.Contains("screensBarrel: export { ProfileScreen } from './ProfileScreen';", result.AppliedExports);
+        Assert.False(File.Exists(Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx")));
+        Assert.Equal(originalBarrel, File.ReadAllText(barrelPath));
+    }
+
+    [Fact]
     public async Task ApplyAsyncReturnsCompatibilityErrorsForNonFabricatorProject()
     {
         using var project = new TemporaryDirectory();
