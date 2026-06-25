@@ -584,6 +584,71 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesUpdateCommandRefreshesExistingLocalTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        var profilePath = Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'old'; }\n");
+
+        try
+        {
+            int addExitCode;
+            using (ConsoleOutputScope.Capture())
+            {
+                addExitCode = rootCommand.Parse(
+                    [
+                        "templates",
+                        "add",
+                        "profile-screen",
+                        "--category",
+                        "screens",
+                        "--from",
+                        projectDirectory,
+                        "--source",
+                        catalogPath
+                    ]).Invoke();
+            }
+
+            File.WriteAllText(profilePath, "export function ProfileScreen() { return 'new'; }\n");
+            File.WriteAllText(
+                Path.Combine(projectDirectory, "src", "screens", "SettingsScreen.tsx"),
+                "export function SettingsScreen() { return null; }\n");
+
+            using var output = ConsoleOutputScope.Capture();
+            var updateExitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "update",
+                    "profile-screen",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, addExitCode);
+            Assert.Equal(ExitCodes.Success, updateExitCode);
+            Assert.Contains("Template updated: profile-screen", output.ToString());
+            Assert.Contains("Files:", output.ToString());
+            Assert.Contains("Changed:", output.ToString());
+            Assert.Contains("src/screens/ProfileScreen.tsx", output.ToString());
+            Assert.Contains("Added:", output.ToString());
+            Assert.Contains("src/screens/SettingsScreen.tsx", output.ToString());
+            Assert.Contains(
+                "return 'new'",
+                File.ReadAllText(Path.Combine(outputDirectory, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCaptureCommandReturnsInvalidInputForUnknownCategory()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

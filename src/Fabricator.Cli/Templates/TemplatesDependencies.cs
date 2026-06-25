@@ -61,6 +61,16 @@ public static class TemplatesDependencies
             errorWriter);
     }
 
+    public static TemplatesUpdateCommandHandler CreateDefaultUpdateHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesUpdateCommandHandler(
+            new FabricatorTemplateUpdateService(),
+            outputWriter,
+            errorWriter);
+    }
+
     public static TemplatesInfoCommandHandler CreateDefaultInfoHandler(
         TextWriter outputWriter,
         TextWriter errorWriter)
