@@ -5,6 +5,7 @@ public sealed class FabricatorTemplateApplyResult
     public FabricatorTemplateApplyResult(
         IReadOnlyList<string> generatedFiles,
         IReadOnlyList<string> skippedFiles,
+        IReadOnlyList<string> overwrittenFiles,
         IReadOnlyList<string> appliedExports,
         IReadOnlyList<string> skippedExports,
         IReadOnlyList<FabricatorTemplateIntegrationReport> integrationReports,
@@ -12,6 +13,7 @@ public sealed class FabricatorTemplateApplyResult
     {
         GeneratedFiles = generatedFiles;
         SkippedFiles = skippedFiles;
+        OverwrittenFiles = overwrittenFiles;
         AppliedExports = appliedExports;
         SkippedExports = skippedExports;
         IntegrationReports = integrationReports;
@@ -21,6 +23,8 @@ public sealed class FabricatorTemplateApplyResult
     public IReadOnlyList<string> GeneratedFiles { get; }
 
     public IReadOnlyList<string> SkippedFiles { get; }
+
+    public IReadOnlyList<string> OverwrittenFiles { get; }
 
     public IReadOnlyList<string> AppliedExports { get; }
 

@@ -1,4 +1,5 @@
 using Fabricator.Core.Environment;
+using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
 
 namespace Fabricator.Cli.Templates;
@@ -35,6 +36,7 @@ public static class TemplatesDependencies
             new TemplateCatalogProvider(),
             new FabricatorTemplateApplyService(),
             new TemplateSourceResolver(new SystemEnvironmentVariables()),
+            new FabricatorProjectStateService(),
             outputWriter,
             errorWriter);
     }

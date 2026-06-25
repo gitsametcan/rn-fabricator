@@ -1,4 +1,5 @@
 using Fabricator.Core;
+using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
 
 namespace Fabricator.Cli.Templates;
@@ -8,6 +9,7 @@ public sealed class TemplatesApplyCommandHandler
     private readonly FabricatorTemplateApplyService _applyService;
     private readonly TextWriter _errorWriter;
     private readonly TextWriter _outputWriter;
+    private readonly IFabricatorProjectStateService _projectStateService;
     private readonly ITemplateCatalogProvider _templateCatalogProvider;
     private readonly ITemplateSourceResolver _templateSourceResolver;
 
@@ -15,12 +17,14 @@ public sealed class TemplatesApplyCommandHandler
         ITemplateCatalogProvider templateCatalogProvider,
         FabricatorTemplateApplyService applyService,
         ITemplateSourceResolver templateSourceResolver,
+        IFabricatorProjectStateService projectStateService,
         TextWriter outputWriter,
         TextWriter errorWriter)
     {
         _templateCatalogProvider = templateCatalogProvider;
         _applyService = applyService;
         _templateSourceResolver = templateSourceResolver;
+        _projectStateService = projectStateService;
         _outputWriter = outputWriter;
         _errorWriter = errorWriter;
     }
@@ -52,10 +56,34 @@ public sealed class TemplatesApplyCommandHandler
 
         try
         {
+            var statePreflight = _projectStateService.ValidateCanTrack(outputDirectory);
+            if (!statePreflight.Succeeded)
+            {
+                RenderApplyPreflightFailure(statePreflight);
+                return ExitCodes.GeneralFailure;
+            }
+
             var package = await _templateCatalogProvider.GetTemplateAsync(sourceResolution.Source, templateId, cancellationToken);
             var result = await _applyService.ApplyAsync(
                 new FabricatorTemplateApplyRequest(package, outputDirectory, overwrite),
                 cancellationToken);
+
+            if (result.Succeeded)
+            {
+                var stateUpdate = await _projectStateService.TrackApplyAsync(
+                    new FabricatorTemplateApplyStateTrackingRequest(
+                        outputDirectory,
+                        sourceResolution.Source,
+                        package,
+                        result),
+                    cancellationToken);
+
+                if (!stateUpdate.Succeeded)
+                {
+                    RenderStateFailure(stateUpdate);
+                    return ExitCodes.GeneralFailure;
+                }
+            }
 
             RenderResult(sourceResolution.Source, outputDirectory, overwrite, package, result);
 
@@ -78,6 +106,26 @@ public sealed class TemplatesApplyCommandHandler
             _errorWriter.WriteLine("Template catalog request timed out.");
             _errorWriter.WriteLine(exception.Message);
             return ExitCodes.GeneralFailure;
+        }
+    }
+
+    private void RenderApplyPreflightFailure(FabricatorProjectStateUpdateResult result)
+    {
+        _errorWriter.WriteLine("Template apply failed.");
+
+        foreach (var error in result.Errors)
+        {
+            _errorWriter.WriteLine($"- {error}");
+        }
+    }
+
+    private void RenderStateFailure(FabricatorProjectStateUpdateResult result)
+    {
+        _errorWriter.WriteLine("Template state tracking failed.");
+
+        foreach (var error in result.Errors)
+        {
+            _errorWriter.WriteLine($"- {error}");
         }
     }
 

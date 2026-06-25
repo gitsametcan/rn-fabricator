@@ -353,6 +353,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains(
                 "export { HomeScreen } from './HomeScreen';",
                 File.ReadAllText(Path.Combine(outputDirectory, "src", "screens", "index.ts")));
+            AssertAppliedTemplateState(outputDirectory, "basic-auth");
         }
         finally
         {
@@ -623,8 +624,38 @@ public sealed class CliInvocationSmokeTests
         File.WriteAllText(
             Path.Combine(path, FabricatorProjectContract.ManifestRelativePath),
             JsonSerializer.Serialize(manifest, JsonOptions));
+        File.WriteAllText(
+            Path.Combine(path, FabricatorProjectStateContract.StateRelativePath),
+            JsonSerializer.Serialize(
+                FabricatorProjectStateContract.CreateInitialState(
+                    "TestApp",
+                    ProductInfo.Version,
+                    CreateProjectService.DefaultStarterId,
+                    "0.1.0",
+                    "starter",
+                    null,
+                    ["App.tsx"]),
+                JsonOptions));
 
         return path;
+    }
+
+    private static void AssertAppliedTemplateState(string projectDirectory, string expectedTemplateId)
+    {
+        using var document = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(projectDirectory, FabricatorProjectStateContract.StateRelativePath)));
+        var appliedTemplates = document.RootElement.GetProperty("appliedTemplates").EnumerateArray().ToArray();
+        var operation = appliedTemplates.Last();
+
+        Assert.Equal(expectedTemplateId, operation.GetProperty("id").GetString());
+        Assert.Equal("apply", operation.GetProperty("operation").GetString());
+        Assert.Equal("applied", operation.GetProperty("result").GetString());
+        Assert.Contains(
+            operation.GetProperty("files").GetProperty("written").EnumerateArray(),
+            file => file.GetString() == "src/auth/AuthProvider.tsx");
+        Assert.Contains(
+            operation.GetProperty("exports").EnumerateArray(),
+            item => item.GetProperty("integrationPoint").GetString() == "screensBarrel");
     }
 
     private static void DeleteTemporaryDirectory(string path)
