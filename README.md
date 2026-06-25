@@ -183,7 +183,13 @@ Capture a reusable template from a compatible Fabricator project folder:
 rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates
 ```
 
-See [Reusable Template Workflow](docs/reusable-template-workflow.md) for the full create, list, info, apply, and capture flow.
+Capture and register a reusable template in a local catalog:
+
+```bash
+rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json
+```
+
+See [Reusable Template Workflow](docs/reusable-template-workflow.md) for the full create, list, info, apply, capture, and add flow.
 
 Useful help commands:
 
@@ -198,6 +204,7 @@ rn-fabricator templates info --help
 rn-fabricator templates validate --help
 rn-fabricator templates apply --help
 rn-fabricator templates capture --help
+rn-fabricator templates add --help
 rn-fabricator templates copy --help
 ```
 

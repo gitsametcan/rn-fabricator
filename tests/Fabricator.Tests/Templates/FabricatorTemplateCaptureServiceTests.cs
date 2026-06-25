@@ -82,6 +82,57 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task AddAsyncCapturesTemplateAndRegistersCatalogEntry()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var service = new FabricatorTemplateAddService();
+
+        var result = await service.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Errors);
+        Assert.Equal(catalogPath, result.CatalogPath);
+        Assert.True(File.Exists(catalogPath));
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "fabricator-template.json")));
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+
+        var package = await new TemplateCatalogProvider().GetTemplateAsync(catalogPath, "profile-screen");
+        Assert.Equal("profile-screen", package.Manifest.Id);
+        Assert.Equal("screens", package.Manifest.Category);
+    }
+
+    [Fact]
+    public async Task AddAsyncRejectsDuplicateTemplateIdWithoutWritingTemplate()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        WriteCatalog(output.Path);
+        var service = new FabricatorTemplateAddService();
+
+        var result = await service.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            Path.Combine(output.Path, "catalog.fabricator.json")));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, error => error.Contains("Template id already exists", StringComparison.Ordinal));
+        Assert.False(Directory.Exists(Path.Combine(output.Path, "profile-screen")));
+    }
+
+    [Fact]
     public async Task CaptureAsyncRejectsUnknownCategoryWithoutWritingTemplate()
     {
         using var project = CreateCompatibleProject();

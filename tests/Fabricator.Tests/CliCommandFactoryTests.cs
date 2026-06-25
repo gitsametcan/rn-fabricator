@@ -170,6 +170,27 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void TemplatesAddCommandAcceptsTemplateCategoryFromAndSourceOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "add",
+                "profile-screen",
+                "--category",
+                "screens",
+                "--from",
+                "MyApp",
+                "--source",
+                "templates/catalog.fabricator.json"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("add", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
     public void TemplatesCopyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
