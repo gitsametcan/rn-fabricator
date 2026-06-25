@@ -201,6 +201,15 @@ captured-templates/
 
 To reuse a captured template through catalog commands, add it to a catalog file:
 
+```bash
+rn-fabricator templates add profile-screen \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --source ./captured-templates/catalog.fabricator.json
+```
+
+The command creates the template directory under `./captured-templates` and registers a catalog entry like this:
+
 ```json
 {
   "id": "profile-screen",

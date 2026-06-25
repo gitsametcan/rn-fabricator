@@ -116,6 +116,12 @@ Capture a reusable template from a compatible Fabricator project folder:
 rn-fabricator templates capture profile-screen --category screens --from ./FabricatorBabyStep --output ./templates
 ```
 
+Capture and register a reusable template in a local catalog:
+
+```bash
+rn-fabricator templates add profile-screen --category screens --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
+```
+
 Expected capture behavior:
 
 - The source project must follow the Fabricator project contract.
@@ -124,6 +130,13 @@ Expected capture behavior:
 - The generated `fabricator-template.json` includes schema v2 metadata, category, tags, `targetPath`, and `targetFolder` mappings.
 - Existing template output folders are not overwritten.
 - Invalid capture attempts fail before publishing a partial template folder.
+
+Expected add behavior:
+
+- `templates add` performs the same safe capture into the catalog directory.
+- The local `catalog.fabricator.json` file is created when missing.
+- Existing catalog metadata is preserved and the `templates` array is sorted by template id.
+- Duplicate template ids are rejected; use the update flow for existing templates.
 
 ## Template Source
 

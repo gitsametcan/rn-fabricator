@@ -208,11 +208,12 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List, inspect, validate, status, copy, apply, and capture Fabricator templates.");
+        var command = new Command("templates", "List, inspect, validate, status, add, copy, apply, and capture Fabricator templates.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
         var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
         var validateCommand = new Command("validate", "Validate a Fabricator template catalog.");
         var statusCommand = new Command("status", "Show templates applied to a compatible Fabricator project.");
+        var addCommand = new Command("add", "Capture and register a reusable template in a local Fabricator catalog.");
         var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
         var captureCommand = new Command("capture", "Capture files from a compatible Fabricator project as a reusable template.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
@@ -227,6 +228,10 @@ public static class CliCommandFactory
         var applyTemplateArgument = new Argument<string>("template")
         {
             Description = "Template id to apply."
+        };
+        var addTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to add."
         };
         var captureTemplateArgument = new Argument<string>("template")
         {
@@ -292,6 +297,18 @@ public static class CliCommandFactory
             Description = "Directory where captured template folders will be created.",
             DefaultValueFactory = _ => Path.Combine(Directory.GetCurrentDirectory(), "templates")
         };
+        var addCategoryOption = new Option<string>("--category")
+        {
+            Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
+        };
+        var addFromOption = new Option<string>("--from")
+        {
+            Description = "Compatible Fabricator project directory to capture from."
+        };
+        var addSourceOption = new Option<string>("--source")
+        {
+            Description = "Local Fabricator template catalog file path to update."
+        };
 
         listCommand.Options.Add(sourceOption);
         listCommand.Options.Add(categoryOption);
@@ -348,6 +365,21 @@ public static class CliCommandFactory
             return await handler.RunAsync(template, source, outputDirectory, overwrite, cancellationToken);
         });
 
+        addCommand.Arguments.Add(addTemplateArgument);
+        addCommand.Options.Add(addCategoryOption);
+        addCommand.Options.Add(addFromOption);
+        addCommand.Options.Add(addSourceOption);
+        addCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(addTemplateArgument);
+            var category = parseResult.GetValue(addCategoryOption) ?? string.Empty;
+            var sourceProjectDirectory = parseResult.GetValue(addFromOption) ?? string.Empty;
+            var source = parseResult.GetValue(addSourceOption) ?? string.Empty;
+            var handler = TemplatesDependencies.CreateDefaultAddHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, category, sourceProjectDirectory, source, cancellationToken);
+        });
+
         captureCommand.Arguments.Add(captureTemplateArgument);
         captureCommand.Options.Add(captureCategoryOption);
         captureCommand.Options.Add(captureFromOption);
@@ -382,6 +414,7 @@ public static class CliCommandFactory
         command.Subcommands.Add(infoCommand);
         command.Subcommands.Add(validateCommand);
         command.Subcommands.Add(statusCommand);
+        command.Subcommands.Add(addCommand);
         command.Subcommands.Add(applyCommand);
         command.Subcommands.Add(captureCommand);
         command.Subcommands.Add(copyCommand);

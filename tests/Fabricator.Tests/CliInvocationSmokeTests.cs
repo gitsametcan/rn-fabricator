@@ -538,6 +538,52 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesAddCommandCapturesTemplateAndUpdatesLocalCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "add",
+                    "profile-screen",
+                    "--category",
+                    "screens",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template added: profile-screen", output.ToString());
+            Assert.Contains($"Catalog: {catalogPath}", output.ToString());
+            Assert.Contains("Captured files:", output.ToString());
+            Assert.True(File.Exists(catalogPath));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
+
+            using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+            var template = Assert.Single(document.RootElement.GetProperty("templates").EnumerateArray());
+            Assert.Equal("profile-screen", template.GetProperty("id").GetString());
+            Assert.Equal("profile-screen/fabricator-template.json", template.GetProperty("manifest").GetString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCaptureCommandReturnsInvalidInputForUnknownCategory()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
