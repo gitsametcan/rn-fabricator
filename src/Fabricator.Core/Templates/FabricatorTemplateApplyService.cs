@@ -34,7 +34,8 @@ public sealed class FabricatorTemplateApplyService
                 [],
                 [],
                 [],
-                compatibility.Errors);
+                compatibility.Errors,
+                request.DryRun);
         }
 
         var generatedFiles = new List<string>();
@@ -79,13 +80,17 @@ public sealed class FabricatorTemplateApplyService
                 continue;
             }
 
-            var targetDirectory = Path.GetDirectoryName(targetPath);
-            if (!string.IsNullOrWhiteSpace(targetDirectory))
+            if (!request.DryRun)
             {
-                Directory.CreateDirectory(targetDirectory);
+                var targetDirectory = Path.GetDirectoryName(targetPath);
+                if (!string.IsNullOrWhiteSpace(targetDirectory))
+                {
+                    Directory.CreateDirectory(targetDirectory);
+                }
+
+                await File.WriteAllTextAsync(targetPath, contents, cancellationToken);
             }
 
-            await File.WriteAllTextAsync(targetPath, contents, cancellationToken);
             generatedFiles.Add(targetRelativePath);
 
             if (targetExists)
@@ -100,6 +105,7 @@ public sealed class FabricatorTemplateApplyService
                 request.Package.Manifest.Exports ?? [],
                 manifest,
                 targetRoot,
+                request.DryRun,
                 appliedExports,
                 skippedExports,
                 integrationReports,
@@ -115,13 +121,15 @@ public sealed class FabricatorTemplateApplyService
             appliedExports,
             skippedExports,
             integrationReports,
-            errors);
+            errors,
+            request.DryRun);
     }
 
     private static async Task ApplyExportsAsync(
         IReadOnlyList<FabricatorTemplateExport> exports,
         FabricatorProjectManifest manifest,
         string targetRoot,
+        bool dryRun,
         List<string> appliedExports,
         List<string> skippedExports,
         List<FabricatorTemplateIntegrationReport> integrationReports,
@@ -183,10 +191,14 @@ public sealed class FabricatorTemplateApplyService
                 continue;
             }
 
-            var separator = existingContent.Length == 0 || existingContent.EndsWith('\n')
-                ? string.Empty
-                : "\n";
-            await File.AppendAllTextAsync(integrationPath, $"{separator}{statement}\n", cancellationToken);
+            if (!dryRun)
+            {
+                var separator = existingContent.Length == 0 || existingContent.EndsWith('\n')
+                    ? string.Empty
+                    : "\n";
+                await File.AppendAllTextAsync(integrationPath, $"{separator}{statement}\n", cancellationToken);
+            }
+
             appliedExports.Add($"{integrationPoint.Key}: {statement}");
         }
     }

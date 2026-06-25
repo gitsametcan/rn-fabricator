@@ -34,6 +34,7 @@ public sealed class TemplatesApplyCommandHandler
         string source,
         string outputDirectory,
         bool overwrite,
+        bool dryRun,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(templateId))
@@ -65,10 +66,10 @@ public sealed class TemplatesApplyCommandHandler
 
             var package = await _templateCatalogProvider.GetTemplateAsync(sourceResolution.Source, templateId, cancellationToken);
             var result = await _applyService.ApplyAsync(
-                new FabricatorTemplateApplyRequest(package, outputDirectory, overwrite),
+                new FabricatorTemplateApplyRequest(package, outputDirectory, overwrite, dryRun),
                 cancellationToken);
 
-            if (result.Succeeded)
+            if (result.Succeeded && !dryRun)
             {
                 var stateUpdate = await _projectStateService.TrackApplyAsync(
                     new FabricatorTemplateApplyStateTrackingRequest(
@@ -85,7 +86,7 @@ public sealed class TemplatesApplyCommandHandler
                 }
             }
 
-            RenderResult(sourceResolution.Source, outputDirectory, overwrite, package, result);
+            RenderResult(sourceResolution.Source, outputDirectory, overwrite, dryRun, package, result);
 
             return result.Succeeded ? ExitCodes.Success : ExitCodes.GeneralFailure;
         }
@@ -133,15 +134,21 @@ public sealed class TemplatesApplyCommandHandler
         string source,
         string outputDirectory,
         bool overwrite,
+        bool dryRun,
         FabricatorTemplatePackage package,
         FabricatorTemplateApplyResult result)
     {
-        _outputWriter.WriteLine($"Template applied: {package.Manifest.Id}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Template apply dry-run: {package.Manifest.Id}"
+            : $"Template applied: {package.Manifest.Id}");
+        _outputWriter.WriteLine($"Mode: {(dryRun ? "dry-run (no files, exports, or fabricator.json changes will be written)" : "apply")}");
         _outputWriter.WriteLine($"Source: {source}");
         _outputWriter.WriteLine($"Output directory: {Path.GetFullPath(outputDirectory)}");
         _outputWriter.WriteLine($"Overwrite: {(overwrite ? "yes" : "no")}");
         _outputWriter.WriteLine();
-        _outputWriter.WriteLine($"Generated: {result.GeneratedFiles.Count}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Would generate: {result.GeneratedFiles.Count}"
+            : $"Generated: {result.GeneratedFiles.Count}");
 
         foreach (var file in result.GeneratedFiles)
         {
@@ -155,7 +162,9 @@ public sealed class TemplatesApplyCommandHandler
             _outputWriter.WriteLine($"  - {file}");
         }
 
-        _outputWriter.WriteLine($"Exports applied: {result.AppliedExports.Count}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Exports to apply: {result.AppliedExports.Count}"
+            : $"Exports applied: {result.AppliedExports.Count}");
 
         foreach (var appliedExport in result.AppliedExports)
         {

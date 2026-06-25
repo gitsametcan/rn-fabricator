@@ -9,7 +9,8 @@ public sealed class FabricatorTemplateApplyResult
         IReadOnlyList<string> appliedExports,
         IReadOnlyList<string> skippedExports,
         IReadOnlyList<FabricatorTemplateIntegrationReport> integrationReports,
-        IReadOnlyList<string> errors)
+        IReadOnlyList<string> errors,
+        bool dryRun = false)
     {
         GeneratedFiles = generatedFiles;
         SkippedFiles = skippedFiles;
@@ -18,6 +19,7 @@ public sealed class FabricatorTemplateApplyResult
         SkippedExports = skippedExports;
         IntegrationReports = integrationReports;
         Errors = errors;
+        DryRun = dryRun;
     }
 
     public IReadOnlyList<string> GeneratedFiles { get; }
@@ -33,6 +35,8 @@ public sealed class FabricatorTemplateApplyResult
     public IReadOnlyList<FabricatorTemplateIntegrationReport> IntegrationReports { get; }
 
     public IReadOnlyList<string> Errors { get; }
+
+    public bool DryRun { get; }
 
     public bool Succeeded => Errors.Count == 0;
 }

@@ -23,13 +23,15 @@ public sealed class TemplatesUpdateCommandHandler
         string templateId,
         string sourceProjectDirectory,
         string catalogSource,
+        bool dryRun,
         CancellationToken cancellationToken = default)
     {
         var result = await _updateService.UpdateAsync(
             new FabricatorTemplateUpdateRequest(
                 templateId,
                 sourceProjectDirectory,
-                catalogSource),
+                catalogSource,
+                dryRun),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -38,7 +40,7 @@ public sealed class TemplatesUpdateCommandHandler
             return ExitCodes.InvalidInput;
         }
 
-        RenderResult(result);
+        RenderResult(result, dryRun);
         return ExitCodes.Success;
     }
 
@@ -52,15 +54,19 @@ public sealed class TemplatesUpdateCommandHandler
         }
     }
 
-    private void RenderResult(FabricatorTemplateUpdateResult result)
+    private void RenderResult(FabricatorTemplateUpdateResult result, bool dryRun)
     {
-        _outputWriter.WriteLine($"Template updated: {result.TemplateId}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Template update dry-run: {result.TemplateId}"
+            : $"Template updated: {result.TemplateId}");
+        _outputWriter.WriteLine($"Mode: {(dryRun ? "dry-run (no template files or catalog changes will be written)" : "update")}");
         _outputWriter.WriteLine($"Catalog: {result.CatalogPath}");
         _outputWriter.WriteLine($"Template directory: {result.TemplateDirectory}");
         _outputWriter.WriteLine($"Manifest: {result.ManifestPath}");
         _outputWriter.WriteLine(
             $"Files: {result.AddedFiles.Count} added, {result.ChangedFiles.Count} changed, {result.RemovedFiles.Count} removed, {result.UnchangedFiles.Count} unchanged");
         _outputWriter.WriteLine($"Preserved metadata: {string.Join(", ", result.PreservedMetadata)}");
+        _outputWriter.WriteLine(dryRun ? "Catalog entry would be updated: yes" : "Catalog entry updated: yes");
 
         RenderFileList("Added", result.AddedFiles);
         RenderFileList("Changed", result.ChangedFiles);

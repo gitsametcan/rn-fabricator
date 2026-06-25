@@ -4,4 +4,5 @@ public sealed record FabricatorTemplateAddRequest(
     string TemplateId,
     string Category,
     string SourceProjectDirectory,
-    string CatalogSource);
+    string CatalogSource,
+    bool DryRun = false);

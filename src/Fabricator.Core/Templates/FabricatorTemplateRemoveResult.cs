@@ -8,7 +8,8 @@ public sealed class FabricatorTemplateRemoveResult
         string? templateDirectory,
         bool catalogEntryRemoved,
         bool templateFilesDeleted,
-        IReadOnlyList<string> errors)
+        IReadOnlyList<string> errors,
+        bool dryRun = false)
     {
         TemplateId = templateId;
         CatalogPath = catalogPath;
@@ -16,6 +17,7 @@ public sealed class FabricatorTemplateRemoveResult
         CatalogEntryRemoved = catalogEntryRemoved;
         TemplateFilesDeleted = templateFilesDeleted;
         Errors = errors;
+        DryRun = dryRun;
     }
 
     public string TemplateId { get; }
@@ -29,6 +31,8 @@ public sealed class FabricatorTemplateRemoveResult
     public bool TemplateFilesDeleted { get; }
 
     public IReadOnlyList<string> Errors { get; }
+
+    public bool DryRun { get; }
 
     public bool Succeeded => Errors.Count == 0;
 }

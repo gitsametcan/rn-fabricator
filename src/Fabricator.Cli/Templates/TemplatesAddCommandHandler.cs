@@ -24,6 +24,7 @@ public sealed class TemplatesAddCommandHandler
         string category,
         string sourceProjectDirectory,
         string catalogSource,
+        bool dryRun,
         CancellationToken cancellationToken = default)
     {
         var result = await _addService.AddAsync(
@@ -31,7 +32,8 @@ public sealed class TemplatesAddCommandHandler
                 templateId,
                 category,
                 sourceProjectDirectory,
-                catalogSource),
+                catalogSource,
+                dryRun),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -40,7 +42,7 @@ public sealed class TemplatesAddCommandHandler
             return ExitCodes.InvalidInput;
         }
 
-        RenderResult(result);
+        RenderResult(result, dryRun);
         return ExitCodes.Success;
     }
 
@@ -54,13 +56,19 @@ public sealed class TemplatesAddCommandHandler
         }
     }
 
-    private void RenderResult(FabricatorTemplateAddResult result)
+    private void RenderResult(FabricatorTemplateAddResult result, bool dryRun)
     {
-        _outputWriter.WriteLine($"Template added: {result.TemplateId}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Template add dry-run: {result.TemplateId}"
+            : $"Template added: {result.TemplateId}");
+        _outputWriter.WriteLine($"Mode: {(dryRun ? "dry-run (no template files or catalog changes will be written)" : "add")}");
         _outputWriter.WriteLine($"Catalog: {result.CatalogPath}");
         _outputWriter.WriteLine($"Template directory: {result.TemplateDirectory}");
         _outputWriter.WriteLine($"Manifest: {result.ManifestPath}");
-        _outputWriter.WriteLine($"Captured files: {result.CapturedFiles.Count}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Files to capture: {result.CapturedFiles.Count}"
+            : $"Captured files: {result.CapturedFiles.Count}");
+        _outputWriter.WriteLine(dryRun ? "Catalog entry would be added: yes" : "Catalog entry added: yes");
 
         foreach (var file in result.CapturedFiles)
         {

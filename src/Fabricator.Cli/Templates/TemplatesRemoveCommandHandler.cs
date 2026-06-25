@@ -23,13 +23,15 @@ public sealed class TemplatesRemoveCommandHandler
         string templateId,
         string catalogSource,
         bool deleteFiles,
+        bool dryRun,
         CancellationToken cancellationToken = default)
     {
         var result = await _removeService.RemoveAsync(
             new FabricatorTemplateRemoveRequest(
                 templateId,
                 catalogSource,
-                deleteFiles),
+                deleteFiles,
+                dryRun),
             cancellationToken);
 
         if (!result.Succeeded)
@@ -38,7 +40,7 @@ public sealed class TemplatesRemoveCommandHandler
             return ExitCodes.InvalidInput;
         }
 
-        RenderResult(result, deleteFiles);
+        RenderResult(result, deleteFiles, dryRun);
         return ExitCodes.Success;
     }
 
@@ -52,16 +54,23 @@ public sealed class TemplatesRemoveCommandHandler
         }
     }
 
-    private void RenderResult(FabricatorTemplateRemoveResult result, bool deleteFiles)
+    private void RenderResult(FabricatorTemplateRemoveResult result, bool deleteFiles, bool dryRun)
     {
-        _outputWriter.WriteLine($"Template removed: {result.TemplateId}");
+        _outputWriter.WriteLine(dryRun
+            ? $"Template remove dry-run: {result.TemplateId}"
+            : $"Template removed: {result.TemplateId}");
+        _outputWriter.WriteLine($"Mode: {(dryRun ? "dry-run (no catalog changes or template file deletions will be written)" : "remove")}");
         _outputWriter.WriteLine($"Catalog: {result.CatalogPath}");
-        _outputWriter.WriteLine($"Catalog entry removed: {(result.CatalogEntryRemoved ? "yes" : "no")}");
+        _outputWriter.WriteLine(dryRun
+            ? "Catalog entry would be removed: yes"
+            : $"Catalog entry removed: {(result.CatalogEntryRemoved ? "yes" : "no")}");
         _outputWriter.WriteLine($"Template directory: {RenderValue(result.TemplateDirectory)}");
 
         if (deleteFiles)
         {
-            _outputWriter.WriteLine($"Template files deleted: {(result.TemplateFilesDeleted ? "yes" : "no")}");
+            _outputWriter.WriteLine(dryRun
+                ? "Template files would be deleted: yes"
+                : $"Template files deleted: {(result.TemplateFilesDeleted ? "yes" : "no")}");
             return;
         }
 

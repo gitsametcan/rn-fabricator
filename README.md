@@ -161,9 +161,12 @@ Apply a template to a compatible Fabricator project:
 
 ```bash
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
+rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
 ```
 
 `templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, records the operation in root `fabricator.json`, and prints manual integration notes for anything it cannot safely automate.
+
+Use `--dry-run` on template lifecycle commands to preview planned writes without changing project files, local catalogs, template folders, exports, or `fabricator.json`.
 
 Show template history for a compatible Fabricator project:
 
@@ -187,18 +190,21 @@ Capture and register a reusable template in a local catalog:
 
 ```bash
 rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json
+rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Refresh an existing local template from a compatible project:
 
 ```bash
 rn-fabricator templates update profile-screen --from ./MyApp --source ./templates/catalog.fabricator.json
+rn-fabricator templates update profile-screen --from ./MyApp --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Remove a template from a local catalog without deleting files:
 
 ```bash
 rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json
+rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Template files are kept by default. Use `--delete-files` only when you explicitly want to remove the local template folder too.
