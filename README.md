@@ -163,7 +163,7 @@ Apply a template to a compatible Fabricator project:
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
 ```
 
-`templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, and prints manual integration notes for anything it cannot safely automate.
+`templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, records the operation in root `fabricator.json`, and prints manual integration notes for anything it cannot safely automate.
 
 Future template lifecycle commands will also use root `fabricator.json` as the user-facing project state file. See [Fabricator State Contract](docs/fabricator-state-contract.md) for the planned state shape.
 

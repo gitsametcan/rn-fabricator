@@ -73,6 +73,7 @@ Expected apply behavior:
 - `targetFolder` is validated against the Fabricator project contract before writing.
 - Existing files are not overwritten unless the user passes an explicit overwrite option.
 - The command prints generated and skipped file output.
+- Successful apply operations are appended to root `fabricator.json` so later status and lifecycle commands can inspect template history.
 
 ## Template Source Resolution
 

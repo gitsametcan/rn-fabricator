@@ -33,11 +33,13 @@ public sealed class FabricatorTemplateApplyService
                 [],
                 [],
                 [],
+                [],
                 compatibility.Errors);
         }
 
         var generatedFiles = new List<string>();
         var skippedFiles = new List<string>();
+        var overwrittenFiles = new List<string>();
         var appliedExports = new List<string>();
         var skippedExports = new List<string>();
         var integrationReports = new List<FabricatorTemplateIntegrationReport>();
@@ -70,7 +72,8 @@ public sealed class FabricatorTemplateApplyService
                 continue;
             }
 
-            if (File.Exists(targetPath) && !request.OverwriteExistingFiles)
+            var targetExists = File.Exists(targetPath);
+            if (targetExists && !request.OverwriteExistingFiles)
             {
                 skippedFiles.Add(targetRelativePath);
                 continue;
@@ -84,6 +87,11 @@ public sealed class FabricatorTemplateApplyService
 
             await File.WriteAllTextAsync(targetPath, contents, cancellationToken);
             generatedFiles.Add(targetRelativePath);
+
+            if (targetExists)
+            {
+                overwrittenFiles.Add(targetRelativePath);
+            }
         }
 
         if (errors.Count == 0)
@@ -103,6 +111,7 @@ public sealed class FabricatorTemplateApplyService
         return new FabricatorTemplateApplyResult(
             generatedFiles,
             skippedFiles,
+            overwrittenFiles,
             appliedExports,
             skippedExports,
             integrationReports,
