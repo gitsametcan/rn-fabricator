@@ -15,6 +15,7 @@ public sealed class FabricatorProjectStateService : IFabricatorProjectStateServi
     };
 
     private readonly IFabricatorProjectCompatibilityValidator _compatibilityValidator;
+    private readonly ITemplateCatalogProvider _templateCatalogProvider;
 
     public FabricatorProjectStateService()
         : this(new FabricatorProjectCompatibilityValidator())
@@ -22,8 +23,16 @@ public sealed class FabricatorProjectStateService : IFabricatorProjectStateServi
     }
 
     public FabricatorProjectStateService(IFabricatorProjectCompatibilityValidator compatibilityValidator)
+        : this(compatibilityValidator, new TemplateCatalogProvider())
+    {
+    }
+
+    public FabricatorProjectStateService(
+        IFabricatorProjectCompatibilityValidator compatibilityValidator,
+        ITemplateCatalogProvider templateCatalogProvider)
     {
         _compatibilityValidator = compatibilityValidator;
+        _templateCatalogProvider = templateCatalogProvider;
     }
 
     public FabricatorProjectStateUpdateResult ValidateCanTrack(string projectDirectory)
@@ -44,6 +53,72 @@ public sealed class FabricatorProjectStateService : IFabricatorProjectStateServi
         return stateRead.Errors.Count == 0
             ? FabricatorProjectStateUpdateResult.Success()
             : FabricatorProjectStateUpdateResult.Failed(stateRead.Errors);
+    }
+
+    public async Task<FabricatorProjectTemplateStatusResult> GetTemplateStatusAsync(
+        string projectDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(projectDirectory);
+
+        var projectRoot = Path.GetFullPath(projectDirectory);
+        var compatibility = _compatibilityValidator.Validate(projectRoot);
+
+        if (!compatibility.IsCompatible)
+        {
+            return FabricatorProjectTemplateStatusResult.Failed(projectRoot, compatibility.Errors);
+        }
+
+        var statePath = Path.Combine(projectRoot, FabricatorProjectStateContract.StateRelativePath);
+        var stateRead = TryReadState(statePath);
+
+        if (stateRead.Errors.Count != 0 || stateRead.State is null)
+        {
+            return FabricatorProjectTemplateStatusResult.Failed(projectRoot, stateRead.Errors);
+        }
+
+        FabricatorProjectState? state;
+        try
+        {
+            state = stateRead.State.Deserialize<FabricatorProjectState>(JsonOptions);
+        }
+        catch (JsonException exception)
+        {
+            return FabricatorProjectTemplateStatusResult.Failed(
+                projectRoot,
+                [$"Fabricator project state file could not be parsed: {statePath}. {exception.Message}"]);
+        }
+
+        if (state is null)
+        {
+            return FabricatorProjectTemplateStatusResult.Failed(
+                projectRoot,
+                [$"Fabricator project state file could not be parsed: {statePath}"]);
+        }
+
+        var catalogCache = new Dictionary<string, FabricatorTemplateCatalog?>(StringComparer.Ordinal);
+        var statuses = new List<FabricatorAppliedTemplateStatus>();
+
+        foreach (var template in state.AppliedTemplates)
+        {
+            var catalogStatus = await GetCatalogStatusAsync(projectRoot, template, catalogCache, cancellationToken);
+            statuses.Add(new FabricatorAppliedTemplateStatus(
+                template.Id,
+                template.Version,
+                template.Category,
+                template.Operation,
+                template.Result,
+                template.AppliedAt,
+                template.Source,
+                template.Files,
+                template.Exports.Count,
+                template.IntegrationNotes.Count,
+                catalogStatus.Status,
+                catalogStatus.Version,
+                catalogStatus.Source));
+        }
+
+        return FabricatorProjectTemplateStatusResult.Success(projectRoot, statuses);
     }
 
     public async Task<FabricatorProjectStateUpdateResult> TrackApplyAsync(
@@ -147,6 +222,70 @@ public sealed class FabricatorProjectStateService : IFabricatorProjectStateServi
             ["value"] = source,
             ["isDefault"] = false
         };
+    }
+
+    private async Task<CatalogStatusResult> GetCatalogStatusAsync(
+        string projectRoot,
+        FabricatorAppliedTemplateState template,
+        Dictionary<string, FabricatorTemplateCatalog?> catalogCache,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(template.Source.Type, FabricatorProjectStateContract.SourceTypeLocal, StringComparison.Ordinal))
+        {
+            return new CatalogStatusResult("not-checked", null, null);
+        }
+
+        if (string.IsNullOrWhiteSpace(template.Source.Value))
+        {
+            return new CatalogStatusResult("catalog-missing", null, null);
+        }
+
+        var catalogSource = ResolveLocalSource(projectRoot, template.Source.Value);
+        if (!File.Exists(catalogSource))
+        {
+            return new CatalogStatusResult("catalog-missing", null, catalogSource);
+        }
+
+        if (!catalogCache.TryGetValue(catalogSource, out var catalog))
+        {
+            try
+            {
+                catalog = await _templateCatalogProvider.ListTemplatesAsync(catalogSource, cancellationToken);
+            }
+            catch (Exception exception) when (exception is TemplatePackageException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            {
+                return new CatalogStatusResult("catalog-unreadable", null, catalogSource);
+            }
+
+            catalogCache[catalogSource] = catalog;
+        }
+
+        var entry = catalog?.Templates.SingleOrDefault(
+            item => string.Equals(item.Id, template.Id, StringComparison.Ordinal));
+
+        if (entry is null)
+        {
+            return new CatalogStatusResult("not-in-catalog", null, catalogSource);
+        }
+
+        var status = string.Equals(entry.Version, template.Version, StringComparison.Ordinal)
+            ? "current"
+            : "catalog-version-differs";
+
+        return new CatalogStatusResult(status, entry.Version, catalogSource);
+    }
+
+    private static string ResolveLocalSource(string projectRoot, string source)
+    {
+        var expandedSource = source.StartsWith("~/", StringComparison.Ordinal)
+            ? Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile),
+                source[2..])
+            : source;
+
+        return Path.GetFullPath(Path.IsPathRooted(expandedSource)
+            ? expandedSource
+            : Path.Combine(projectRoot, expandedSource));
     }
 
     private static JsonArray CreateExportArray(
@@ -311,4 +450,9 @@ public sealed class FabricatorProjectStateService : IFabricatorProjectStateServi
             return new StateReadResult(null, null, errors);
         }
     }
+
+    private sealed record CatalogStatusResult(
+        string Status,
+        string? Version,
+        string? Source);
 }

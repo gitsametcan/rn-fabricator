@@ -208,10 +208,11 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List, inspect, validate, copy, apply, and capture Fabricator templates.");
+        var command = new Command("templates", "List, inspect, validate, status, copy, apply, and capture Fabricator templates.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
         var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
         var validateCommand = new Command("validate", "Validate a Fabricator template catalog.");
+        var statusCommand = new Command("status", "Show templates applied to a compatible Fabricator project.");
         var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
         var captureCommand = new Command("capture", "Capture files from a compatible Fabricator project as a reusable template.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
@@ -254,6 +255,11 @@ public static class CliCommandFactory
         var validateSourceOption = new Option<string>("--source")
         {
             Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var statusProjectOption = new Option<string>("--project")
+        {
+            Description = "Compatible Fabricator project directory to inspect.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
         };
         var outputOption = new Option<string>("--output", "-o")
         {
@@ -318,6 +324,15 @@ public static class CliCommandFactory
             return await handler.RunAsync(source, cancellationToken);
         });
 
+        statusCommand.Options.Add(statusProjectOption);
+        statusCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var projectDirectory = parseResult.GetValue(statusProjectOption) ?? Directory.GetCurrentDirectory();
+            var handler = TemplatesDependencies.CreateDefaultStatusHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(projectDirectory, cancellationToken);
+        });
+
         applyCommand.Arguments.Add(applyTemplateArgument);
         applyCommand.Options.Add(applySourceOption);
         applyCommand.Options.Add(applyOutputOption);
@@ -366,6 +381,7 @@ public static class CliCommandFactory
         command.Subcommands.Add(listCommand);
         command.Subcommands.Add(infoCommand);
         command.Subcommands.Add(validateCommand);
+        command.Subcommands.Add(statusCommand);
         command.Subcommands.Add(applyCommand);
         command.Subcommands.Add(captureCommand);
         command.Subcommands.Add(copyCommand);

@@ -72,4 +72,14 @@ public static class TemplatesDependencies
             outputWriter,
             errorWriter);
     }
+
+    public static TemplatesStatusCommandHandler CreateDefaultStatusHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesStatusCommandHandler(
+            new FabricatorProjectStateService(),
+            outputWriter,
+            errorWriter);
+    }
 }

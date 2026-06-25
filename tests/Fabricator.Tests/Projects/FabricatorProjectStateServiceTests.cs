@@ -73,6 +73,64 @@ public sealed class FabricatorProjectStateServiceTests
     }
 
     [Fact]
+    public async Task GetTemplateStatusAsyncReturnsAppliedTemplateStatusWithLocalCatalogComparison()
+    {
+        using var project = CreateCompatibleProject(includeState: true);
+        var package = CreatePackage();
+        WriteCatalog(project.Path, "profile", "1.2.3");
+        var service = new FabricatorProjectStateService();
+
+        var update = await service.TrackApplyAsync(
+            new FabricatorTemplateApplyStateTrackingRequest(
+                project.Path,
+                "./templates/catalog.fabricator.json",
+                package,
+                new FabricatorTemplateApplyResult(
+                    ["src/screens/ProfileScreen.tsx"],
+                    [],
+                    [],
+                    ["screensBarrel: export { ProfileScreen } from './ProfileScreen';"],
+                    [],
+                    [],
+                    [])));
+
+        var status = await service.GetTemplateStatusAsync(project.Path);
+
+        Assert.True(update.Succeeded);
+        Assert.True(status.Succeeded);
+        Assert.Equal(project.Path, status.ProjectDirectory);
+
+        var profile = Assert.Single(status.AppliedTemplates, template => template.Id == "profile");
+        Assert.Equal("1.2.3", profile.Version);
+        Assert.Equal("screen", profile.Category);
+        Assert.Equal("apply", profile.Operation);
+        Assert.Equal("applied", profile.Result);
+        Assert.Equal("local", profile.Source.Type);
+        Assert.Equal("current", profile.CatalogStatus);
+        Assert.Equal("1.2.3", profile.CatalogVersion);
+        Assert.EndsWith(
+            Path.Combine("templates", "catalog.fabricator.json"),
+            profile.CatalogSource,
+            StringComparison.Ordinal);
+        Assert.Single(profile.Files.Written);
+        Assert.Equal(1, profile.ExportCount);
+    }
+
+    [Fact]
+    public async Task GetTemplateStatusAsyncRequiresFabricatorStateFile()
+    {
+        using var project = CreateCompatibleProject(includeState: false);
+        var service = new FabricatorProjectStateService();
+
+        var status = await service.GetTemplateStatusAsync(project.Path);
+
+        Assert.False(status.Succeeded);
+        Assert.Contains(
+            status.Errors,
+            error => error.Contains("Fabricator project state file was not found", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void ValidateCanTrackReturnsCompatibilityErrorsBeforeStateErrors()
     {
         using var project = new TemporaryDirectory();
@@ -148,6 +206,33 @@ public sealed class FabricatorProjectStateServiceTests
                 files,
                 Category: "screen"),
             files.ToDictionary(file => file.Path, _ => "content\n"));
+    }
+
+    private static void WriteCatalog(string projectPath, string templateId, string version)
+    {
+        var templatesPath = Path.Combine(projectPath, "templates");
+        Directory.CreateDirectory(templatesPath);
+        File.WriteAllText(
+            Path.Combine(templatesPath, "catalog.fabricator.json"),
+            $$"""
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template-catalog",
+              "displayName": "Test catalog",
+              "description": "Test catalog.",
+              "templates": [
+                {
+                  "id": "{{templateId}}",
+                  "displayName": "Profile",
+                  "description": "Profile template.",
+                  "version": "{{version}}",
+                  "manifest": "profile/fabricator-template.json",
+                  "tags": ["profile"],
+                  "category": "screen"
+                }
+              ]
+            }
+            """);
     }
 
     private static TemporaryDirectory CreateCompatibleProject(bool includeState)

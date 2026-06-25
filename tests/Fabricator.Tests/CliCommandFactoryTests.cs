@@ -160,6 +160,16 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void TemplatesStatusCommandAcceptsProjectOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(["templates", "status", "--project", "MyApp"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("status", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
     public void TemplatesCopyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

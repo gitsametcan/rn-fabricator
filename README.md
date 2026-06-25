@@ -165,7 +165,15 @@ rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator
 
 `templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, records the operation in root `fabricator.json`, and prints manual integration notes for anything it cannot safely automate.
 
-Future template lifecycle commands will also use root `fabricator.json` as the user-facing project state file. See [Fabricator State Contract](docs/fabricator-state-contract.md) for the planned state shape.
+Show template history for a compatible Fabricator project:
+
+```bash
+rn-fabricator templates status --project ./MyApp
+```
+
+`templates status` reads root `fabricator.json`, summarizes applied templates, and compares local catalog versions when the recorded template source is available on disk.
+
+Template lifecycle commands use root `fabricator.json` as the user-facing project state file. See [Fabricator State Contract](docs/fabricator-state-contract.md) for the state shape.
 
 Template commands resolve catalog sources in this order: explicit `--source`, `RN_FABRICATOR_TEMPLATE_SOURCE`, catalog sources from root `fabricator.json`, then conventional local `./templates/catalog.fabricator.json`.
 
