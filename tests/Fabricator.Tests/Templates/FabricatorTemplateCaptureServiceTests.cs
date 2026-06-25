@@ -203,6 +203,127 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task RemoveAsyncRemovesCatalogEntryAndKeepsTemplateFilesByDefault()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var removeService = new FabricatorTemplateRemoveService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+
+        var result = await removeService.RemoveAsync(new FabricatorTemplateRemoveRequest(
+            "profile-screen",
+            catalogPath,
+            DeleteFiles: false));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+        Assert.True(result.CatalogEntryRemoved);
+        Assert.False(result.TemplateFilesDeleted);
+        Assert.True(Directory.Exists(Path.Combine(output.Path, "profile-screen")));
+
+        using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+        Assert.Empty(document.RootElement.GetProperty("templates").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task RemoveAsyncDeletesTemplateFilesOnlyWhenRequested()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var removeService = new FabricatorTemplateRemoveService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+
+        var result = await removeService.RemoveAsync(new FabricatorTemplateRemoveRequest(
+            "profile-screen",
+            catalogPath,
+            DeleteFiles: true));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+        Assert.True(result.CatalogEntryRemoved);
+        Assert.True(result.TemplateFilesDeleted);
+        Assert.False(Directory.Exists(Path.Combine(output.Path, "profile-screen")));
+    }
+
+    [Fact]
+    public async Task RemoveAsyncRejectsMissingTemplateIdWithoutChangingCatalog()
+    {
+        using var output = new TemporaryDirectory();
+        WriteCatalog(output.Path);
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var originalCatalog = File.ReadAllText(catalogPath);
+        var removeService = new FabricatorTemplateRemoveService();
+
+        var result = await removeService.RemoveAsync(new FabricatorTemplateRemoveRequest(
+            "missing-template",
+            catalogPath,
+            DeleteFiles: false));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, error => error.Contains("Template id was not found in catalog", StringComparison.Ordinal));
+        Assert.Equal(originalCatalog, File.ReadAllText(catalogPath));
+    }
+
+    [Fact]
+    public async Task RemoveAsyncRejectsUnsafeFileDeletionWithoutChangingCatalog()
+    {
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        File.WriteAllText(
+            catalogPath,
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template-catalog",
+              "displayName": "Unsafe catalog",
+              "description": "Unsafe catalog.",
+              "templates": [
+                {
+                  "id": "unsafe-template",
+                  "displayName": "Unsafe",
+                  "description": "Unsafe.",
+                  "version": "0.1.0",
+                  "category": "screens",
+                  "manifest": "../unsafe/fabricator-template.json",
+                  "tags": ["screens"]
+                }
+              ]
+            }
+            """);
+        var originalCatalog = File.ReadAllText(catalogPath);
+        var removeService = new FabricatorTemplateRemoveService();
+
+        var result = await removeService.RemoveAsync(new FabricatorTemplateRemoveRequest(
+            "unsafe-template",
+            catalogPath,
+            DeleteFiles: true));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, error => error.Contains("resolved outside the catalog directory", StringComparison.Ordinal));
+        Assert.Equal(originalCatalog, File.ReadAllText(catalogPath));
+    }
+
+    [Fact]
     public async Task CaptureAsyncRejectsUnknownCategoryWithoutWritingTemplate()
     {
         using var project = CreateCompatibleProject();

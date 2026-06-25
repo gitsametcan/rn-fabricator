@@ -128,6 +128,18 @@ Refresh an existing local template from the current project files:
 rn-fabricator templates update profile-screen --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
 ```
 
+Remove a template entry from a local catalog:
+
+```bash
+rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json
+```
+
+Delete local template files only when explicitly requested:
+
+```bash
+rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json --delete-files
+```
+
 Expected capture behavior:
 
 - The source project must follow the Fabricator project contract.
@@ -151,6 +163,15 @@ Expected update behavior:
 - The template files and manifest `files` array are refreshed from the source project.
 - Manifest metadata is preserved where possible: display name, description, version, mode, tags, dependencies, exports, and integration hints.
 - The command prints added, changed, removed, and unchanged file counts.
+- Remote catalog URLs are read-only and cannot be updated.
+
+Expected remove behavior:
+
+- `templates remove` requires the template id to exist in the selected local catalog.
+- By default, only the catalog entry is removed; the template folder is kept.
+- `--delete-files` is required before the CLI deletes the local template folder.
+- File deletion is allowed only when the manifest path resolves to a template folder under the catalog directory.
+- Target projects that previously applied the template are not modified.
 - Remote catalog URLs are read-only and cannot be updated.
 
 ## Template Source

@@ -210,6 +210,24 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void TemplatesRemoveCommandAcceptsTemplateSourceAndDeleteFilesOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "remove",
+                "profile-screen",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--delete-files"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("remove", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
     public void TemplatesCopyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();

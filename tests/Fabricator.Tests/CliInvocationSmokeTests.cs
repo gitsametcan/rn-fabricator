@@ -649,6 +649,63 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void TemplatesRemoveCommandRemovesCatalogEntryAndKeepsFilesByDefault()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            int addExitCode;
+            using (ConsoleOutputScope.Capture())
+            {
+                addExitCode = rootCommand.Parse(
+                    [
+                        "templates",
+                        "add",
+                        "profile-screen",
+                        "--category",
+                        "screens",
+                        "--from",
+                        projectDirectory,
+                        "--source",
+                        catalogPath
+                    ]).Invoke();
+            }
+
+            using var output = ConsoleOutputScope.Capture();
+            var removeExitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "remove",
+                    "profile-screen",
+                    "--source",
+                    catalogPath
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, addExitCode);
+            Assert.Equal(ExitCodes.Success, removeExitCode);
+            Assert.Contains("Template removed: profile-screen", output.ToString());
+            Assert.Contains("Catalog entry removed: yes", output.ToString());
+            Assert.Contains("Template files kept: yes", output.ToString());
+            Assert.True(Directory.Exists(Path.Combine(outputDirectory, "profile-screen")));
+
+            using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+            Assert.Empty(document.RootElement.GetProperty("templates").EnumerateArray());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
     public void TemplatesCaptureCommandReturnsInvalidInputForUnknownCategory()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
