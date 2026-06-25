@@ -208,13 +208,14 @@ public static class CliCommandFactory
 
     private static Command CreateTemplatesCommand()
     {
-        var command = new Command("templates", "List, inspect, validate, status, add, update, copy, apply, and capture Fabricator templates.");
+        var command = new Command("templates", "List, inspect, validate, status, add, update, remove, copy, apply, and capture Fabricator templates.");
         var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
         var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
         var validateCommand = new Command("validate", "Validate a Fabricator template catalog.");
         var statusCommand = new Command("status", "Show templates applied to a compatible Fabricator project.");
         var addCommand = new Command("add", "Capture and register a reusable template in a local Fabricator catalog.");
         var updateCommand = new Command("update", "Refresh an existing local template from a compatible Fabricator project.");
+        var removeCommand = new Command("remove", "Remove a template entry from a local Fabricator catalog.");
         var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
         var captureCommand = new Command("capture", "Capture files from a compatible Fabricator project as a reusable template.");
         var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
@@ -237,6 +238,10 @@ public static class CliCommandFactory
         var updateTemplateArgument = new Argument<string>("template")
         {
             Description = "Template id to update."
+        };
+        var removeTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to remove."
         };
         var captureTemplateArgument = new Argument<string>("template")
         {
@@ -322,6 +327,14 @@ public static class CliCommandFactory
         {
             Description = "Local Fabricator template catalog file path to update."
         };
+        var removeSourceOption = new Option<string>("--source")
+        {
+            Description = "Local Fabricator template catalog file path to update."
+        };
+        var removeDeleteFilesOption = new Option<bool>("--delete-files")
+        {
+            Description = "Also delete the template folder when it can be resolved safely."
+        };
 
         listCommand.Options.Add(sourceOption);
         listCommand.Options.Add(categoryOption);
@@ -406,6 +419,19 @@ public static class CliCommandFactory
             return await handler.RunAsync(template, sourceProjectDirectory, source, cancellationToken);
         });
 
+        removeCommand.Arguments.Add(removeTemplateArgument);
+        removeCommand.Options.Add(removeSourceOption);
+        removeCommand.Options.Add(removeDeleteFilesOption);
+        removeCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(removeTemplateArgument);
+            var source = parseResult.GetValue(removeSourceOption) ?? string.Empty;
+            var deleteFiles = parseResult.GetValue(removeDeleteFilesOption);
+            var handler = TemplatesDependencies.CreateDefaultRemoveHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, deleteFiles, cancellationToken);
+        });
+
         captureCommand.Arguments.Add(captureTemplateArgument);
         captureCommand.Options.Add(captureCategoryOption);
         captureCommand.Options.Add(captureFromOption);
@@ -442,6 +468,7 @@ public static class CliCommandFactory
         command.Subcommands.Add(statusCommand);
         command.Subcommands.Add(addCommand);
         command.Subcommands.Add(updateCommand);
+        command.Subcommands.Add(removeCommand);
         command.Subcommands.Add(applyCommand);
         command.Subcommands.Add(captureCommand);
         command.Subcommands.Add(copyCommand);

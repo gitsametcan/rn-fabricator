@@ -71,6 +71,16 @@ public static class TemplatesDependencies
             errorWriter);
     }
 
+    public static TemplatesRemoveCommandHandler CreateDefaultRemoveHandler(
+        TextWriter outputWriter,
+        TextWriter errorWriter)
+    {
+        return new TemplatesRemoveCommandHandler(
+            new FabricatorTemplateRemoveService(),
+            outputWriter,
+            errorWriter);
+    }
+
     public static TemplatesInfoCommandHandler CreateDefaultInfoHandler(
         TextWriter outputWriter,
         TextWriter errorWriter)

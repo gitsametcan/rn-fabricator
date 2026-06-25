@@ -195,7 +195,15 @@ Refresh an existing local template from a compatible project:
 rn-fabricator templates update profile-screen --from ./MyApp --source ./templates/catalog.fabricator.json
 ```
 
-See [Reusable Template Workflow](docs/reusable-template-workflow.md) for the full create, list, info, apply, capture, add, and update flow.
+Remove a template from a local catalog without deleting files:
+
+```bash
+rn-fabricator templates remove profile-screen --source ./templates/catalog.fabricator.json
+```
+
+Template files are kept by default. Use `--delete-files` only when you explicitly want to remove the local template folder too.
+
+See [Reusable Template Workflow](docs/reusable-template-workflow.md) for the full create, list, info, apply, capture, add, update, and remove flow.
 
 Useful help commands:
 
@@ -212,6 +220,7 @@ rn-fabricator templates apply --help
 rn-fabricator templates capture --help
 rn-fabricator templates add --help
 rn-fabricator templates update --help
+rn-fabricator templates remove --help
 rn-fabricator templates copy --help
 ```
 

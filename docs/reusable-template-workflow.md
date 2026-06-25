@@ -232,6 +232,23 @@ rn-fabricator templates update profile-screen \
 
 Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
 
+Remove a template from the local catalog without deleting the template folder:
+
+```bash
+rn-fabricator templates remove profile-screen \
+  --source ./captured-templates/catalog.fabricator.json
+```
+
+To also delete the local template folder, opt in explicitly:
+
+```bash
+rn-fabricator templates remove profile-screen \
+  --source ./captured-templates/catalog.fabricator.json \
+  --delete-files
+```
+
+Remove does not modify projects that previously applied the template.
+
 Then inspect and apply it like any other template:
 
 ```bash
