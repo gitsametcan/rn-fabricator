@@ -281,6 +281,7 @@ rn-fabricator templates copy --help
 - [Reusable Template Workflow](docs/reusable-template-workflow.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
+- [v1.0.0-beta.1 Release Notes](docs/releases/v1.0.0-beta.1.md)
 - [v0.9.0 Release Notes](docs/releases/v0.9.0.md)
 - [v0.8.0 Release Notes](docs/releases/v0.8.0.md)
 - [v0.7.1 Release Notes](docs/releases/v0.7.1.md)

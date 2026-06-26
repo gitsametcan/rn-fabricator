@@ -8,6 +8,30 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 No unreleased changes.
 
+## 1.0.0-beta.1 - 2026-06-26
+
+### Added
+
+- Root `fabricator.json` project state generation for Fabricator-created projects.
+- Template source resolution from explicit `--source`, `RN_FABRICATOR_TEMPLATE_SOURCE`, root `fabricator.json`, and conventional local catalogs.
+- `templates status` for inspecting applied template history and local catalog version status.
+- Local template lifecycle commands for reusable catalogs:
+  - `templates add`
+  - `templates update`
+  - `templates remove`
+- `--dry-run` support for `templates apply`, `templates add`, `templates update`, and `templates remove`.
+- Beta readiness coverage for create state generation, local source resolution, validation diagnostics, apply state tracking, duplicate apply behavior, lifecycle dry-runs, and invalid state handling.
+
+### Changed
+
+- Template command output now includes more consistent `Summary:` and `Next:` lines for portfolio-quality logs and clearer failure recovery.
+- `templates apply` records successful operations in root `fabricator.json` and reports state tracking in command output.
+- Local template lifecycle documentation now covers project-to-template-to-catalog workflows, repo-external dogfooding, beta catalog examples, and manual integration limits.
+
+### Fixed
+
+- `templates validate` now accepts Fabricator project folder categories such as `screens`, `components`, `services`, and `utils` for templates captured with local lifecycle commands.
+
 ## 0.9.0 - 2026-06-24
 
 ### Added

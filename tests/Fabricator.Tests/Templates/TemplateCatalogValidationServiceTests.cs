@@ -100,6 +100,19 @@ public sealed class TemplateCatalogValidationServiceTests
         Assert.Contains(result.Issues, issue => issue.Code == "unsupported-export-statement");
     }
 
+    [Fact]
+    public async Task ValidateAsyncAcceptsFabricatorProjectFolderCategories()
+    {
+        using var directory = new TemporaryDirectory();
+        var catalogPath = WriteCatalog(directory.Path, category: "screens");
+        var service = new TemplateCatalogValidationService();
+
+        var result = await service.ValidateAsync(new TemplateCatalogValidationRequest(catalogPath));
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Issues);
+    }
+
     private static string WriteCatalog(
         string root,
         bool duplicateEntry = false,

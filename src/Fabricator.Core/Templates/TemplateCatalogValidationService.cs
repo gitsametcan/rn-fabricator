@@ -10,11 +10,17 @@ public sealed class TemplateCatalogValidationService : ITemplateCatalogValidatio
     {
         "starter",
         "screen",
+        "screens",
         "component",
+        "components",
         "service",
+        "services",
         "util",
+        "utils",
         "integration",
+        "integrations",
         "layout",
+        "layouts",
         "navigation",
         "auth",
         "config"
