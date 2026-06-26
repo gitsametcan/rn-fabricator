@@ -37,6 +37,7 @@ List available templates:
 ```bash
 rn-fabricator templates list
 rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
@@ -101,6 +102,22 @@ Source precedence:
 
 Relative source paths from `fabricator.json` are resolved from the directory that contains that state file. Relative environment variable sources are resolved from the current working directory. Explicit relative `--source` values keep the existing command-line behavior.
 
+Recommended local authoring workspace:
+
+```text
+rn-fabricator-playground/
+  FabricatorBabyStep/
+    .fabricator/project.json
+    fabricator.json
+    src/
+  local-templates/
+    catalog.fabricator.json
+    profile-screen/
+      fabricator-template.json
+```
+
+Use the release-tagged raw catalog for reproducible read-only examples. Use a local filesystem catalog, such as `./local-templates/catalog.fabricator.json`, when running `templates add`, `templates update`, or `templates remove`.
+
 Expected copy behavior:
 
 - Copy remains a lower-level escape hatch.
@@ -163,6 +180,7 @@ Expected add behavior:
 - The local `catalog.fabricator.json` file is created when missing.
 - Existing catalog metadata is preserved and the `templates` array is sorted by template id.
 - Duplicate template ids are rejected; use the update flow for existing templates.
+- Remote catalog URLs are read-only and cannot receive new template entries.
 - `--dry-run` previews captured files and the catalog entry without writing the template folder or catalog file.
 
 Expected update behavior:
@@ -184,6 +202,22 @@ Expected remove behavior:
 - Target projects that previously applied the template are not modified.
 - Remote catalog URLs are read-only and cannot be updated.
 - `--dry-run` previews catalog removal and optional file deletion without changing the catalog or deleting files.
+
+## Local Template Lifecycle Workflow
+
+1. Create or open a Fabricator-compatible project.
+2. Create a local template workspace outside the project root.
+3. Capture the first version with `templates add --dry-run`.
+4. Run `templates add` without `--dry-run` after reviewing output.
+5. Run `templates validate --source ./local-templates/catalog.fabricator.json`.
+6. Run `templates info <template> --source ./local-templates/catalog.fabricator.json`.
+7. Apply the template to a second Fabricator project with `templates apply --dry-run`, then without dry-run.
+8. When the source project changes, refresh the template with `templates update --dry-run`, then without dry-run.
+9. Remove deprecated templates with `templates remove --dry-run`; pass `--delete-files` only when deleting the local template folder is intended.
+
+`templates add`, `templates update`, and `templates remove` modify local catalog files and local template folders. They do not modify target projects that previously applied a template.
+
+`templates apply` is the project-mutating command. It writes files into the target project, appends safe barrel exports, and records successful operations in root `fabricator.json`.
 
 ## Template Source
 

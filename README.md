@@ -64,8 +64,8 @@ dotnet tool update --global rn-fabricator
 Install from a local package while developing the repository:
 
 ```bash
-dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages
-dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 0.9.0
+dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages -p:VersionPrefix=1.0.0 -p:VersionSuffix=beta.1
+dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 1.0.0-beta.1
 ./.tools/rn-fabricator --help
 ```
 
@@ -127,6 +127,24 @@ Create with an explicit Fabricator template catalog source:
 rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
 ```
 
+For beta releases, use the matching tagged catalog when you want reproducible examples:
+
+```bash
+rn-fabricator create MyApp \
+  --template-source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json
+```
+
+For local template authoring, keep the project and the editable template workspace side by side:
+
+```text
+fabricator-playground/
+  MyApp/
+  local-templates/
+    catalog.fabricator.json
+```
+
+Use `local-templates/catalog.fabricator.json` as the local catalog source while capturing, updating, validating, and applying templates.
+
 List templates from a Fabricator template catalog:
 
 ```bash
@@ -180,6 +198,8 @@ Template lifecycle commands use root `fabricator.json` as the user-facing projec
 
 Template commands resolve catalog sources in this order: explicit `--source`, `RN_FABRICATOR_TEMPLATE_SOURCE`, catalog sources from root `fabricator.json`, then conventional local `./templates/catalog.fabricator.json`.
 
+`fabricator.json` is created by `rn-fabricator create`. Template apply records successful operations there, and status reads it later. If the file is missing or invalid, template commands fail with a repair-oriented error instead of guessing.
+
 Capture a reusable template from a compatible Fabricator project folder:
 
 ```bash
@@ -208,6 +228,8 @@ rn-fabricator templates remove profile-screen --source ./templates/catalog.fabri
 ```
 
 Template files are kept by default. Use `--delete-files` only when you explicitly want to remove the local template folder too.
+
+Fabricator can add files and safe barrel exports automatically. It intentionally leaves arbitrary imports, navigation registration, menu wiring, dependency installation, and secret/env decisions as manual integration notes.
 
 See [Reusable Template Workflow](docs/reusable-template-workflow.md) for the full create, list, info, apply, capture, add, update, and remove flow.
 

@@ -18,8 +18,8 @@ Do not generate React Native projects inside the rn-fabricator repository. Gener
 Download the release package into the playground:
 
 ```bash
-curl -L -o rn-fabricator.0.9.0.nupkg \
-  https://github.com/gitsametcan/rn-fabricator/releases/download/v0.9.0/rn-fabricator.0.9.0.nupkg
+curl -L -o rn-fabricator.1.0.0-beta.1.nupkg \
+  https://github.com/gitsametcan/rn-fabricator/releases/download/v1.0.0-beta.1/rn-fabricator.1.0.0-beta.1.nupkg
 ```
 
 Install it as a local tool:
@@ -28,7 +28,7 @@ Install it as a local tool:
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source . \
-  --version 0.9.0
+  --version 1.0.0-beta.1
 ```
 
 Verify the installed tool:
@@ -52,7 +52,7 @@ Install a locally packed development version from the rn-fabricator repository:
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source /Users/sametcan/Documents/GitHub/fabricator/artifacts/packages \
-  --version 0.9.0
+  --version 1.0.0-beta.1
 ```
 
 Use a version override when packing an experimental build:
@@ -62,7 +62,7 @@ cd /Users/sametcan/Documents/GitHub/fabricator
 dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj \
   --configuration Release \
   --output artifacts/packages \
-  -p:VersionPrefix=0.9.0 \
+  -p:VersionPrefix=1.0.0 \
   -p:VersionSuffix=dogfood.1
 ```
 
@@ -73,7 +73,7 @@ cd ~/Documents/rn-fabricator-playground
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source /Users/sametcan/Documents/GitHub/fabricator/artifacts/packages \
-  --version 0.9.0-dogfood.1
+  --version 1.0.0-dogfood.1
 ```
 
 ## Run Dogfooding Checks
@@ -137,10 +137,24 @@ Use the local repository catalog while testing unreleased template behavior:
 export RN_FABRICATOR_TEMPLATE_SOURCE="/Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json"
 ```
 
+Keep dogfooding outside the rn-fabricator repository so generated React Native files and local template experiments do not pollute the source tree:
+
+```bash
+mkdir -p ~/Documents/rn-fabricator-playground/local-templates
+cd ~/Documents/rn-fabricator-playground
+export RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE="$PWD/local-templates/catalog.fabricator.json"
+```
+
 Use the GitHub raw catalog only after the relevant changes are pushed:
 
 ```bash
 export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json"
+```
+
+Use the release-tagged raw catalog when validating a beta package exactly as users will see it:
+
+```bash
+export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json"
 ```
 
 Create a sample React Native project with the minimal splash and main starter:
@@ -156,6 +170,7 @@ Expected generated starter files:
 ```text
 FabricatorBabyStep/App.tsx
 FabricatorBabyStep/.fabricator/project.json
+FabricatorBabyStep/fabricator.json
 FabricatorBabyStep/src/screens/SplashScreen.tsx
 FabricatorBabyStep/src/screens/MainScreen.tsx
 FabricatorBabyStep/src/screens/index.ts
@@ -199,6 +214,21 @@ util/storage
 ```
 
 Expected category output includes `basic-auth` and excludes `minimal-splash`.
+
+Validate the catalog before applying templates:
+
+```bash
+./.tools/rn-fabricator templates validate \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected validate output includes:
+
+```text
+Template catalog validation
+Result: valid
+Summary: catalog is valid.
+```
 
 List component templates:
 
@@ -270,8 +300,10 @@ FabricatorBabyStep/src/screens/index.ts
 Expected apply output includes export and integration sections:
 
 ```text
+State tracking: fabricator.json updated
 Exports applied: 4
 Integration notes: 2
+Summary:
 ```
 
 `src/screens/index.ts` should include idempotent screen exports such as:
@@ -324,6 +356,15 @@ FabricatorBabyStep/src/components/PrimaryButton.tsx
 export { PrimaryButton } from './PrimaryButton';
 ```
 
+Check the applied template history:
+
+```bash
+./.tools/rn-fabricator templates status \
+  --project ./FabricatorBabyStep
+```
+
+Expected status output includes the create operation and later apply operations from `fabricator.json`.
+
 Capture a reusable template from the generated project's screen folder:
 
 ```bash
@@ -341,6 +382,68 @@ captured-templates/baby-step-screens/src/screens/index.ts
 ```
 
 The generated manifest should include `category: screens` and file mappings with `targetFolder: screens`.
+
+Add and register a local reusable template:
+
+```bash
+./.tools/rn-fabricator templates add baby-step-screens \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --dry-run
+```
+
+Expected dry-run behavior:
+
+- No `local-templates/catalog.fabricator.json` file is written.
+- No `local-templates/baby-step-screens` folder is created.
+- Output includes `Template add dry-run`, `Files to capture`, and `Summary`.
+
+Drop `--dry-run` after reviewing the output:
+
+```bash
+./.tools/rn-fabricator templates add baby-step-screens \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+```
+
+Validate and inspect the local catalog:
+
+```bash
+./.tools/rn-fabricator templates validate \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+
+./.tools/rn-fabricator templates info baby-step-screens \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+```
+
+Update the local template after changing files under `FabricatorBabyStep/src/screens`:
+
+```bash
+./.tools/rn-fabricator templates update baby-step-screens \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --dry-run
+```
+
+Drop `--dry-run` only after reviewing added, changed, removed, and unchanged file counts.
+
+Remove a local template entry without deleting its folder:
+
+```bash
+./.tools/rn-fabricator templates remove baby-step-screens \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --dry-run
+```
+
+Use `--delete-files` only when the local template folder should also be deleted.
+
+Known manual integration limits to watch during dogfooding:
+
+- Fabricator can add safe barrel exports, but it does not edit arbitrary imports in user-authored files.
+- Navigation registration, menu wiring, dependency installation, and secret or environment decisions remain manual integration notes.
+- Remote GitHub raw catalogs are read-only; use a local filesystem catalog for add, update, and remove.
 
 Use low-level copy only when you intentionally want to copy template source paths without Fabricator project validation:
 
