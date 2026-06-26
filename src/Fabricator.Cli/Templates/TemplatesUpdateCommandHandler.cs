@@ -47,11 +47,10 @@ public sealed class TemplatesUpdateCommandHandler
     private void RenderFailure(FabricatorTemplateUpdateResult result)
     {
         _errorWriter.WriteLine("Template update failed.");
-
-        foreach (var error in result.Errors)
-        {
-            _errorWriter.WriteLine($"- {error}");
-        }
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(
+            _errorWriter,
+            "Check the template id, source project path, and catalog source, then retry.");
     }
 
     private void RenderResult(FabricatorTemplateUpdateResult result, bool dryRun)
@@ -71,6 +70,13 @@ public sealed class TemplatesUpdateCommandHandler
         RenderFileList("Added", result.AddedFiles);
         RenderFileList("Changed", result.ChangedFiles);
         RenderFileList("Removed", result.RemovedFiles);
+
+        _outputWriter.WriteLine(dryRun
+            ? $"Summary: would add {result.AddedFiles.Count}, change {result.ChangedFiles.Count}, remove {result.RemovedFiles.Count}, keep {result.UnchangedFiles.Count} file(s)."
+            : $"Summary: added {result.AddedFiles.Count}, changed {result.ChangedFiles.Count}, removed {result.RemovedFiles.Count}, kept {result.UnchangedFiles.Count} file(s).");
+        TemplateCommandOutput.WriteNext(
+            _outputWriter,
+            $"Run templates info {result.TemplateId} --source {result.CatalogPath} to review the updated template.");
     }
 
     private void RenderFileList(string label, IReadOnlyList<string> files)

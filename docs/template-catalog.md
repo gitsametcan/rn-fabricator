@@ -84,6 +84,8 @@ Expected apply behavior:
 - `templates status` reads root `fabricator.json`, prints applied template history, and compares versions against recorded local catalog sources when those files are available.
 - `templates apply --dry-run` prints planned file writes, export updates, skips, and integration notes without writing project files, exports, or `fabricator.json`.
 
+Template command output should stay screenshot-friendly and actionable. Successful commands print a concise `Summary:` line, and commands that leave a follow-up action for the developer print a `Next:` line. Failures include the failing template id, catalog source, project path, or file path when that information is available.
+
 ## Template Source Resolution
 
 Template commands can read a source explicitly or resolve one from the local workspace.

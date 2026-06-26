@@ -39,6 +39,9 @@ public sealed class TemplatesInfoCommandHandler
         if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
             _errorWriter.WriteLine(sourceResolution.ErrorMessage);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                "Pass --source <catalog-path-or-url> or set RN_FABRICATOR_TEMPLATE_SOURCE, then retry.");
             return ExitCodes.InvalidInput;
         }
 
@@ -53,18 +56,23 @@ public sealed class TemplatesInfoCommandHandler
         {
             _errorWriter.WriteLine("Template could not be read.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                $"Check template id '{templateId}' and the catalog source, then run templates info again.");
             return ExitCodes.InvalidInput;
         }
         catch (HttpRequestException exception)
         {
             _errorWriter.WriteLine("Template catalog request failed.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Check your network connection and catalog URL, then retry.");
             return ExitCodes.GeneralFailure;
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             _errorWriter.WriteLine("Template catalog request timed out.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Retry the command or use a local catalog source.");
             return ExitCodes.GeneralFailure;
         }
     }
@@ -87,6 +95,13 @@ public sealed class TemplatesInfoCommandHandler
         RenderDependencies(manifest.Dependencies);
         RenderExports(manifest.Exports);
         RenderIntegrationHints(manifest.IntegrationHints);
+
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine(
+            $"Summary: {manifest.Files.Count} file(s), {manifest.Exports?.Count ?? 0} export(s), {manifest.IntegrationHints?.Count ?? 0} integration hint(s).");
+        TemplateCommandOutput.WriteNext(
+            _outputWriter,
+            $"Run templates apply {manifest.Id} --source <catalog> --output <project> to apply this template.");
     }
 
     private void RenderFiles(IReadOnlyList<FabricatorTemplateFile> files)

@@ -44,6 +44,9 @@ public sealed class TemplatesCopyCommandHandler
         if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
             _errorWriter.WriteLine(sourceResolution.ErrorMessage);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                "Pass --source <catalog-path-or-url> or set RN_FABRICATOR_TEMPLATE_SOURCE, then retry.");
             return ExitCodes.InvalidInput;
         }
 
@@ -59,18 +62,23 @@ public sealed class TemplatesCopyCommandHandler
         {
             _errorWriter.WriteLine("Template could not be read.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                $"Check template id '{templateId}' and the catalog source, then run templates copy again.");
             return ExitCodes.InvalidInput;
         }
         catch (HttpRequestException exception)
         {
             _errorWriter.WriteLine("Template catalog request failed.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Check your network connection and catalog URL, then retry.");
             return ExitCodes.GeneralFailure;
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             _errorWriter.WriteLine("Template catalog request timed out.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Retry the command or use a local catalog source.");
             return ExitCodes.GeneralFailure;
         }
     }
@@ -145,14 +153,16 @@ public sealed class TemplatesCopyCommandHandler
 
         if (result.Errors.Count == 0)
         {
+            _outputWriter.WriteLine(
+                $"Summary: {result.GeneratedFiles.Count} generated, {result.SkippedFiles.Count} skipped, 0 error(s).");
             return;
         }
 
         _errorWriter.WriteLine("Template copy completed with errors.");
-        foreach (var error in result.Errors)
-        {
-            _errorWriter.WriteLine($"- {error}");
-        }
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(_errorWriter, "Fix the listed file paths or permissions, then retry.");
+        _outputWriter.WriteLine(
+            $"Summary: {result.GeneratedFiles.Count} generated, {result.SkippedFiles.Count} skipped, {result.Errors.Count} error(s).");
     }
 
     private static bool IsChildPath(string parentPath, string childPath)

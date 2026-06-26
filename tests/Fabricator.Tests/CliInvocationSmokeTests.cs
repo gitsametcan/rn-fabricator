@@ -125,6 +125,7 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Category: starter", output.ToString());
         Assert.Contains("Category: auth", output.ToString());
         Assert.Contains("Category: screen", output.ToString());
+        Assert.Contains("Summary:", output.ToString());
     }
 
     [Fact]
@@ -153,6 +154,7 @@ public sealed class CliInvocationSmokeTests
 
         Assert.Equal(ExitCodes.Success, exitCode);
         Assert.Contains("No templates found for category: navigation", output.ToString());
+        Assert.Contains("Summary: 0 template(s) shown.", output.ToString());
     }
 
     [Fact]
@@ -185,6 +187,8 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Target path: src/auth/AuthProvider.tsx", output.ToString());
         Assert.Contains("Exports: 4", output.ToString());
         Assert.Contains("Integration hints: 2", output.ToString());
+        Assert.Contains("Summary:", output.ToString());
+        Assert.Contains("Next:", output.ToString());
     }
 
     [Fact]
@@ -231,6 +235,7 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Template catalog validation", output.ToString());
         Assert.Contains($"Source: {source}", output.ToString());
         Assert.Contains("Result: valid", output.ToString());
+        Assert.Contains("Summary: catalog is valid.", output.ToString());
     }
 
     [Fact]
@@ -269,6 +274,8 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.InvalidInput, exitCode);
             Assert.Contains("Result: invalid", output.ToString());
             Assert.Contains("template-read-failed", output.ToString());
+            Assert.Contains("Summary: catalog has 1 issue(s).", output.ToString());
+            Assert.Contains("Next:", output.ToString());
         }
         finally
         {
@@ -292,6 +299,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.Success, exitCode);
             Assert.Contains("Template copied: basic-auth", output.ToString());
             Assert.Contains("Generated:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
             Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
@@ -346,6 +354,8 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains("Generated:", output.ToString());
             Assert.Contains("Exports applied: 4", output.ToString());
             Assert.Contains("Integration notes: 2", output.ToString());
+            Assert.Contains("State tracking: fabricator.json updated", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
             Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
@@ -410,6 +420,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains("Mode: dry-run", output.ToString());
             Assert.Contains("Would generate:", output.ToString());
             Assert.Contains("Exports to apply:", output.ToString());
+            Assert.Contains("State tracking: skipped (dry-run)", output.ToString());
             Assert.False(File.Exists(Path.Combine(outputDirectory, ".env.example")));
             Assert.False(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
             Assert.Equal(originalScreensBarrel, File.ReadAllText(screensBarrelPath));
@@ -499,6 +510,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.GeneralFailure, exitCode);
             Assert.Contains("Template apply failed.", output.ErrorOutput);
             Assert.Contains("Fabricator project manifest was not found", output.ErrorOutput);
+            Assert.Contains("Next:", output.ErrorOutput);
         }
         finally
         {
@@ -524,6 +536,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains("minimal-splash (0.1.0)", output.ToString());
             Assert.Contains("Operation: create", output.ToString());
             Assert.Contains("Catalog: not checked for embedded or remote source", output.ToString());
+            Assert.Contains("Summary: 1 applied template record(s).", output.ToString());
         }
         finally
         {
@@ -560,6 +573,8 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.Success, exitCode);
             Assert.Contains("Template captured: profile-screen", output.ToString());
             Assert.Contains("Captured files:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.Contains("Next:", output.ToString());
             Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
         }
@@ -601,6 +616,8 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains("Template added: profile-screen", output.ToString());
             Assert.Contains($"Catalog: {catalogPath}", output.ToString());
             Assert.Contains("Captured files:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.Contains("Next:", output.ToString());
             Assert.True(File.Exists(catalogPath));
             Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
 
@@ -708,6 +725,8 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.Success, updateExitCode);
             Assert.Contains("Template updated: profile-screen", output.ToString());
             Assert.Contains("Files:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.Contains("Next:", output.ToString());
             Assert.Contains("Changed:", output.ToString());
             Assert.Contains("src/screens/ProfileScreen.tsx", output.ToString());
             Assert.Contains("Added:", output.ToString());
@@ -768,6 +787,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Contains("Template removed: profile-screen", output.ToString());
             Assert.Contains("Catalog entry removed: yes", output.ToString());
             Assert.Contains("Template files kept: yes", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
             Assert.True(Directory.Exists(Path.Combine(outputDirectory, "profile-screen")));
 
             using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
@@ -806,6 +826,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.InvalidInput, exitCode);
             Assert.Contains("Template capture failed.", output.ErrorOutput);
             Assert.Contains("Category must match a Fabricator project folder key", output.ErrorOutput);
+            Assert.Contains("Next:", output.ErrorOutput);
             Assert.False(Directory.Exists(Path.Combine(outputDirectory, "auth-template")));
         }
         finally
@@ -831,6 +852,7 @@ public sealed class CliInvocationSmokeTests
             Assert.Equal(ExitCodes.InvalidInput, exitCode);
             Assert.Contains("Template could not be read.", output.ErrorOutput);
             Assert.Contains("missing-template", output.ErrorOutput);
+            Assert.Contains("Next:", output.ErrorOutput);
         }
         finally
         {

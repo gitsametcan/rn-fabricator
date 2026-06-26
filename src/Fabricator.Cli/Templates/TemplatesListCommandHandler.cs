@@ -39,6 +39,9 @@ public sealed class TemplatesListCommandHandler
         if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
             _errorWriter.WriteLine(sourceResolution.ErrorMessage);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                "Pass --source <catalog-path-or-url> or set RN_FABRICATOR_TEMPLATE_SOURCE, then retry.");
             return ExitCodes.InvalidInput;
         }
 
@@ -52,18 +55,21 @@ public sealed class TemplatesListCommandHandler
         {
             _errorWriter.WriteLine("Template catalog could not be read.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Check the catalog path or URL, then run templates list again.");
             return ExitCodes.InvalidInput;
         }
         catch (HttpRequestException exception)
         {
             _errorWriter.WriteLine("Template catalog request failed.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Check your network connection and catalog URL, then retry.");
             return ExitCodes.GeneralFailure;
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             _errorWriter.WriteLine("Template catalog request timed out.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Retry the command or use a local catalog source.");
             return ExitCodes.GeneralFailure;
         }
     }
@@ -89,6 +95,7 @@ public sealed class TemplatesListCommandHandler
             _outputWriter.WriteLine(string.IsNullOrWhiteSpace(category)
                 ? "No templates found."
                 : $"No templates found for category: {category}");
+            _outputWriter.WriteLine("Summary: 0 template(s) shown.");
             return;
         }
 
@@ -99,6 +106,9 @@ public sealed class TemplatesListCommandHandler
             _outputWriter.WriteLine($"  Category: {RenderValue(template.Category)}");
             _outputWriter.WriteLine($"  Description: {template.Description}");
         }
+
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine($"Summary: {templates.Count} template(s) shown.");
     }
 
     private static IReadOnlyList<FabricatorTemplateCatalogEntry> FilterTemplates(

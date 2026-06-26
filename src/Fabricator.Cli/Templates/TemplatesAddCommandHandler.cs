@@ -49,11 +49,10 @@ public sealed class TemplatesAddCommandHandler
     private void RenderFailure(FabricatorTemplateAddResult result)
     {
         _errorWriter.WriteLine("Template add failed.");
-
-        foreach (var error in result.Errors)
-        {
-            _errorWriter.WriteLine($"- {error}");
-        }
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(
+            _errorWriter,
+            "Check the template id, category, source project path, and catalog source, then retry.");
     }
 
     private void RenderResult(FabricatorTemplateAddResult result, bool dryRun)
@@ -74,5 +73,12 @@ public sealed class TemplatesAddCommandHandler
         {
             _outputWriter.WriteLine($"- {file}");
         }
+
+        _outputWriter.WriteLine(dryRun
+            ? $"Summary: would capture {result.CapturedFiles.Count} file(s) and add 1 catalog entry."
+            : $"Summary: captured {result.CapturedFiles.Count} file(s) and added 1 catalog entry.");
+        TemplateCommandOutput.WriteNext(
+            _outputWriter,
+            $"Run templates info {result.TemplateId} --source {result.CatalogPath} to review the saved template.");
     }
 }

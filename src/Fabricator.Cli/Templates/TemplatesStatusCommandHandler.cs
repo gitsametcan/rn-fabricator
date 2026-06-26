@@ -26,6 +26,7 @@ public sealed class TemplatesStatusCommandHandler
         if (string.IsNullOrWhiteSpace(projectDirectory))
         {
             _errorWriter.WriteLine("Project directory is required.");
+            TemplateCommandOutput.WriteNext(_errorWriter, "Pass --project <project-root> or run from a Fabricator project.");
             return ExitCodes.InvalidInput;
         }
 
@@ -43,11 +44,10 @@ public sealed class TemplatesStatusCommandHandler
     private void RenderFailure(FabricatorProjectTemplateStatusResult result)
     {
         _errorWriter.WriteLine("Template status failed.");
-
-        foreach (var error in result.Errors)
-        {
-            _errorWriter.WriteLine($"- {error}");
-        }
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(
+            _errorWriter,
+            "Run this command from a Fabricator project root or pass --project <project-root>.");
     }
 
     private void RenderStatus(FabricatorProjectTemplateStatusResult result)
@@ -60,6 +60,7 @@ public sealed class TemplatesStatusCommandHandler
         if (result.AppliedTemplates.Count == 0)
         {
             _outputWriter.WriteLine("No templates have been applied.");
+            _outputWriter.WriteLine("Summary: 0 applied template record(s).");
             return;
         }
 
@@ -77,6 +78,9 @@ public sealed class TemplatesStatusCommandHandler
             _outputWriter.WriteLine($"  Integration notes: {template.IntegrationNoteCount}");
             _outputWriter.WriteLine($"  Catalog: {RenderCatalogStatus(template)}");
         }
+
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine($"Summary: {result.AppliedTemplates.Count} applied template record(s).");
     }
 
     private static string RenderSource(FabricatorTemplateSourceState source)
