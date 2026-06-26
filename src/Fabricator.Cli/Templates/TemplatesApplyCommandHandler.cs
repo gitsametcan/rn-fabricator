@@ -52,6 +52,9 @@ public sealed class TemplatesApplyCommandHandler
         if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
             _errorWriter.WriteLine(sourceResolution.ErrorMessage);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                "Pass --source <catalog-path-or-url> or set RN_FABRICATOR_TEMPLATE_SOURCE, then retry.");
             return ExitCodes.InvalidInput;
         }
 
@@ -94,18 +97,23 @@ public sealed class TemplatesApplyCommandHandler
         {
             _errorWriter.WriteLine("Template could not be read.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                $"Check template id '{templateId}' and the catalog source, then run templates apply again.");
             return ExitCodes.InvalidInput;
         }
         catch (HttpRequestException exception)
         {
             _errorWriter.WriteLine("Template catalog request failed.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Check your network connection and catalog URL, then retry.");
             return ExitCodes.GeneralFailure;
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             _errorWriter.WriteLine("Template catalog request timed out.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Retry the command or use a local catalog source.");
             return ExitCodes.GeneralFailure;
         }
     }
@@ -114,20 +122,16 @@ public sealed class TemplatesApplyCommandHandler
     {
         _errorWriter.WriteLine("Template apply failed.");
 
-        foreach (var error in result.Errors)
-        {
-            _errorWriter.WriteLine($"- {error}");
-        }
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(_errorWriter, "Run this command from a Fabricator project root or pass --output <project-root>.");
     }
 
     private void RenderStateFailure(FabricatorProjectStateUpdateResult result)
     {
         _errorWriter.WriteLine("Template state tracking failed.");
 
-        foreach (var error in result.Errors)
-        {
-            _errorWriter.WriteLine($"- {error}");
-        }
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(_errorWriter, "Fix fabricator.json access or permissions, then retry.");
     }
 
     private void RenderResult(
@@ -144,7 +148,8 @@ public sealed class TemplatesApplyCommandHandler
         _outputWriter.WriteLine($"Mode: {(dryRun ? "dry-run (no files, exports, or fabricator.json changes will be written)" : "apply")}");
         _outputWriter.WriteLine($"Source: {source}");
         _outputWriter.WriteLine($"Output directory: {Path.GetFullPath(outputDirectory)}");
-        _outputWriter.WriteLine($"Overwrite: {(overwrite ? "yes" : "no")}");
+        _outputWriter.WriteLine($"Overwrite: {TemplateCommandOutput.RenderYesNo(overwrite)}");
+        _outputWriter.WriteLine(RenderStateTracking(dryRun, result.Succeeded));
         _outputWriter.WriteLine();
         _outputWriter.WriteLine(dryRun
             ? $"Would generate: {result.GeneratedFiles.Count}"
@@ -188,13 +193,27 @@ public sealed class TemplatesApplyCommandHandler
 
         if (result.Succeeded)
         {
+            _outputWriter.WriteLine(
+                $"Summary: {result.GeneratedFiles.Count} generated, {result.SkippedFiles.Count} skipped, {result.AppliedExports.Count} export(s) applied, {result.SkippedExports.Count} export(s) skipped.");
             return;
         }
 
         _errorWriter.WriteLine("Template apply failed.");
-        foreach (var error in result.Errors)
+        TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+        TemplateCommandOutput.WriteNext(_errorWriter, "Fix the listed file, export, or project compatibility issue, then retry.");
+        _outputWriter.WriteLine(
+            $"Summary: {result.GeneratedFiles.Count} generated, {result.SkippedFiles.Count} skipped, {result.AppliedExports.Count} export(s) applied, {result.Errors.Count} error(s).");
+    }
+
+    private static string RenderStateTracking(bool dryRun, bool succeeded)
+    {
+        if (dryRun)
         {
-            _errorWriter.WriteLine($"- {error}");
+            return "State tracking: skipped (dry-run)";
         }
+
+        return succeeded
+            ? "State tracking: fabricator.json updated"
+            : "State tracking: skipped (apply failed)";
     }
 }

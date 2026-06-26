@@ -37,10 +37,10 @@ public sealed class TemplatesCaptureCommandHandler
         if (!result.Succeeded)
         {
             _errorWriter.WriteLine("Template capture failed.");
-            foreach (var error in result.Errors)
-            {
-                _errorWriter.WriteLine($"- {error}");
-            }
+            TemplateCommandOutput.WriteErrors(_errorWriter, result.Errors);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                "Check the template id, category, source project path, and output path, then retry.");
 
             return ExitCodes.InvalidInput;
         }
@@ -54,6 +54,10 @@ public sealed class TemplatesCaptureCommandHandler
         {
             _outputWriter.WriteLine($"  + {file}");
         }
+
+        _outputWriter.WriteLine(
+            $"Summary: captured {result.CapturedFiles.Count} file(s) into {result.TemplateDirectory}.");
+        TemplateCommandOutput.WriteNext(_outputWriter, "Review the generated manifest before publishing or adding it to a catalog.");
 
         return ExitCodes.Success;
     }

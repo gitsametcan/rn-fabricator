@@ -32,6 +32,9 @@ public sealed class TemplatesValidateCommandHandler
         if (!sourceResolution.Succeeded || string.IsNullOrWhiteSpace(sourceResolution.Source))
         {
             _errorWriter.WriteLine(sourceResolution.ErrorMessage);
+            TemplateCommandOutput.WriteNext(
+                _errorWriter,
+                "Pass --source <catalog-path-or-url> or set RN_FABRICATOR_TEMPLATE_SOURCE, then retry.");
             return ExitCodes.InvalidInput;
         }
 
@@ -49,12 +52,14 @@ public sealed class TemplatesValidateCommandHandler
         {
             _errorWriter.WriteLine("Template catalog request failed.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Check your network connection and catalog URL, then retry.");
             return ExitCodes.GeneralFailure;
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             _errorWriter.WriteLine("Template catalog request timed out.");
             _errorWriter.WriteLine(exception.Message);
+            TemplateCommandOutput.WriteNext(_errorWriter, "Retry the command or use a local catalog source.");
             return ExitCodes.GeneralFailure;
         }
     }
@@ -69,6 +74,7 @@ public sealed class TemplatesValidateCommandHandler
         if (result.Succeeded)
         {
             _outputWriter.WriteLine("Result: valid");
+            _outputWriter.WriteLine("Summary: catalog is valid.");
             return;
         }
 
@@ -82,5 +88,9 @@ public sealed class TemplatesValidateCommandHandler
                 : $" [{issue.TemplateId}]";
             _outputWriter.WriteLine($"- {issue.Code}{templatePrefix}: {issue.Message}");
         }
+
+        _outputWriter.WriteLine();
+        _outputWriter.WriteLine($"Summary: catalog has {result.Issues.Count} issue(s).");
+        TemplateCommandOutput.WriteNext(_outputWriter, "Fix the listed catalog issues and run templates validate again.");
     }
 }
