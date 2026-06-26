@@ -21,10 +21,19 @@ The project root must include:
 
 ```text
 .fabricator/project.json
+fabricator.json
 src/
 ```
 
-The template catalog source must be explicit:
+`.fabricator/project.json` tells rn-fabricator where files can be written safely. Root `fabricator.json` records template sources and applied template operations so `templates status` can explain what happened later.
+
+For release-stable examples, use the catalog from the matching release tag:
+
+```bash
+export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json"
+```
+
+For latest development examples, use the `develop` catalog:
 
 ```bash
 export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json"
@@ -35,6 +44,16 @@ For local dogfooding, point to the repository catalog:
 ```bash
 export RN_FABRICATOR_TEMPLATE_SOURCE="/Users/sametcan/Documents/GitHub/fabricator/templates/catalog.fabricator.json"
 ```
+
+For local template authoring, create a repo-external playground and a writable local catalog workspace:
+
+```bash
+mkdir -p ~/Documents/rn-fabricator-playground/local-templates
+cd ~/Documents/rn-fabricator-playground
+export RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE="$PWD/local-templates/catalog.fabricator.json"
+```
+
+Use the remote or repository catalog for discovering existing templates. Use `RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE` for add, update, remove, and local validate operations.
 
 ## 1. Create A Compatible Project
 
@@ -51,7 +70,17 @@ Expected result:
 - React Native CLI project files are created.
 - The minimal splash and main starter is applied.
 - `.fabricator/project.json` declares the Fabricator project contract.
+- Root `fabricator.json` records the create operation and the starter template source.
 - Standard folders such as `src/screens`, `src/components`, `src/services`, and `src/utils` exist.
+
+Inspect project state:
+
+```bash
+rn-fabricator templates status \
+  --project ./FabricatorBabyStep
+```
+
+The status output should show the create-time `minimal-splash` entry. Later `templates apply` operations are appended to the same `fabricator.json` history.
 
 ## 2. List Templates
 
@@ -99,6 +128,15 @@ Current repository examples:
 
 ## 3. Inspect Before Applying
 
+Validate the catalog before applying templates:
+
+```bash
+rn-fabricator templates validate \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+The command reads the catalog and referenced manifests, then reports invalid schema, missing files, duplicate ids, unsupported categories, and unsafe export statements.
+
 Inspect a template before it mutates a project:
 
 ```bash
@@ -114,6 +152,15 @@ Review:
 - `Dependencies`: package or tool requirements the template reports.
 
 ## 4. Apply A Template
+
+Preview the apply first:
+
+```bash
+rn-fabricator templates apply component/primary-button \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
+```
 
 Apply a template to a compatible project:
 
@@ -139,6 +186,8 @@ Apply is non-destructive by default:
 
 - Existing files are skipped.
 - Existing export statements are not duplicated.
+- A successful operation is appended to `FabricatorBabyStep/fabricator.json`.
+- `templates status --project ./FabricatorBabyStep` shows the applied template history.
 - Use `--overwrite` only after reviewing skipped files.
 
 ```bash
@@ -205,11 +254,18 @@ To reuse a captured template through catalog commands, add it to a catalog file:
 rn-fabricator templates add profile-screen \
   --category screens \
   --from ./FabricatorBabyStep \
-  --source ./captured-templates/catalog.fabricator.json \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --dry-run
 ```
 
-Drop `--dry-run` to create the template directory under `./captured-templates` and register a catalog entry like this:
+Drop `--dry-run` to create the template directory under `./local-templates` and register a catalog entry like this:
+
+```bash
+rn-fabricator templates add profile-screen \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+```
 
 ```json
 {
@@ -223,30 +279,55 @@ Drop `--dry-run` to create the template directory under `./captured-templates` a
 }
 ```
 
+Validate and inspect the local catalog:
+
+```bash
+rn-fabricator templates validate \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+
+rn-fabricator templates info profile-screen \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+```
+
 When the source project changes, refresh the existing local template:
 
 ```bash
 rn-fabricator templates update profile-screen \
   --from ./FabricatorBabyStep \
-  --source ./captured-templates/catalog.fabricator.json \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --dry-run
 ```
 
-Drop `--dry-run` to apply the update. Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
+Drop `--dry-run` to apply the update:
+
+```bash
+rn-fabricator templates update profile-screen \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+```
+
+Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
 
 Remove a template from the local catalog without deleting the template folder:
 
 ```bash
 rn-fabricator templates remove profile-screen \
-  --source ./captured-templates/catalog.fabricator.json \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --dry-run
+```
+
+Drop `--dry-run` to remove only the catalog entry:
+
+```bash
+rn-fabricator templates remove profile-screen \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
 ```
 
 To also delete the local template folder, opt in explicitly:
 
 ```bash
 rn-fabricator templates remove profile-screen \
-  --source ./captured-templates/catalog.fabricator.json \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --delete-files \
   --dry-run
 ```
@@ -257,14 +338,26 @@ Then inspect and apply it like any other template:
 
 ```bash
 rn-fabricator templates info profile-screen \
-  --source ./captured-templates/catalog.fabricator.json
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
 
 rn-fabricator templates apply profile-screen \
-  --source ./captured-templates/catalog.fabricator.json \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --output ./AnotherFabricatorApp
 ```
 
-## 7. Dogfooding Checklist
+## 7. Local Lifecycle Rules
+
+Use this rule of thumb:
+
+- `templates capture` creates a standalone template folder but does not register it in a catalog.
+- `templates add` captures and registers a new template in a local catalog.
+- `templates update` refreshes an existing local template from the source project folder.
+- `templates remove` removes a local catalog entry and keeps files unless `--delete-files` is passed.
+- `--dry-run` is the first command to run before any add, update, remove, or apply operation.
+
+Local lifecycle commands require a filesystem catalog path. Remote GitHub raw URLs are read-only sources for list, info, validate, copy, and apply.
+
+## 8. Dogfooding Checklist
 
 Use a repo-external playground directory:
 
@@ -294,6 +387,12 @@ rn-fabricator templates capture baby-step-screens \
   --category screens \
   --from ./FabricatorBabyStep \
   --output ./captured-templates
+
+rn-fabricator templates add baby-step-screens \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --dry-run
 ```
 
 Turn feedback into issues with the command, expected behavior, actual behavior, platform, and rn-fabricator version.
