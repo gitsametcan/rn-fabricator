@@ -223,7 +223,7 @@ Unsupported work is reported as integration notes so the developer can apply it 
 Capture a known Fabricator project folder into a reusable template:
 
 ```bash
-rn-fabricator templates capture profile-screen \
+rn-fabricator templates capture profile-screens \
   --category screens \
   --from ./FabricatorBabyStep \
   --output ./captured-templates
@@ -232,7 +232,8 @@ rn-fabricator templates capture profile-screen \
 Important rules:
 
 - `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `services`, or `utils`.
-- Capture copies files from that folder into a new template directory.
+- Without `--include`, capture copies files from that folder into a new template directory.
+- With `--include`, capture copies only the selected project-relative files.
 - Capture writes `fabricator-template.json` with schema v2 metadata.
 - Existing output folders are not overwritten.
 - Invalid capture attempts fail without publishing a partial template folder.
@@ -241,20 +242,45 @@ Expected output shape:
 
 ```text
 captured-templates/
-  profile-screen/
+  profile-screens/
     fabricator-template.json
     src/
       screens/
         ProfileScreen.tsx
 ```
 
-To reuse a captured template through catalog commands, add it to a catalog file:
+Capture one screen from the same project without capturing the whole `src/screens` folder:
+
+```bash
+rn-fabricator templates capture profile-screen \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --output ./captured-templates \
+  --include src/screens/ProfileScreen.tsx
+```
+
+Capture a small feature slice by selecting files from more than one Fabricator folder:
+
+```bash
+rn-fabricator templates capture profile-feature \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --output ./captured-templates \
+  --include src/screens/ProfileScreen.tsx \
+  --include src/components/ProfileHeader.tsx \
+  --include src/services/profileApi.ts
+```
+
+Selected files are still mapped back to their Fabricator target folders. For example, `src/screens/ProfileScreen.tsx` targets `screens`, `src/components/ProfileHeader.tsx` targets `components`, and `src/services/profileApi.ts` targets `services`.
+
+To capture and register the selected screen through catalog commands, add it to a catalog file:
 
 ```bash
 rn-fabricator templates add profile-screen \
   --category screens \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --include src/screens/ProfileScreen.tsx \
   --dry-run
 ```
 
@@ -264,7 +290,8 @@ Drop `--dry-run` to create the template directory under `./local-templates` and 
 rn-fabricator templates add profile-screen \
   --category screens \
   --from ./FabricatorBabyStep \
-  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --include src/screens/ProfileScreen.tsx
 ```
 
 ```json
@@ -303,10 +330,11 @@ Drop `--dry-run` to apply the update:
 ```bash
 rn-fabricator templates update profile-screen \
   --from ./FabricatorBabyStep \
-  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --include src/screens/ProfileScreen.tsx
 ```
 
-Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. It refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category.
+Update preserves the existing manifest display name, description, version, mode, tags, dependencies, exports, and integration hints. Without `--include`, it refreshes the `files` array and template file contents from the Fabricator project folder declared by the existing manifest category. With `--include`, it refreshes only the selected files and keeps the template narrow.
 
 Remove a template from the local catalog without deleting the template folder:
 
@@ -352,6 +380,7 @@ Use this rule of thumb:
 - `templates capture` creates a standalone template folder but does not register it in a catalog.
 - `templates add` captures and registers a new template in a local catalog.
 - `templates update` refreshes an existing local template from the source project folder.
+- `--include` narrows capture, add, or update to one or more project-relative files.
 - `templates remove` removes a local catalog entry and keeps files unless `--delete-files` is passed.
 - `--dry-run` is the first command to run before any add, update, remove, or apply operation.
 

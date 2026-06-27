@@ -206,10 +206,17 @@ Capture a reusable template from a compatible Fabricator project folder:
 rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates
 ```
 
+Capture only one screen, component, service, or utility by passing project-relative `--include` paths:
+
+```bash
+rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates --include src/screens/ProfileScreen.tsx
+```
+
 Capture and register a reusable template in a local catalog:
 
 ```bash
 rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json
+rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json --include src/screens/ProfileScreen.tsx
 rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json --dry-run
 ```
 
@@ -217,6 +224,7 @@ Refresh an existing local template from a compatible project:
 
 ```bash
 rn-fabricator templates update profile-screen --from ./MyApp --source ./templates/catalog.fabricator.json
+rn-fabricator templates update profile-screen --from ./MyApp --source ./templates/catalog.fabricator.json --include src/screens/ProfileScreen.tsx
 rn-fabricator templates update profile-screen --from ./MyApp --source ./templates/catalog.fabricator.json --dry-run
 ```
 

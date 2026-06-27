@@ -383,6 +383,23 @@ captured-templates/baby-step-screens/src/screens/index.ts
 
 The generated manifest should include `category: screens` and file mappings with `targetFolder: screens`.
 
+Capture only one screen from the generated project:
+
+```bash
+./.tools/rn-fabricator templates capture fabricator-beta-screen \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --output ./captured-templates \
+  --include src/screens/FabricatorBeta.tsx
+```
+
+Expected selected-file capture output includes only the requested screen and the template manifest:
+
+```text
+captured-templates/fabricator-beta-screen/fabricator-template.json
+captured-templates/fabricator-beta-screen/src/screens/FabricatorBeta.tsx
+```
+
 Add and register a local reusable template:
 
 ```bash
@@ -408,6 +425,16 @@ Drop `--dry-run` after reviewing the output:
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
 ```
 
+Add and register only one selected screen:
+
+```bash
+./.tools/rn-fabricator templates add fabricator-beta-screen \
+  --category screens \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --include src/screens/FabricatorBeta.tsx
+```
+
 Validate and inspect the local catalog:
 
 ```bash
@@ -428,6 +455,16 @@ Update the local template after changing files under `FabricatorBabyStep/src/scr
 ```
 
 Drop `--dry-run` only after reviewing added, changed, removed, and unchanged file counts.
+
+Update only the selected-screen template after changing `FabricatorBeta.tsx`:
+
+```bash
+./.tools/rn-fabricator templates update fabricator-beta-screen \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --include src/screens/FabricatorBeta.tsx \
+  --dry-run
+```
 
 Remove a local template entry without deleting its folder:
 
