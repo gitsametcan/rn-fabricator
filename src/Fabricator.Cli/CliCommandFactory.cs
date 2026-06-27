@@ -302,6 +302,11 @@ public static class CliCommandFactory
         {
             Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
         };
+        var captureIncludeOption = new Option<string[]>("--include")
+        {
+            Description = "Project-relative file path to capture. Can be provided multiple times.",
+            AllowMultipleArgumentsPerToken = true
+        };
         var captureFromOption = new Option<string>("--from")
         {
             Description = "Compatible Fabricator project directory to capture from."
@@ -314,6 +319,11 @@ public static class CliCommandFactory
         var addCategoryOption = new Option<string>("--category")
         {
             Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
+        };
+        var addIncludeOption = new Option<string[]>("--include")
+        {
+            Description = "Project-relative file path to capture. Can be provided multiple times.",
+            AllowMultipleArgumentsPerToken = true
         };
         var addFromOption = new Option<string>("--from")
         {
@@ -330,6 +340,11 @@ public static class CliCommandFactory
         var updateFromOption = new Option<string>("--from")
         {
             Description = "Compatible Fabricator project directory to refresh from."
+        };
+        var updateIncludeOption = new Option<string[]>("--include")
+        {
+            Description = "Project-relative file path to refresh. Can be provided multiple times.",
+            AllowMultipleArgumentsPerToken = true
         };
         var updateSourceOption = new Option<string>("--source")
         {
@@ -411,6 +426,7 @@ public static class CliCommandFactory
 
         addCommand.Arguments.Add(addTemplateArgument);
         addCommand.Options.Add(addCategoryOption);
+        addCommand.Options.Add(addIncludeOption);
         addCommand.Options.Add(addFromOption);
         addCommand.Options.Add(addSourceOption);
         addCommand.Options.Add(addDryRunOption);
@@ -421,13 +437,15 @@ public static class CliCommandFactory
             var sourceProjectDirectory = parseResult.GetValue(addFromOption) ?? string.Empty;
             var source = parseResult.GetValue(addSourceOption) ?? string.Empty;
             var dryRun = parseResult.GetValue(addDryRunOption);
+            var includePaths = parseResult.GetValue(addIncludeOption) ?? [];
             var handler = TemplatesDependencies.CreateDefaultAddHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, category, sourceProjectDirectory, source, dryRun, cancellationToken);
+            return await handler.RunAsync(template, category, sourceProjectDirectory, source, dryRun, includePaths, cancellationToken);
         });
 
         updateCommand.Arguments.Add(updateTemplateArgument);
         updateCommand.Options.Add(updateFromOption);
+        updateCommand.Options.Add(updateIncludeOption);
         updateCommand.Options.Add(updateSourceOption);
         updateCommand.Options.Add(updateDryRunOption);
         updateCommand.SetAction(async (parseResult, cancellationToken) =>
@@ -436,9 +454,10 @@ public static class CliCommandFactory
             var sourceProjectDirectory = parseResult.GetValue(updateFromOption) ?? string.Empty;
             var source = parseResult.GetValue(updateSourceOption) ?? string.Empty;
             var dryRun = parseResult.GetValue(updateDryRunOption);
+            var includePaths = parseResult.GetValue(updateIncludeOption) ?? [];
             var handler = TemplatesDependencies.CreateDefaultUpdateHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, sourceProjectDirectory, source, dryRun, cancellationToken);
+            return await handler.RunAsync(template, sourceProjectDirectory, source, dryRun, includePaths, cancellationToken);
         });
 
         removeCommand.Arguments.Add(removeTemplateArgument);
@@ -458,6 +477,7 @@ public static class CliCommandFactory
 
         captureCommand.Arguments.Add(captureTemplateArgument);
         captureCommand.Options.Add(captureCategoryOption);
+        captureCommand.Options.Add(captureIncludeOption);
         captureCommand.Options.Add(captureFromOption);
         captureCommand.Options.Add(captureOutputOption);
         captureCommand.SetAction(async (parseResult, cancellationToken) =>
@@ -466,9 +486,10 @@ public static class CliCommandFactory
             var category = parseResult.GetValue(captureCategoryOption) ?? string.Empty;
             var sourceProjectDirectory = parseResult.GetValue(captureFromOption) ?? string.Empty;
             var outputDirectory = parseResult.GetValue(captureOutputOption) ?? Path.Combine(Directory.GetCurrentDirectory(), "templates");
+            var includePaths = parseResult.GetValue(captureIncludeOption) ?? [];
             var handler = TemplatesDependencies.CreateDefaultCaptureHandler(Console.Out, Console.Error);
 
-            return await handler.RunAsync(template, category, sourceProjectDirectory, outputDirectory, cancellationToken);
+            return await handler.RunAsync(template, category, sourceProjectDirectory, outputDirectory, includePaths, cancellationToken);
         });
 
         copyCommand.Arguments.Add(templateArgument);

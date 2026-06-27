@@ -50,6 +50,56 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task CaptureAsyncCreatesTemplateFromIncludedFilesOnly()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "SettingsScreen.tsx"),
+            "export function SettingsScreen() { return null; }\n");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "components", "PrimaryButton.tsx"),
+            "export function PrimaryButton() { return null; }\n");
+        var service = new FabricatorTemplateCaptureService();
+
+        var result = await service.CaptureAsync(new FabricatorTemplateCaptureRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            output.Path,
+            IncludePaths:
+            [
+                "src/screens/ProfileScreen.tsx",
+                "src/components/PrimaryButton.tsx"
+            ]));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(
+            ["src/components/PrimaryButton.tsx", "src/screens/ProfileScreen.tsx"],
+            result.CapturedFiles.Order(StringComparer.Ordinal));
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "components", "PrimaryButton.tsx")));
+        Assert.False(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "SettingsScreen.tsx")));
+
+        var manifest = JsonSerializer.Deserialize<FabricatorTemplateManifest>(
+            File.ReadAllText(Path.Combine(output.Path, "profile-screen", "fabricator-template.json")),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(manifest);
+        Assert.Contains(manifest.Files, file =>
+            file.Path == "src/screens/ProfileScreen.tsx" &&
+            file.TargetPath == "src/screens/ProfileScreen.tsx" &&
+            file.TargetFolder == "screens");
+        Assert.Contains(manifest.Files, file =>
+            file.Path == "src/components/PrimaryButton.tsx" &&
+            file.TargetPath == "src/components/PrimaryButton.tsx" &&
+            file.TargetFolder == "components");
+    }
+
+    [Fact]
     public async Task CaptureAsyncCreatesTemplateThatCanBeAppliedToAnotherProject()
     {
         using var sourceProject = CreateCompatibleProject();
@@ -82,6 +132,46 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task CaptureAsyncCreatesIncludedTemplateThatCanBeAppliedToAnotherProject()
+    {
+        using var sourceProject = CreateCompatibleProject();
+        using var targetProject = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(sourceProject.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        File.WriteAllText(
+            Path.Combine(sourceProject.Path, "src", "components", "PrimaryButton.tsx"),
+            "export function PrimaryButton() { return null; }\n");
+        var captureService = new FabricatorTemplateCaptureService();
+
+        var captureResult = await captureService.CaptureAsync(new FabricatorTemplateCaptureRequest(
+            "profile-screen",
+            "screens",
+            sourceProject.Path,
+            output.Path,
+            IncludePaths:
+            [
+                "src/screens/ProfileScreen.tsx",
+                "src/components/PrimaryButton.tsx"
+            ]));
+        WriteCatalog(output.Path);
+
+        var package = await new TemplateCatalogProvider()
+            .GetTemplateAsync(Path.Combine(output.Path, "catalog.fabricator.json"), "profile-screen");
+        var applyResult = await new FabricatorTemplateApplyService()
+            .ApplyAsync(new FabricatorTemplateApplyRequest(
+                package,
+                targetProject.Path,
+                OverwriteExistingFiles: false));
+
+        Assert.True(captureResult.Succeeded);
+        Assert.True(applyResult.Succeeded);
+        Assert.True(File.Exists(Path.Combine(targetProject.Path, "src", "screens", "ProfileScreen.tsx")));
+        Assert.True(File.Exists(Path.Combine(targetProject.Path, "src", "components", "PrimaryButton.tsx")));
+    }
+
+    [Fact]
     public async Task AddAsyncCapturesTemplateAndRegistersCatalogEntry()
     {
         using var project = CreateCompatibleProject();
@@ -108,6 +198,37 @@ public sealed class FabricatorTemplateCaptureServiceTests
         var package = await new TemplateCatalogProvider().GetTemplateAsync(catalogPath, "profile-screen");
         Assert.Equal("profile-screen", package.Manifest.Id);
         Assert.Equal("screens", package.Manifest.Category);
+    }
+
+    [Fact]
+    public async Task AddAsyncCapturesIncludedFilesAndRegistersCatalogEntry()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "screens", "SettingsScreen.tsx"),
+            "export function SettingsScreen() { return null; }\n");
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var service = new FabricatorTemplateAddService();
+
+        var result = await service.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath,
+            IncludePaths: ["src/screens/ProfileScreen.tsx"]));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(["src/screens/ProfileScreen.tsx"], result.CapturedFiles);
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        Assert.False(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "SettingsScreen.tsx")));
+
+        var package = await new TemplateCatalogProvider().GetTemplateAsync(catalogPath, "profile-screen");
+        Assert.Single(package.Manifest.Files);
+        Assert.Equal("src/screens/ProfileScreen.tsx", package.Manifest.Files[0].TargetPath);
     }
 
     [Fact]
@@ -207,6 +328,49 @@ public sealed class FabricatorTemplateCaptureServiceTests
         Assert.Equal("Custom Profile Template", manifest.DisplayName);
         Assert.Equal("1.2.3", manifest.Version);
         Assert.Contains("custom", manifest.Tags ?? []);
+    }
+
+    [Fact]
+    public async Task UpdateAsyncRefreshesIncludedFilesOnly()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var profilePath = Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx");
+        var settingsPath = Path.Combine(project.Path, "src", "screens", "SettingsScreen.tsx");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'old'; }\n");
+        File.WriteAllText(settingsPath, "export function SettingsScreen() { return 'old'; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var updateService = new FabricatorTemplateUpdateService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath,
+            IncludePaths: ["src/screens/ProfileScreen.tsx"]));
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'new'; }\n");
+        File.WriteAllText(settingsPath, "export function SettingsScreen() { return 'new'; }\n");
+
+        var result = await updateService.UpdateAsync(new FabricatorTemplateUpdateRequest(
+            "profile-screen",
+            project.Path,
+            catalogPath,
+            IncludePaths: ["src/screens/ProfileScreen.tsx"]));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+        Assert.Contains("src/screens/ProfileScreen.tsx", result.ChangedFiles);
+        Assert.DoesNotContain("src/screens/SettingsScreen.tsx", result.AddedFiles);
+        Assert.True(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        Assert.False(File.Exists(Path.Combine(output.Path, "profile-screen", "src", "screens", "SettingsScreen.tsx")));
+
+        var manifest = JsonSerializer.Deserialize<FabricatorTemplateManifest>(
+            File.ReadAllText(Path.Combine(output.Path, "profile-screen", "fabricator-template.json")),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(manifest);
+        Assert.Single(manifest.Files);
+        Assert.Equal("src/screens/ProfileScreen.tsx", manifest.Files[0].Path);
     }
 
     [Fact]
@@ -512,6 +676,32 @@ public sealed class FabricatorTemplateCaptureServiceTests
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, error => error.Contains("No files were found in Fabricator folder: src/utils", StringComparison.Ordinal));
         Assert.False(Directory.Exists(Path.Combine(output.Path, "empty-utils")));
+    }
+
+    [Theory]
+    [InlineData("../outside.tsx", "must not contain current or parent segments")]
+    [InlineData("src/screens/MissingScreen.tsx", "Included file was not found")]
+    [InlineData("src/screens", "Included path must be a file")]
+    [InlineData("App.tsx", "Included file must be under a Fabricator project folder")]
+    public async Task CaptureAsyncRejectsInvalidIncludePathsWithoutWritingTemplate(
+        string includePath,
+        string expectedError)
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(Path.Combine(project.Path, "App.tsx"), "export {};\n");
+        var service = new FabricatorTemplateCaptureService();
+
+        var result = await service.CaptureAsync(new FabricatorTemplateCaptureRequest(
+            "invalid-include",
+            "screens",
+            project.Path,
+            output.Path,
+            IncludePaths: [includePath]));
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, error => error.Contains(expectedError, StringComparison.Ordinal));
+        Assert.False(Directory.Exists(Path.Combine(output.Path, "invalid-include")));
     }
 
     private static TemporaryDirectory CreateCompatibleProject()

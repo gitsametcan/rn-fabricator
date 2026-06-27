@@ -24,6 +24,7 @@ public sealed class TemplatesUpdateCommandHandler
         string sourceProjectDirectory,
         string catalogSource,
         bool dryRun,
+        IReadOnlyList<string>? includePaths,
         CancellationToken cancellationToken = default)
     {
         var result = await _updateService.UpdateAsync(
@@ -31,7 +32,8 @@ public sealed class TemplatesUpdateCommandHandler
                 templateId,
                 sourceProjectDirectory,
                 catalogSource,
-                dryRun),
+                dryRun,
+                includePaths),
             cancellationToken);
 
         if (!result.Succeeded)
