@@ -24,6 +24,7 @@ public sealed class TemplatesCaptureCommandHandler
         string category,
         string sourceProjectDirectory,
         string outputDirectory,
+        IReadOnlyList<string>? includePaths,
         CancellationToken cancellationToken = default)
     {
         var result = await _captureService.CaptureAsync(
@@ -31,7 +32,8 @@ public sealed class TemplatesCaptureCommandHandler
                 templateId,
                 category,
                 sourceProjectDirectory,
-                outputDirectory),
+                outputDirectory,
+                IncludePaths: includePaths),
             cancellationToken);
 
         if (!result.Succeeded)

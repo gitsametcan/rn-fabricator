@@ -322,51 +322,16 @@ public sealed class FabricatorTemplateUpdateService
 
         var projectManifest = compatibility.Manifest
             ?? throw new InvalidOperationException("Compatible Fabricator projects must include a manifest.");
-        var folder = projectManifest.Folders.FirstOrDefault(folder =>
-            string.Equals(folder.Key, category, StringComparison.Ordinal));
+        var selection = FabricatorProjectTemplateFileSelector.Select(
+            projectManifest,
+            projectRoot,
+            category,
+            request.IncludePaths,
+            cancellationToken);
 
-        if (folder is null)
-        {
-            return ProjectCaptureResult.Failed([$"Category must match a Fabricator project folder key: {category}"]);
-        }
-
-        var captureRoot = Path.GetFullPath(Path.Combine(projectRoot, folder.Path));
-        if (!IsChildPath(projectRoot, captureRoot))
-        {
-            return ProjectCaptureResult.Failed([$"Capture folder resolved outside the project root: {folder.Path}"]);
-        }
-
-        var capturedFiles = Directory
-            .EnumerateFiles(captureRoot, "*", SearchOption.AllDirectories)
-            .Select(Path.GetFullPath)
-            .OrderBy(path => path, StringComparer.Ordinal)
-            .ToArray();
-
-        if (capturedFiles.Length == 0)
-        {
-            return ProjectCaptureResult.Failed([$"No files were found in Fabricator folder: {folder.Path}"]);
-        }
-
-        var templateFiles = new List<FabricatorTemplateFile>();
-        foreach (var capturedFile in capturedFiles)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (!IsChildPath(projectRoot, capturedFile))
-            {
-                return ProjectCaptureResult.Failed([$"Captured file resolved outside the project root: {capturedFile}"]);
-            }
-
-            var relativePath = Path.GetRelativePath(projectRoot, capturedFile).Replace('\\', '/');
-            templateFiles.Add(new FabricatorTemplateFile(
-                relativePath,
-                "file",
-                relativePath,
-                folder.Key,
-                $"Captured from {relativePath}."));
-        }
-
-        return ProjectCaptureResult.Success(templateFiles);
+        return selection.Succeeded
+            ? ProjectCaptureResult.Success(selection.Files)
+            : ProjectCaptureResult.Failed(selection.Errors);
     }
 
     private static FabricatorTemplateManifest PreserveMetadata(

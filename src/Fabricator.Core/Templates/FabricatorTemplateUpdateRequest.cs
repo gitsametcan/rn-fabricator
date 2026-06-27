@@ -4,4 +4,5 @@ public sealed record FabricatorTemplateUpdateRequest(
     string TemplateId,
     string SourceProjectDirectory,
     string CatalogSource,
-    bool DryRun = false);
+    bool DryRun = false,
+    IReadOnlyList<string>? IncludePaths = null);

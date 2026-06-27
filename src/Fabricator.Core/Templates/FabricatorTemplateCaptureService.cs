@@ -59,57 +59,18 @@ public sealed class FabricatorTemplateCaptureService
 
         var manifest = compatibility.Manifest
             ?? throw new InvalidOperationException("Compatible Fabricator projects must include a manifest.");
-        var folder = manifest.Folders.FirstOrDefault(folder =>
-            string.Equals(folder.Key, request.Category, StringComparison.Ordinal));
-
-        if (folder is null)
+        var selection = FabricatorProjectTemplateFileSelector.Select(
+            manifest,
+            projectRoot,
+            request.Category,
+            request.IncludePaths,
+            cancellationToken);
+        if (!selection.Succeeded)
         {
-            errors.Add($"Category must match a Fabricator project folder key: {request.Category}");
-            return Failed(request, errors);
+            return Failed(request, selection.Errors);
         }
 
-        if (!TryResolveProjectPath(projectRoot, folder.Path, out var captureRoot, out var captureRootError))
-        {
-            errors.Add($"Invalid capture folder '{folder.Path}': {captureRootError}");
-            return Failed(request, errors);
-        }
-
-        var capturedFiles = Directory
-            .EnumerateFiles(captureRoot, "*", SearchOption.AllDirectories)
-            .Select(path => Path.GetFullPath(path))
-            .OrderBy(path => path, StringComparer.Ordinal)
-            .ToArray();
-
-        if (capturedFiles.Length == 0)
-        {
-            errors.Add($"No files were found in Fabricator folder: {folder.Path}");
-            return Failed(request, errors);
-        }
-
-        var templateFiles = new List<FabricatorTemplateFile>();
-        foreach (var capturedFile in capturedFiles)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (!IsChildPath(projectRoot, capturedFile))
-            {
-                errors.Add($"Captured file resolved outside the project root: {capturedFile}");
-                continue;
-            }
-
-            var relativePath = Path.GetRelativePath(projectRoot, capturedFile).Replace('\\', '/');
-            templateFiles.Add(new FabricatorTemplateFile(
-                relativePath,
-                "file",
-                relativePath,
-                folder.Key,
-                $"Captured from {relativePath}."));
-        }
-
-        if (errors.Count > 0)
-        {
-            return Failed(request, errors);
-        }
+        var templateFiles = selection.Files;
 
         var templateManifest = new FabricatorTemplateManifest(
             2,
@@ -248,37 +209,6 @@ public sealed class FabricatorTemplateCaptureService
             [],
             errors,
             request.DryRun);
-    }
-
-    private static bool TryResolveProjectPath(
-        string projectRoot,
-        string relativePath,
-        out string resolvedPath,
-        out string error)
-    {
-        resolvedPath = string.Empty;
-        error = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(relativePath))
-        {
-            error = "Path is required.";
-            return false;
-        }
-
-        if (Path.IsPathRooted(relativePath))
-        {
-            error = "Path must be relative to the project root.";
-            return false;
-        }
-
-        resolvedPath = Path.GetFullPath(Path.Combine(projectRoot, relativePath));
-        if (!IsChildPath(projectRoot, resolvedPath))
-        {
-            error = "Path resolved outside the project root.";
-            return false;
-        }
-
-        return true;
     }
 
     private static string ToDisplayName(string templateId)

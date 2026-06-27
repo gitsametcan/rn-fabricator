@@ -65,7 +65,8 @@ public sealed class FabricatorTemplateAddService
                 request.Category,
                 request.SourceProjectDirectory,
                 catalogDirectory,
-                request.DryRun),
+                request.DryRun,
+                request.IncludePaths),
             cancellationToken);
 
         if (!captureResult.Succeeded)

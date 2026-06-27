@@ -25,6 +25,7 @@ public sealed class TemplatesAddCommandHandler
         string sourceProjectDirectory,
         string catalogSource,
         bool dryRun,
+        IReadOnlyList<string>? includePaths,
         CancellationToken cancellationToken = default)
     {
         var result = await _addService.AddAsync(
@@ -33,7 +34,8 @@ public sealed class TemplatesAddCommandHandler
                 category,
                 sourceProjectDirectory,
                 catalogSource,
-                dryRun),
+                dryRun,
+                includePaths),
             cancellationToken);
 
         if (!result.Succeeded)
