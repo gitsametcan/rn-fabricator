@@ -37,7 +37,7 @@ List available templates:
 ```bash
 rn-fabricator templates list
 rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
-rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json
+rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.2/templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 

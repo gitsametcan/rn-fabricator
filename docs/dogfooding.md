@@ -18,8 +18,8 @@ Do not generate React Native projects inside the rn-fabricator repository. Gener
 Download the release package into the playground:
 
 ```bash
-curl -L -o rn-fabricator.1.0.0-beta.1.nupkg \
-  https://github.com/gitsametcan/rn-fabricator/releases/download/v1.0.0-beta.1/rn-fabricator.1.0.0-beta.1.nupkg
+curl -L -o rn-fabricator.1.0.0-beta.2.nupkg \
+  https://github.com/gitsametcan/rn-fabricator/releases/download/v1.0.0-beta.2/rn-fabricator.1.0.0-beta.2.nupkg
 ```
 
 Install it as a local tool:
@@ -28,7 +28,7 @@ Install it as a local tool:
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source . \
-  --version 1.0.0-beta.1
+  --version 1.0.0-beta.2
 ```
 
 Verify the installed tool:
@@ -52,7 +52,7 @@ Install a locally packed development version from the rn-fabricator repository:
 dotnet tool install rn-fabricator \
   --tool-path ./.tools \
   --add-source /Users/sametcan/Documents/GitHub/fabricator/artifacts/packages \
-  --version 1.0.0-beta.1
+  --version 1.0.0-beta.2
 ```
 
 Use a version override when packing an experimental build:
@@ -154,7 +154,7 @@ export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsamet
 Use the release-tagged raw catalog when validating a beta package exactly as users will see it:
 
 ```bash
-export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json"
+export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.2/templates/catalog.fabricator.json"
 ```
 
 Create a sample React Native project with the minimal splash and main starter:

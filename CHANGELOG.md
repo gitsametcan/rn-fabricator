@@ -8,6 +8,19 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 No unreleased changes.
 
+## 1.0.0-beta.2 - 2026-06-27
+
+### Added
+
+- Repeatable `--include <path>` support for `templates capture`, `templates add`, and `templates update`.
+- Selected-file template capture for saving one screen, component, service, utility, or small feature slice without capturing a whole Fabricator folder.
+- Target folder derivation for selected files using `.fabricator/project.json`, so selected screens, components, and services apply back to the expected project paths.
+
+### Changed
+
+- Reusable template workflow documentation now separates full-folder templates from selected-file templates.
+- Dogfooding documentation now includes a single-screen template capture, add, and update workflow.
+
 ## 1.0.0-beta.1 - 2026-06-26
 
 ### Added

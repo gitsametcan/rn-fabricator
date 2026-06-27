@@ -30,7 +30,7 @@ src/
 For release-stable examples, use the catalog from the matching release tag:
 
 ```bash
-export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.1/templates/catalog.fabricator.json"
+export RN_FABRICATOR_TEMPLATE_SOURCE="https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.2/templates/catalog.fabricator.json"
 ```
 
 For latest development examples, use the `develop` catalog:
