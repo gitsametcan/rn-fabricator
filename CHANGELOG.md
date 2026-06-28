@@ -6,6 +6,8 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+## 1.0.0-beta.3 - 2026-06-28
+
 ### Added
 
 - `navigation` folder support in the Fabricator project contract and generated starter projects.
