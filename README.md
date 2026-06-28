@@ -65,7 +65,7 @@ Install from a local package while developing the repository:
 
 ```bash
 dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --configuration Release --output artifacts/packages -p:VersionPrefix=1.0.0 -p:VersionSuffix=beta.3
-dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 1.0.0-beta.4
+dotnet tool install rn-fabricator --tool-path ./.tools --add-source artifacts/packages --version 1.0.0
 ./.tools/rn-fabricator --help
 ```
 
@@ -127,11 +127,11 @@ Create with an explicit Fabricator template catalog source:
 rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
 ```
 
-For beta releases, use the matching tagged catalog when you want reproducible examples:
+For releases, use the matching tagged catalog when you want reproducible examples:
 
 ```bash
 rn-fabricator create MyApp \
-  --template-source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.4/templates/catalog.fabricator.json
+  --template-source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0/templates/catalog.fabricator.json
 ```
 
 For local template authoring, keep the project and the editable template workspace side by side:
@@ -316,6 +316,7 @@ rn-fabricator templates copy --help
 - [Reusable Template Workflow](docs/reusable-template-workflow.md)
 - [Release Checklist](docs/release-checklist.md)
 - [Release Workflow](docs/release-workflow.md)
+- [v1.0.0 Release Notes](docs/releases/v1.0.0.md)
 - [v1.0.0-beta.4 Release Notes](docs/releases/v1.0.0-beta.4.md)
 - [v1.0.0-beta.3 Release Notes](docs/releases/v1.0.0-beta.3.md)
 - [v1.0.0-beta.2 Release Notes](docs/releases/v1.0.0-beta.2.md)

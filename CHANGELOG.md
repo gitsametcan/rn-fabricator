@@ -6,6 +6,23 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+## 1.0.0 - 2026-06-29
+
+### Added
+
+- React Native environment checks through the `doctor` command.
+- Guided setup planning and apply flows for React Native development dependencies.
+- React Native CLI project creation through the `create` command.
+- Fabricator-compatible starter projects with generated `.fabricator/project.json` and `fabricator.json` state files.
+- Reusable template catalog commands for list, info, validate, apply, status, capture, add, update, remove, and copy workflows.
+- Repository template catalog examples for starter, auth, screen, component, service, util, layout, and navigation categories.
+- Local template lifecycle support for capturing selected files such as one screen, one component, or small feature slices.
+- Release packaging as a .NET tool package.
+
+### Fixed
+
+- `templates add`, `templates capture`, and `templates update` normalize singular template categories such as `screen` and `component` while keeping plural folder keys backward compatible.
+
 ## 1.0.0-beta.4 - 2026-06-28
 
 ### Fixed
