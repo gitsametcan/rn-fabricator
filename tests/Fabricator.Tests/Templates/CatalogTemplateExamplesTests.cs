@@ -10,11 +10,13 @@ public sealed class CatalogTemplateExamplesTests
     private static readonly string[] ExampleTemplateIds =
     [
         "screen/main-menu",
+        "screen/settings-screen",
         "service/api-client",
         "util/storage",
         "layout/app-shell",
         "navigation/app-navigator",
-        "component/primary-button"
+        "component/primary-button",
+        "component/empty-state"
     ];
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -35,20 +37,24 @@ public sealed class CatalogTemplateExamplesTests
         }
 
         Assert.Contains(catalog.Templates, template => template.Id == "screen/main-menu" && template.Category == "screen");
+        Assert.Contains(catalog.Templates, template => template.Id == "screen/settings-screen" && template.Category == "screen");
         Assert.Contains(catalog.Templates, template => template.Id == "service/api-client" && template.Category == "service");
         Assert.Contains(catalog.Templates, template => template.Id == "util/storage" && template.Category == "util");
         Assert.Contains(catalog.Templates, template => template.Id == "layout/app-shell" && template.Category == "layout");
         Assert.Contains(catalog.Templates, template => template.Id == "navigation/app-navigator" && template.Category == "navigation");
         Assert.Contains(catalog.Templates, template => template.Id == "component/primary-button" && template.Category == "component");
+        Assert.Contains(catalog.Templates, template => template.Id == "component/empty-state" && template.Category == "component");
     }
 
     [Theory]
     [InlineData("screen/main-menu", "screen", "src/screens/MainMenuScreen.tsx", "screens")]
+    [InlineData("screen/settings-screen", "screen", "src/screens/SettingsScreen.tsx", "screens")]
     [InlineData("service/api-client", "service", "src/services/apiClient.ts", "services")]
     [InlineData("util/storage", "util", "src/utils/storage.ts", "utils")]
     [InlineData("layout/app-shell", "layout", "src/app/AppShell.tsx", "app")]
     [InlineData("navigation/app-navigator", "navigation", "src/navigation/AppNavigator.tsx", "navigation")]
     [InlineData("component/primary-button", "component", "src/components/PrimaryButton.tsx", "components")]
+    [InlineData("component/empty-state", "component", "src/components/EmptyState.tsx", "components")]
     public async Task RepositoryExamplesUseSchemaV2Metadata(
         string templateId,
         string category,

@@ -42,6 +42,19 @@
       ]
     },
     {
+      "id": "screen/settings-screen",
+      "displayName": "Settings Screen",
+      "description": "Reusable settings screen with toggle and action rows.",
+      "version": "0.1.0",
+      "category": "screen",
+      "manifest": "screen/settings-screen/fabricator-template.json",
+      "tags": [
+        "screen",
+        "settings",
+        "form"
+      ]
+    },
+    {
       "id": "service/api-client",
       "displayName": "API Client",
       "description": "Small fetch-based API client with typed request helpers.",
@@ -103,6 +116,19 @@
       "tags": [
         "component",
         "button",
+        "ui"
+      ]
+    },
+    {
+      "id": "component/empty-state",
+      "displayName": "Empty State",
+      "description": "Reusable empty state component with optional call-to-action.",
+      "version": "0.1.0",
+      "category": "component",
+      "manifest": "component/empty-state/fabricator-template.json",
+      "tags": [
+        "component",
+        "empty-state",
         "ui"
       ]
     }

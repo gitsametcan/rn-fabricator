@@ -11,6 +11,7 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 - `navigation` folder support in the Fabricator project contract and generated starter projects.
 - Dependency-free starter navigation files under `src/navigation`.
 - Repository template example `navigation/app-navigator`.
+- Repository template examples `screen/settings-screen` and `component/empty-state`.
 
 ## 1.0.0-beta.2 - 2026-06-27
 

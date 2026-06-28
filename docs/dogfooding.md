@@ -215,11 +215,13 @@ Expected list output includes:
 
 ```text
 basic-auth
+component/empty-state
 component/primary-button
 layout/app-shell
 minimal-splash
 navigation/app-navigator
 screen/main-menu
+screen/settings-screen
 service/api-client
 util/storage
 ```
@@ -249,7 +251,17 @@ List component templates:
   --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
 ```
 
-Expected component category output includes `component/primary-button`.
+Expected component category output includes `component/primary-button` and `component/empty-state`.
+
+List screen templates:
+
+```bash
+./.tools/rn-fabricator templates list \
+  --category screen \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected screen category output includes `screen/main-menu` and `screen/settings-screen`.
 
 List navigation templates:
 
@@ -375,6 +387,20 @@ FabricatorBabyStep/src/components/PrimaryButton.tsx
 
 ```ts
 export { PrimaryButton } from './PrimaryButton';
+```
+
+Preview additional reusable examples:
+
+```bash
+./.tools/rn-fabricator templates apply screen/settings-screen \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
+
+./.tools/rn-fabricator templates apply component/empty-state \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
 ```
 
 Preview the reusable navigation template:

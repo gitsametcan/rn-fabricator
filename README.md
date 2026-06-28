@@ -152,6 +152,7 @@ rn-fabricator templates list
 rn-fabricator templates list --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category component --source ./templates/catalog.fabricator.json
+rn-fabricator templates list --category screen --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category navigation --source ./templates/catalog.fabricator.json
 ```
 
@@ -161,6 +162,8 @@ Inspect a template before copying or applying it:
 rn-fabricator templates info component/primary-button
 rn-fabricator templates info basic-auth --source ./templates/catalog.fabricator.json
 rn-fabricator templates info component/primary-button --source ./templates/catalog.fabricator.json
+rn-fabricator templates info component/empty-state --source ./templates/catalog.fabricator.json
+rn-fabricator templates info screen/settings-screen --source ./templates/catalog.fabricator.json
 rn-fabricator templates info navigation/app-navigator --source ./templates/catalog.fabricator.json
 ```
 
@@ -182,6 +185,8 @@ Apply a template to a compatible Fabricator project:
 ```bash
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
+rn-fabricator templates apply screen/settings-screen --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
+rn-fabricator templates apply component/empty-state --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
 rn-fabricator templates apply navigation/app-navigator --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
 ```
 
