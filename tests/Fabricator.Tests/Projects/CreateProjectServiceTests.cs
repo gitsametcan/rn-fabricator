@@ -55,6 +55,8 @@ public sealed class CreateProjectServiceTests
         Assert.Contains("App.tsx", result.StarterResult.GeneratedFiles);
         Assert.Contains("src/screens/SplashScreen.tsx", result.StarterResult.GeneratedFiles);
         Assert.Contains("src/screens/MainScreen.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Contains("src/navigation/AppNavigator.tsx", result.StarterResult.GeneratedFiles);
+        Assert.Contains("src/navigation/index.ts", result.StarterResult.GeneratedFiles);
         Assert.Contains("src/utils/index.ts", result.StarterResult.GeneratedFiles);
         Assert.Contains(".fabricator/project.json", result.StarterResult.GeneratedFiles);
         Assert.Contains("fabricator.json", result.StarterResult.GeneratedFiles);
@@ -63,6 +65,16 @@ public sealed class CreateProjectServiceTests
         Assert.Contains("MainScreen", appContent);
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "screens", "SplashScreen.tsx")));
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "screens", "MainScreen.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "AppNavigator.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "AuthNavigator.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "MainNavigator.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "TabNavigator.tsx")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "routes.ts")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "types.ts")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "linking.ts")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "navigationRef.ts")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "screenOptions.ts")));
+        Assert.True(File.Exists(Path.Combine(projectPath, "src", "navigation", "index.ts")));
         Assert.True(File.Exists(Path.Combine(projectPath, "src", "utils", "index.ts")));
         AssertProjectManifest(projectPath);
         AssertProjectState(
@@ -342,6 +354,10 @@ public sealed class CreateProjectServiceTests
             root.GetProperty("folders").EnumerateArray(),
             folder => folder.GetProperty("key").GetString() == "screens" &&
                       folder.GetProperty("path").GetString() == "src/screens");
+        Assert.Contains(
+            root.GetProperty("folders").EnumerateArray(),
+            folder => folder.GetProperty("key").GetString() == "navigation" &&
+                      folder.GetProperty("path").GetString() == "src/navigation");
         Assert.Contains(
             root.GetProperty("integrationPoints").EnumerateArray(),
             point => point.GetProperty("key").GetString() == "screensBarrel" &&

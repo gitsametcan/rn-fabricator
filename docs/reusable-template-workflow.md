@@ -109,10 +109,11 @@ Common categories:
 | `service` | API clients and external service adapters. |
 | `util` | Utility helpers. |
 | `layout` | Shared layout or shell components. |
+| `navigation` | Navigator shells, route definitions, linking, and navigation refs. |
 | `auth` | Authentication flows and helpers. |
 | `config` | Configuration examples and setup helpers. |
 
-Catalog categories describe the template type. Capture uses project folder keys from `.fabricator/project.json`, which are usually plural, such as `screens`, `components`, `services`, and `utils`.
+Catalog categories describe the template type. Capture uses project folder keys from `.fabricator/project.json`, such as `screens`, `components`, `navigation`, `services`, and `utils`.
 
 Current repository examples:
 
@@ -124,6 +125,7 @@ Current repository examples:
 | `service/api-client` | `service` |
 | `util/storage` | `util` |
 | `layout/app-shell` | `layout` |
+| `navigation/app-navigator` | `navigation` |
 | `component/primary-button` | `component` |
 
 ## 3. Inspect Before Applying
@@ -174,6 +176,15 @@ Expected result:
 
 ```text
 FabricatorBabyStep/src/components/PrimaryButton.tsx
+```
+
+Preview the navigation starter template when a project needs a reusable navigation structure:
+
+```bash
+rn-fabricator templates apply navigation/app-navigator \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
 ```
 
 If the template declares a supported barrel export, Fabricator updates the matching integration point. For `component/primary-button`, this means `src/components/index.ts` receives:
@@ -231,7 +242,7 @@ rn-fabricator templates capture profile-screens \
 
 Important rules:
 
-- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `services`, or `utils`.
+- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `navigation`, `services`, or `utils`.
 - Without `--include`, capture copies files from that folder into a new template directory.
 - With `--include`, capture copies only the selected project-relative files.
 - Capture writes `fabricator-template.json` with schema v2 metadata.
@@ -272,6 +283,26 @@ rn-fabricator templates capture profile-feature \
 ```
 
 Selected files are still mapped back to their Fabricator target folders. For example, `src/screens/ProfileScreen.tsx` targets `screens`, `src/components/ProfileHeader.tsx` targets `components`, and `src/services/profileApi.ts` targets `services`.
+
+Capture navigation files as a reusable local navigation template:
+
+```bash
+rn-fabricator templates add navigation/app-navigator \
+  --category navigation \
+  --from ./FabricatorBabyStep \
+  --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
+  --include src/navigation/AppNavigator.tsx \
+  --include src/navigation/AuthNavigator.tsx \
+  --include src/navigation/MainNavigator.tsx \
+  --include src/navigation/TabNavigator.tsx \
+  --include src/navigation/routes.ts \
+  --include src/navigation/types.ts \
+  --include src/navigation/linking.ts \
+  --include src/navigation/navigationRef.ts \
+  --include src/navigation/screenOptions.ts \
+  --include src/navigation/index.ts \
+  --dry-run
+```
 
 To capture and register the selected screen through catalog commands, add it to a catalog file:
 

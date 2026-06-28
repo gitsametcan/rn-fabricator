@@ -28,6 +28,7 @@ public sealed class FabricatorProjectContractTests
             folder => Assert.Equal(("config", "src/config"), (folder.Key, folder.Path)),
             folder => Assert.Equal(("constants", "src/constants"), (folder.Key, folder.Path)),
             folder => Assert.Equal(("hooks", "src/hooks"), (folder.Key, folder.Path)),
+            folder => Assert.Equal(("navigation", "src/navigation"), (folder.Key, folder.Path)),
             folder => Assert.Equal(("screens", "src/screens"), (folder.Key, folder.Path)),
             folder => Assert.Equal(("services", "src/services"), (folder.Key, folder.Path)),
             folder => Assert.Equal(("storage", "src/storage"), (folder.Key, folder.Path)),

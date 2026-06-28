@@ -52,6 +52,11 @@ Initial schema version:
       "purpose": "Reusable React hooks."
     },
     {
+      "key": "navigation",
+      "path": "src/navigation",
+      "purpose": "Navigation stacks, route definitions, and navigator composition."
+    },
+    {
       "key": "screens",
       "path": "src/screens",
       "purpose": "Screen-level mobile views."
@@ -167,4 +172,4 @@ Apply behavior uses both inputs:
 
 `rn-fabricator create` should generate this manifest for new projects after the React Native CLI project is created and the starter files are applied.
 
-The first compatible generated app should remain small: Splash screen, Main screen, the standard folder layout, and `.fabricator/project.json`.
+The first compatible generated app should remain small: Splash screen, Main screen, a dependency-free navigation starter structure, the standard folder layout, and `.fabricator/project.json`.

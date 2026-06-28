@@ -28,6 +28,7 @@ Expected result:
 
 - React Native CLI project is created.
 - A minimal splash and main screen starter is resolved from the Fabricator template catalog and applied.
+- A dependency-free navigation starter structure is available under `src/navigation`.
 - No auth flow is applied automatically.
 - The generated app has a predictable `src` structure.
 - The generated app can declare Fabricator compatibility with `.fabricator/project.json`.
@@ -39,12 +40,14 @@ rn-fabricator templates list
 rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 rn-fabricator templates list --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.2/templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+rn-fabricator templates list --category navigation --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
 Inspect a template before copying or applying it:
 
 ```bash
 rn-fabricator templates info basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
+rn-fabricator templates info navigation/app-navigator --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 ```
 
 Validate a catalog before applying or publishing templates:
@@ -59,6 +62,7 @@ Apply a template into a compatible Fabricator project:
 ```bash
 rn-fabricator templates apply basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
+rn-fabricator templates apply navigation/app-navigator --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
 ```
 
 Show template history for a compatible Fabricator project:
@@ -168,7 +172,7 @@ rn-fabricator templates remove profile-screen --source ./templates/catalog.fabri
 Expected capture behavior:
 
 - The source project must follow the Fabricator project contract.
-- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `services`, or `utils`.
+- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `navigation`, `services`, or `utils`.
 - Files under that folder are copied into a new template folder.
 - The generated `fabricator-template.json` includes schema v2 metadata, category, tags, `targetPath`, and `targetFolder` mappings.
 - Existing template output folders are not overwritten.
@@ -320,7 +324,7 @@ Initial categories:
 | `util` | Reusable utility functions. |
 | `integration` | Third-party integration setup. |
 | `layout` | Shared shell, header, footer, or structural UI. |
-| `navigation` | Navigation/menu-related files. |
+| `navigation` | Navigator shells, route definitions, linking, navigation refs, and screen options. |
 | `auth` | Authentication flows and helpers. |
 | `config` | Configuration examples or setup helpers. |
 

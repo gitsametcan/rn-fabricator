@@ -300,7 +300,7 @@ public static class CliCommandFactory
         };
         var captureCategoryOption = new Option<string>("--category")
         {
-            Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
+            Description = "Fabricator project folder key to capture, such as screens, components, navigation, services, or utils."
         };
         var captureIncludeOption = new Option<string[]>("--include")
         {
@@ -318,7 +318,7 @@ public static class CliCommandFactory
         };
         var addCategoryOption = new Option<string>("--category")
         {
-            Description = "Fabricator project folder key to capture, such as screens, components, services, or utils."
+            Description = "Fabricator project folder key to capture, such as screens, components, navigation, services, or utils."
         };
         var addIncludeOption = new Option<string[]>("--include")
         {

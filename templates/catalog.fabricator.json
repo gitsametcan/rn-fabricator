@@ -81,6 +81,19 @@
       ]
     },
     {
+      "id": "navigation/app-navigator",
+      "displayName": "App Navigator",
+      "description": "Reusable dependency-free navigation starter with app, auth, main, tab, route, linking, ref, and screen option files.",
+      "version": "0.1.0",
+      "category": "navigation",
+      "manifest": "navigation/app-navigator/fabricator-template.json",
+      "tags": [
+        "navigation",
+        "navigator",
+        "routes"
+      ]
+    },
+    {
       "id": "component/primary-button",
       "displayName": "Primary Button",
       "description": "Reusable React Native primary button component.",

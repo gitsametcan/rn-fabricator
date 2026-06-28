@@ -134,6 +134,12 @@ public sealed class FabricatorTemplateCaptureService
                 cancellationToken);
 
             Directory.CreateDirectory(outputRoot);
+            var templateParentDirectory = Path.GetDirectoryName(templateDirectory);
+            if (!string.IsNullOrWhiteSpace(templateParentDirectory))
+            {
+                Directory.CreateDirectory(templateParentDirectory);
+            }
+
             Directory.Move(stagingDirectory, templateDirectory);
 
             return new FabricatorTemplateCaptureResult(

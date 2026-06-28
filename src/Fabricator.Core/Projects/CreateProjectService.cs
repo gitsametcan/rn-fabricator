@@ -143,6 +143,241 @@ public sealed class CreateProjectService : ICreateProjectService
         new("src/config/index.ts", "export {};\n"),
         new("src/constants/index.ts", "export {};\n"),
         new("src/hooks/index.ts", "export {};\n"),
+        new("src/navigation/AppNavigator.tsx", """
+            import React from 'react';
+            import { AuthNavigator } from './AuthNavigator';
+            import { MainNavigator } from './MainNavigator';
+            import type { AppNavigatorProps } from './types';
+
+            export function AppNavigator({ isAuthenticated = true }: AppNavigatorProps) {
+              return isAuthenticated ? <MainNavigator /> : <AuthNavigator />;
+            }
+            """),
+        new("src/navigation/AuthNavigator.tsx", """
+            import React from 'react';
+            import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+            import { ROUTES } from './routes';
+
+            export function AuthNavigator() {
+              return (
+                <SafeAreaView style={styles.safeArea}>
+                  <View style={styles.container}>
+                    <Text style={styles.eyebrow}>{ROUTES.auth.signIn}</Text>
+                    <Text style={styles.title}>Auth flow</Text>
+                    <Text style={styles.subtitle}>Add login, register, and password recovery screens here.</Text>
+                  </View>
+                </SafeAreaView>
+              );
+            }
+
+            const styles = StyleSheet.create({
+              safeArea: {
+                flex: 1,
+                backgroundColor: '#FFFFFF',
+              },
+              container: {
+                flex: 1,
+                justifyContent: 'center',
+                padding: 24,
+              },
+              eyebrow: {
+                color: '#2563EB',
+                fontSize: 14,
+                fontWeight: '700',
+                marginBottom: 12,
+                textTransform: 'uppercase',
+              },
+              title: {
+                color: '#111827',
+                fontSize: 28,
+                fontWeight: '700',
+              },
+              subtitle: {
+                color: '#4B5563',
+                fontSize: 16,
+                lineHeight: 24,
+                marginTop: 12,
+              },
+            });
+            """),
+        new("src/navigation/MainNavigator.tsx", """
+            import React from 'react';
+            import { MainScreen } from '../screens';
+
+            export function MainNavigator() {
+              return <MainScreen />;
+            }
+            """),
+        new("src/navigation/TabNavigator.tsx", """
+            import React from 'react';
+            import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+            import { TAB_ROUTES } from './routes';
+
+            export function TabNavigator() {
+              return (
+                <SafeAreaView style={styles.safeArea}>
+                  <View style={styles.container}>
+                    <Text style={styles.title}>Tabs</Text>
+                    {TAB_ROUTES.map(route => (
+                      <View key={route.name} style={styles.item}>
+                        <Text style={styles.itemTitle}>{route.title}</Text>
+                        <Text style={styles.itemName}>{route.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </SafeAreaView>
+              );
+            }
+
+            const styles = StyleSheet.create({
+              safeArea: {
+                flex: 1,
+                backgroundColor: '#F8FAFC',
+              },
+              container: {
+                flex: 1,
+                gap: 12,
+                padding: 24,
+              },
+              title: {
+                color: '#111827',
+                fontSize: 28,
+                fontWeight: '700',
+                marginBottom: 8,
+              },
+              item: {
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E5E7EB',
+                borderRadius: 8,
+                borderWidth: 1,
+                padding: 16,
+              },
+              itemTitle: {
+                color: '#111827',
+                fontSize: 16,
+                fontWeight: '700',
+              },
+              itemName: {
+                color: '#6B7280',
+                fontSize: 13,
+                marginTop: 4,
+              },
+            });
+            """),
+        new("src/navigation/routes.ts", """
+            export const ROUTES = {
+              auth: {
+                signIn: 'auth.signIn',
+                forgotPassword: 'auth.forgotPassword',
+              },
+              main: {
+                home: 'main.home',
+              },
+              tabs: {
+                home: 'tabs.home',
+                settings: 'tabs.settings',
+              },
+            } as const;
+
+            export const TAB_ROUTES = [
+              { name: ROUTES.tabs.home, title: 'Home' },
+              { name: ROUTES.tabs.settings, title: 'Settings' },
+            ] as const;
+            """),
+        new("src/navigation/types.ts", """
+            import { ROUTES } from './routes';
+
+            export type AuthRouteName =
+              | typeof ROUTES.auth.signIn
+              | typeof ROUTES.auth.forgotPassword;
+
+            export type MainRouteName = typeof ROUTES.main.home;
+
+            export type TabRouteName =
+              | typeof ROUTES.tabs.home
+              | typeof ROUTES.tabs.settings;
+
+            export type AppRouteName = AuthRouteName | MainRouteName | TabRouteName;
+
+            export type AppNavigatorProps = {
+              isAuthenticated?: boolean;
+            };
+
+            export type NavigationCommand = {
+              name: AppRouteName;
+              params?: Record<string, unknown>;
+            };
+            """),
+        new("src/navigation/linking.ts", """
+            import { ROUTES } from './routes';
+
+            export const linkingConfig = {
+              prefixes: ['myapp://'],
+              config: {
+                screens: {
+                  [ROUTES.auth.signIn]: 'sign-in',
+                  [ROUTES.main.home]: 'home',
+                  [ROUTES.tabs.settings]: 'settings',
+                },
+              },
+            };
+            """),
+        new("src/navigation/navigationRef.ts", """
+            import type { AppRouteName, NavigationCommand } from './types';
+
+            type NavigationListener = (command: NavigationCommand) => void;
+
+            let currentRoute: AppRouteName | null = null;
+            const listeners = new Set<NavigationListener>();
+
+            export const navigationRef = {
+              getCurrentRoute() {
+                return currentRoute;
+              },
+              navigate(name: AppRouteName, params?: Record<string, unknown>) {
+                currentRoute = name;
+                const command: NavigationCommand = params === undefined ? { name } : { name, params };
+
+                listeners.forEach(listener => listener(command));
+              },
+              subscribe(listener: NavigationListener) {
+                listeners.add(listener);
+
+                return () => listeners.delete(listener);
+              },
+            };
+            """),
+        new("src/navigation/screenOptions.ts", """
+            export const defaultScreenOptions = {
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: '#FFFFFF',
+              },
+            } as const;
+
+            export const modalScreenOptions = {
+              presentation: 'modal',
+              headerShown: true,
+            } as const;
+            """),
+        new("src/navigation/index.ts", """
+            export { AppNavigator } from './AppNavigator';
+            export { AuthNavigator } from './AuthNavigator';
+            export { MainNavigator } from './MainNavigator';
+            export { TabNavigator } from './TabNavigator';
+            export { linkingConfig } from './linking';
+            export { navigationRef } from './navigationRef';
+            export { ROUTES, TAB_ROUTES } from './routes';
+            export { defaultScreenOptions, modalScreenOptions } from './screenOptions';
+            export type {
+              AppNavigatorProps,
+              AppRouteName,
+              AuthRouteName,
+              MainRouteName,
+              NavigationCommand,
+              TabRouteName,
+            } from './types';
+            """),
         new("src/services/index.ts", "export {};\n"),
         new("src/storage/index.ts", "export {};\n"),
         new("src/theme/index.ts", "export {};\n"),

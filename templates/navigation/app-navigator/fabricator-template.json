@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "navigation/app-navigator",
+  "displayName": "App Navigator",
+  "description": "Reusable dependency-free navigation starter with app, auth, main, tab, route, linking, ref, and screen option files.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "navigation",
+  "tags": [
+    "navigation",
+    "navigator",
+    "routes"
+  ],
+  "files": [
+    {
+      "path": "src/navigation/AppNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/AppNavigator.tsx",
+      "description": "Application navigator shell."
+    },
+    {
+      "path": "src/navigation/AuthNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/AuthNavigator.tsx",
+      "description": "Authentication flow navigator shell."
+    },
+    {
+      "path": "src/navigation/MainNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/MainNavigator.tsx",
+      "description": "Main application navigator shell."
+    },
+    {
+      "path": "src/navigation/TabNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/TabNavigator.tsx",
+      "description": "Tab navigator shell."
+    },
+    {
+      "path": "src/navigation/routes.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/routes.ts",
+      "description": "Route constants."
+    },
+    {
+      "path": "src/navigation/types.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/types.ts",
+      "description": "Navigation type definitions."
+    },
+    {
+      "path": "src/navigation/linking.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/linking.ts",
+      "description": "Deep link configuration placeholder."
+    },
+    {
+      "path": "src/navigation/navigationRef.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/navigationRef.ts",
+      "description": "Dependency-free navigation command ref."
+    },
+    {
+      "path": "src/navigation/screenOptions.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/screenOptions.ts",
+      "description": "Shared screen option placeholders."
+    },
+    {
+      "path": "src/navigation/index.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/index.ts",
+      "description": "Navigation barrel exports."
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "App.tsx",
+      "message": "Import AppNavigator from src/navigation when you are ready to replace the starter App.tsx screen switch."
+    },
+    {
+      "type": "manual",
+      "target": "dependencies",
+      "message": "Install React Navigation packages only when you replace this dependency-free starter with real navigators."
+    }
+  ]
+}
