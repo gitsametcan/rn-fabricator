@@ -37,7 +37,7 @@ Initial schema version:
 {
   "schemaVersion": 1,
   "kind": "fabricator-project-state",
-  "toolVersion": "1.0.0-beta.3",
+  "toolVersion": "1.0.0-beta.4",
   "project": {
     "name": "FabricatorDemo",
     "type": "react-native-cli",
@@ -53,7 +53,7 @@ Initial schema version:
     {
       "name": "release",
       "type": "remote",
-      "value": "https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.3/templates/catalog.fabricator.json",
+      "value": "https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.4/templates/catalog.fabricator.json",
       "isDefault": false
     }
   ],
@@ -65,7 +65,7 @@ Initial schema version:
       "source": {
         "name": "release",
         "type": "remote",
-        "value": "https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.3/templates/catalog.fabricator.json"
+        "value": "https://raw.githubusercontent.com/gitsametcan/rn-fabricator/v1.0.0-beta.4/templates/catalog.fabricator.json"
       },
       "appliedAt": "2026-06-24T12:01:00Z",
       "operation": "create",
