@@ -120,9 +120,11 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("minimal-splash (0.1.0)", output.ToString());
         Assert.Contains("Basic Auth", output.ToString());
         Assert.Contains("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("screen/settings-screen (0.1.0)", output.ToString());
         Assert.Contains("navigation/app-navigator (0.1.0)", output.ToString());
         Assert.Contains("service/api-client (0.1.0)", output.ToString());
         Assert.Contains("component/primary-button (0.1.0)", output.ToString());
+        Assert.Contains("component/empty-state (0.1.0)", output.ToString());
         Assert.Contains("Category: starter", output.ToString());
         Assert.Contains("Category: auth", output.ToString());
         Assert.Contains("Category: screen", output.ToString());
@@ -143,6 +145,36 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Category: auth", output.ToString());
         Assert.Contains("basic-auth (0.1.0)", output.ToString());
         Assert.DoesNotContain("minimal-splash (0.1.0)", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersComponentTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "component"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("component/primary-button (0.1.0)", output.ToString());
+        Assert.Contains("component/empty-state (0.1.0)", output.ToString());
+        Assert.DoesNotContain("screen/main-menu (0.1.0)", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersScreenTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "screen"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("screen/settings-screen (0.1.0)", output.ToString());
+        Assert.DoesNotContain("component/primary-button (0.1.0)", output.ToString());
     }
 
     [Fact]
@@ -210,6 +242,27 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Target path: src/screens/MainMenuScreen.tsx", output.ToString());
         Assert.Contains("Exports: 1", output.ToString());
         Assert.Contains("Integration hints: 1", output.ToString());
+    }
+
+    [Theory]
+    [InlineData("screen/settings-screen", "Category: screen", "Target path: src/screens/SettingsScreen.tsx")]
+    [InlineData("component/empty-state", "Category: component", "Target path: src/components/EmptyState.tsx")]
+    public void TemplatesInfoCommandReturnsSuccessForAdditionalExampleTemplates(
+        string templateId,
+        string expectedCategory,
+        string expectedTargetPath)
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", templateId, "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains($"Template: {templateId} (0.1.0)", output.ToString());
+        Assert.Contains(expectedCategory, output.ToString());
+        Assert.Contains(expectedTargetPath, output.ToString());
+        Assert.Contains("Files: 1", output.ToString());
     }
 
     [Fact]

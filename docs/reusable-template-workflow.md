@@ -122,11 +122,13 @@ Current repository examples:
 | `minimal-splash` | `starter` |
 | `basic-auth` | `auth` |
 | `screen/main-menu` | `screen` |
+| `screen/settings-screen` | `screen` |
 | `service/api-client` | `service` |
 | `util/storage` | `util` |
 | `layout/app-shell` | `layout` |
 | `navigation/app-navigator` | `navigation` |
 | `component/primary-button` | `component` |
+| `component/empty-state` | `component` |
 
 ## 3. Inspect Before Applying
 
@@ -176,6 +178,20 @@ Expected result:
 
 ```text
 FabricatorBabyStep/src/components/PrimaryButton.tsx
+```
+
+Other optional examples can be applied the same way:
+
+```bash
+rn-fabricator templates apply screen/settings-screen \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
+
+rn-fabricator templates apply component/empty-state \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
 ```
 
 Preview the navigation starter template when a project needs a reusable navigation structure:

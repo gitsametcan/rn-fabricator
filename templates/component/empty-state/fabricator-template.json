@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "component/empty-state",
+  "displayName": "Empty State",
+  "description": "Reusable empty state component with optional call-to-action.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "component",
+  "tags": [
+    "component",
+    "empty-state",
+    "ui"
+  ],
+  "files": [
+    {
+      "path": "src/components/EmptyState.tsx",
+      "type": "file",
+      "targetFolder": "components",
+      "targetPath": "src/components/EmptyState.tsx",
+      "description": "Empty state component with optional action."
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "componentsBarrel",
+      "statement": "export { EmptyState } from './EmptyState';",
+      "source": "src/components/EmptyState.tsx"
+    }
+  ]
+}

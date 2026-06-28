@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "screen/settings-screen",
+  "displayName": "Settings Screen",
+  "description": "Reusable settings screen with toggle and action rows.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "screen",
+  "tags": [
+    "screen",
+    "settings",
+    "form"
+  ],
+  "files": [
+    {
+      "path": "src/screens/SettingsScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/SettingsScreen.tsx",
+      "description": "Settings screen with configurable rows."
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { SettingsScreen } from './SettingsScreen';",
+      "source": "src/screens/SettingsScreen.tsx"
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "navigation",
+      "message": "Add SettingsScreen to your navigator or route registry when the project exposes settings."
+    }
+  ]
+}

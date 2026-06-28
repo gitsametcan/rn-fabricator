@@ -62,6 +62,8 @@ Apply a template into a compatible Fabricator project:
 ```bash
 rn-fabricator templates apply basic-auth --source https://raw.githubusercontent.com/gitsametcan/rn-fabricator/develop/templates/catalog.fabricator.json
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
+rn-fabricator templates apply screen/settings-screen --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
+rn-fabricator templates apply component/empty-state --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
 rn-fabricator templates apply navigation/app-navigator --source ./templates/catalog.fabricator.json --output ./FabricatorBabyStep --dry-run
 ```
 
