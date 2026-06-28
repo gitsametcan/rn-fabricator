@@ -16,7 +16,7 @@ internal static class FabricatorProjectTemplateFileSelector
 
         if (categoryFolder is null)
         {
-            return ProjectTemplateFileSelection.Failed([$"Category must match a Fabricator project folder key: {category}"]);
+            return ProjectTemplateFileSelection.Failed([$"Category must match a Fabricator template category or project folder key: {category}"]);
         }
 
         return includePaths is null || includePaths.Count == 0

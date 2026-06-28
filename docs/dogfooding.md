@@ -427,7 +427,7 @@ Capture a reusable template from the generated project's screen folder:
 
 ```bash
 ./.tools/rn-fabricator templates capture baby-step-screens \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --output ./captured-templates
 ```
@@ -439,13 +439,13 @@ captured-templates/baby-step-screens/fabricator-template.json
 captured-templates/baby-step-screens/src/screens/index.ts
 ```
 
-The generated manifest should include `category: screens` and file mappings with `targetFolder: screens`.
+The generated manifest should include `category: screen` and file mappings with `targetFolder: screens`.
 
 Capture only one screen from the generated project:
 
 ```bash
 ./.tools/rn-fabricator templates capture fabricator-beta-screen \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --output ./captured-templates \
   --include src/screens/FabricatorBeta.tsx
@@ -462,7 +462,7 @@ Add and register a local reusable template:
 
 ```bash
 ./.tools/rn-fabricator templates add baby-step-screens \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --dry-run
@@ -478,7 +478,7 @@ Drop `--dry-run` after reviewing the output:
 
 ```bash
 ./.tools/rn-fabricator templates add baby-step-screens \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE"
 ```
@@ -487,7 +487,7 @@ Add and register only one selected screen:
 
 ```bash
 ./.tools/rn-fabricator templates add fabricator-beta-screen \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --include src/screens/FabricatorBeta.tsx

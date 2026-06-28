@@ -637,7 +637,7 @@ public sealed class CliInvocationSmokeTests
                     "capture",
                     "profile-screen",
                     "--category",
-                    "screens",
+                    "screen",
                     "--from",
                     projectDirectory,
                     "--output",
@@ -679,7 +679,7 @@ public sealed class CliInvocationSmokeTests
                     "add",
                     "profile-screen",
                     "--category",
-                    "screens",
+                    "screen",
                     "--from",
                     projectDirectory,
                     "--source",
@@ -698,7 +698,54 @@ public sealed class CliInvocationSmokeTests
             using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
             var template = Assert.Single(document.RootElement.GetProperty("templates").EnumerateArray());
             Assert.Equal("profile-screen", template.GetProperty("id").GetString());
+            Assert.Equal("screen", template.GetProperty("category").GetString());
             Assert.Equal("profile-screen/fabricator-template.json", template.GetProperty("manifest").GetString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesAddCommandAcceptsSingularComponentCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "components", "InfoCard.tsx"),
+            "export function InfoCard() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "add",
+                    "component/info-card",
+                    "--category",
+                    "component",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath,
+                    "--include",
+                    "src/components/InfoCard.tsx"
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template added: component/info-card", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "component", "info-card", "fabricator-template.json")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "component", "info-card", "src", "components", "InfoCard.tsx")));
+
+            using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+            var template = Assert.Single(document.RootElement.GetProperty("templates").EnumerateArray());
+            Assert.Equal("component/info-card", template.GetProperty("id").GetString());
+            Assert.Equal("component", template.GetProperty("category").GetString());
         }
         finally
         {
@@ -899,7 +946,7 @@ public sealed class CliInvocationSmokeTests
 
             Assert.Equal(ExitCodes.InvalidInput, exitCode);
             Assert.Contains("Template capture failed.", output.ErrorOutput);
-            Assert.Contains("Category must match a Fabricator project folder key", output.ErrorOutput);
+            Assert.Contains("Category must match a Fabricator template category or project folder key", output.ErrorOutput);
             Assert.Contains("Next:", output.ErrorOutput);
             Assert.False(Directory.Exists(Path.Combine(outputDirectory, "auth-template")));
         }

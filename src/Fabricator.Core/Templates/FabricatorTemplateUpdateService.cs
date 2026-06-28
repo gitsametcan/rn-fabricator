@@ -77,8 +77,8 @@ public sealed class FabricatorTemplateUpdateService
                     [$"Template manifest id '{existingManifest.Id}' does not match catalog template '{request.TemplateId}'."]);
             }
 
-            var category = ResolveCategory(existingManifest, catalogEntry);
-            if (string.IsNullOrWhiteSpace(category))
+            var categoryValue = ResolveCategory(existingManifest, catalogEntry);
+            if (string.IsNullOrWhiteSpace(categoryValue))
             {
                 return Failed(
                     request,
@@ -88,13 +88,14 @@ public sealed class FabricatorTemplateUpdateService
                     [$"Template category is required in the manifest or catalog entry: {request.TemplateId}"]);
             }
 
-            var capture = CaptureProjectFiles(request, category, cancellationToken);
+            var category = FabricatorTemplateCategoryNormalizer.Normalize(categoryValue);
+            var capture = CaptureProjectFiles(request, category.FolderKey, cancellationToken);
             if (capture.Errors.Count > 0)
             {
                 return Failed(request, catalogPath, templateDirectory, manifestPath, capture.Errors);
             }
 
-            var updatedManifest = PreserveMetadata(existingManifest, category, capture.TemplateFiles);
+            var updatedManifest = PreserveMetadata(existingManifest, category.CanonicalCategory, capture.TemplateFiles);
             var projectRoot = Path.GetFullPath(request.SourceProjectDirectory);
             var summary = CreateSummary(
                 projectRoot,
