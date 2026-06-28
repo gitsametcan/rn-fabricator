@@ -30,6 +30,7 @@ public static class FabricatorProjectContract
         new("config", "src/config", "Application configuration helpers and constants."),
         new("constants", "src/constants", "Shared static values."),
         new("hooks", "src/hooks", "Reusable React hooks."),
+        new("navigation", "src/navigation", "Navigation stacks, route definitions, and navigator composition."),
         new("screens", "src/screens", "Screen-level mobile views."),
         new("services", "src/services", "API clients and external service adapters."),
         new("storage", "src/storage", "Local persistence helpers."),

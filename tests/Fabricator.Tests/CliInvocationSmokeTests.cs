@@ -120,11 +120,13 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("minimal-splash (0.1.0)", output.ToString());
         Assert.Contains("Basic Auth", output.ToString());
         Assert.Contains("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("navigation/app-navigator (0.1.0)", output.ToString());
         Assert.Contains("service/api-client (0.1.0)", output.ToString());
         Assert.Contains("component/primary-button (0.1.0)", output.ToString());
         Assert.Contains("Category: starter", output.ToString());
         Assert.Contains("Category: auth", output.ToString());
         Assert.Contains("Category: screen", output.ToString());
+        Assert.Contains("Category: navigation", output.ToString());
         Assert.Contains("Summary:", output.ToString());
     }
 
@@ -144,7 +146,7 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
-    public void TemplatesListCommandReturnsClearOutputWhenCategoryHasNoMatches()
+    public void TemplatesListCommandFiltersNavigationTemplatesByCategory()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
         var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
@@ -153,8 +155,10 @@ public sealed class CliInvocationSmokeTests
         var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "navigation"]).Invoke();
 
         Assert.Equal(ExitCodes.Success, exitCode);
-        Assert.Contains("No templates found for category: navigation", output.ToString());
-        Assert.Contains("Summary: 0 template(s) shown.", output.ToString());
+        Assert.Contains("navigation/app-navigator (0.1.0)", output.ToString());
+        Assert.Contains("Category: navigation", output.ToString());
+        Assert.DoesNotContain("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("Summary: 1 template(s) shown.", output.ToString());
     }
 
     [Fact]
@@ -206,6 +210,23 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("Target path: src/screens/MainMenuScreen.tsx", output.ToString());
         Assert.Contains("Exports: 1", output.ToString());
         Assert.Contains("Integration hints: 1", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsSuccessForNavigationExampleTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "navigation/app-navigator", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template: navigation/app-navigator (0.1.0)", output.ToString());
+        Assert.Contains("Category: navigation", output.ToString());
+        Assert.Contains("Target path: src/navigation/AppNavigator.tsx", output.ToString());
+        Assert.Contains("Files: 10", output.ToString());
+        Assert.Contains("Integration hints: 2", output.ToString());
     }
 
     [Fact]

@@ -179,6 +179,16 @@ FabricatorBabyStep/src/components/index.ts
 FabricatorBabyStep/src/config/index.ts
 FabricatorBabyStep/src/constants/index.ts
 FabricatorBabyStep/src/hooks/index.ts
+FabricatorBabyStep/src/navigation/AppNavigator.tsx
+FabricatorBabyStep/src/navigation/AuthNavigator.tsx
+FabricatorBabyStep/src/navigation/MainNavigator.tsx
+FabricatorBabyStep/src/navigation/TabNavigator.tsx
+FabricatorBabyStep/src/navigation/routes.ts
+FabricatorBabyStep/src/navigation/types.ts
+FabricatorBabyStep/src/navigation/linking.ts
+FabricatorBabyStep/src/navigation/navigationRef.ts
+FabricatorBabyStep/src/navigation/screenOptions.ts
+FabricatorBabyStep/src/navigation/index.ts
 FabricatorBabyStep/src/services/index.ts
 FabricatorBabyStep/src/storage/index.ts
 FabricatorBabyStep/src/theme/index.ts
@@ -208,6 +218,7 @@ basic-auth
 component/primary-button
 layout/app-shell
 minimal-splash
+navigation/app-navigator
 screen/main-menu
 service/api-client
 util/storage
@@ -239,6 +250,16 @@ List component templates:
 ```
 
 Expected component category output includes `component/primary-button`.
+
+List navigation templates:
+
+```bash
+./.tools/rn-fabricator templates list \
+  --category navigation \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE"
+```
+
+Expected navigation category output includes `navigation/app-navigator`.
 
 Inspect a template before applying or copying it:
 
@@ -355,6 +376,17 @@ FabricatorBabyStep/src/components/PrimaryButton.tsx
 ```ts
 export { PrimaryButton } from './PrimaryButton';
 ```
+
+Preview the reusable navigation template:
+
+```bash
+./.tools/rn-fabricator templates apply navigation/app-navigator \
+  --source "$RN_FABRICATOR_TEMPLATE_SOURCE" \
+  --output ./FabricatorBabyStep \
+  --dry-run
+```
+
+Expected navigation dry-run output includes files under `src/navigation`.
 
 Check the applied template history:
 

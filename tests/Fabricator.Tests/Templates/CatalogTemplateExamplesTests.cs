@@ -13,6 +13,7 @@ public sealed class CatalogTemplateExamplesTests
         "service/api-client",
         "util/storage",
         "layout/app-shell",
+        "navigation/app-navigator",
         "component/primary-button"
     ];
 
@@ -37,6 +38,7 @@ public sealed class CatalogTemplateExamplesTests
         Assert.Contains(catalog.Templates, template => template.Id == "service/api-client" && template.Category == "service");
         Assert.Contains(catalog.Templates, template => template.Id == "util/storage" && template.Category == "util");
         Assert.Contains(catalog.Templates, template => template.Id == "layout/app-shell" && template.Category == "layout");
+        Assert.Contains(catalog.Templates, template => template.Id == "navigation/app-navigator" && template.Category == "navigation");
         Assert.Contains(catalog.Templates, template => template.Id == "component/primary-button" && template.Category == "component");
     }
 
@@ -45,6 +47,7 @@ public sealed class CatalogTemplateExamplesTests
     [InlineData("service/api-client", "service", "src/services/apiClient.ts", "services")]
     [InlineData("util/storage", "util", "src/utils/storage.ts", "utils")]
     [InlineData("layout/app-shell", "layout", "src/app/AppShell.tsx", "app")]
+    [InlineData("navigation/app-navigator", "navigation", "src/navigation/AppNavigator.tsx", "navigation")]
     [InlineData("component/primary-button", "component", "src/components/PrimaryButton.tsx", "components")]
     public async Task RepositoryExamplesUseSchemaV2Metadata(
         string templateId,

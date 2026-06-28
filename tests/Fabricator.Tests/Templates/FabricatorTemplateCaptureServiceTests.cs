@@ -232,6 +232,47 @@ public sealed class FabricatorTemplateCaptureServiceTests
     }
 
     [Fact]
+    public async Task AddAsyncCapturesNavigationTemplateFromIncludedFiles()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var navigationDirectory = Path.Combine(project.Path, "src", "navigation");
+        File.WriteAllText(
+            Path.Combine(navigationDirectory, "AppNavigator.tsx"),
+            "export function AppNavigator() { return null; }\n");
+        File.WriteAllText(
+            Path.Combine(navigationDirectory, "routes.ts"),
+            "export const routes = {};\n");
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var service = new FabricatorTemplateAddService();
+
+        var result = await service.AddAsync(new FabricatorTemplateAddRequest(
+            "navigation/app-navigator",
+            "navigation",
+            project.Path,
+            catalogPath,
+            IncludePaths:
+            [
+                "src/navigation/AppNavigator.tsx",
+                "src/navigation/routes.ts"
+            ]));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(
+            ["src/navigation/AppNavigator.tsx", "src/navigation/routes.ts"],
+            result.CapturedFiles);
+        Assert.True(File.Exists(Path.Combine(output.Path, "navigation", "app-navigator", "src", "navigation", "AppNavigator.tsx")));
+        Assert.True(File.Exists(Path.Combine(output.Path, "navigation", "app-navigator", "src", "navigation", "routes.ts")));
+
+        var package = await new TemplateCatalogProvider().GetTemplateAsync(catalogPath, "navigation/app-navigator");
+        Assert.Equal("navigation", package.Manifest.Category);
+        Assert.Contains(package.Manifest.Files, file =>
+            file.Path == "src/navigation/AppNavigator.tsx" &&
+            file.TargetPath == "src/navigation/AppNavigator.tsx" &&
+            file.TargetFolder == "navigation");
+    }
+
+    [Fact]
     public async Task AddAsyncRejectsDuplicateTemplateIdWithoutWritingTemplate()
     {
         using var project = CreateCompatibleProject();

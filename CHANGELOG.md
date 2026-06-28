@@ -6,7 +6,11 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
-No unreleased changes.
+### Added
+
+- `navigation` folder support in the Fabricator project contract and generated starter projects.
+- Dependency-free starter navigation files under `src/navigation`.
+- Repository template example `navigation/app-navigator`.
 
 ## 1.0.0-beta.2 - 2026-06-27
 

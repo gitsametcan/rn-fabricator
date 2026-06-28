@@ -71,6 +71,76 @@
       "targetPath": "src/hooks/index.ts"
     },
     {
+      "path": "src/navigation/AppNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/AppNavigator.tsx",
+      "description": "Application navigator shell."
+    },
+    {
+      "path": "src/navigation/AuthNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/AuthNavigator.tsx",
+      "description": "Authentication flow navigator shell."
+    },
+    {
+      "path": "src/navigation/MainNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/MainNavigator.tsx",
+      "description": "Main application navigator shell."
+    },
+    {
+      "path": "src/navigation/TabNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/TabNavigator.tsx",
+      "description": "Tab navigator shell."
+    },
+    {
+      "path": "src/navigation/routes.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/routes.ts",
+      "description": "Route constants."
+    },
+    {
+      "path": "src/navigation/types.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/types.ts",
+      "description": "Navigation type definitions."
+    },
+    {
+      "path": "src/navigation/linking.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/linking.ts",
+      "description": "Deep link configuration placeholder."
+    },
+    {
+      "path": "src/navigation/navigationRef.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/navigationRef.ts",
+      "description": "Dependency-free navigation command ref."
+    },
+    {
+      "path": "src/navigation/screenOptions.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/screenOptions.ts",
+      "description": "Shared screen option placeholders."
+    },
+    {
+      "path": "src/navigation/index.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/index.ts",
+      "description": "Navigation barrel exports."
+    },
+    {
       "path": "src/services/index.ts",
       "type": "file",
       "targetFolder": "services",

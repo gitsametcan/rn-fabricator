@@ -152,6 +152,7 @@ rn-fabricator templates list
 rn-fabricator templates list --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category auth --source ./templates/catalog.fabricator.json
 rn-fabricator templates list --category component --source ./templates/catalog.fabricator.json
+rn-fabricator templates list --category navigation --source ./templates/catalog.fabricator.json
 ```
 
 Inspect a template before copying or applying it:
@@ -160,6 +161,7 @@ Inspect a template before copying or applying it:
 rn-fabricator templates info component/primary-button
 rn-fabricator templates info basic-auth --source ./templates/catalog.fabricator.json
 rn-fabricator templates info component/primary-button --source ./templates/catalog.fabricator.json
+rn-fabricator templates info navigation/app-navigator --source ./templates/catalog.fabricator.json
 ```
 
 Validate a template catalog before applying or publishing templates:
@@ -180,6 +182,7 @@ Apply a template to a compatible Fabricator project:
 ```bash
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp
 rn-fabricator templates apply basic-auth --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
+rn-fabricator templates apply navigation/app-navigator --source ./templates/catalog.fabricator.json --output ./MyApp --dry-run
 ```
 
 `templates apply` validates `.fabricator/project.json`, writes files non-destructively, adds supported barrel exports such as `src/screens/index.ts`, records the operation in root `fabricator.json`, and prints manual integration notes for anything it cannot safely automate.
@@ -210,6 +213,25 @@ Capture only one screen, component, service, or utility by passing project-relat
 
 ```bash
 rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates --include src/screens/ProfileScreen.tsx
+```
+
+Capture navigation files as a local navigation template:
+
+```bash
+rn-fabricator templates add navigation/app-navigator \
+  --category navigation \
+  --from ./MyApp \
+  --source ./templates/catalog.fabricator.json \
+  --include src/navigation/AppNavigator.tsx \
+  --include src/navigation/AuthNavigator.tsx \
+  --include src/navigation/MainNavigator.tsx \
+  --include src/navigation/TabNavigator.tsx \
+  --include src/navigation/routes.ts \
+  --include src/navigation/types.ts \
+  --include src/navigation/linking.ts \
+  --include src/navigation/navigationRef.ts \
+  --include src/navigation/screenOptions.ts \
+  --include src/navigation/index.ts
 ```
 
 Capture and register a reusable template in a local catalog:
