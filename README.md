@@ -211,13 +211,13 @@ Template commands resolve catalog sources in this order: explicit `--source`, `R
 Capture a reusable template from a compatible Fabricator project folder:
 
 ```bash
-rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates
+rn-fabricator templates capture profile-screen --category screen --from ./MyApp --output ./templates
 ```
 
 Capture only one screen, component, service, or utility by passing project-relative `--include` paths:
 
 ```bash
-rn-fabricator templates capture profile-screen --category screens --from ./MyApp --output ./templates --include src/screens/ProfileScreen.tsx
+rn-fabricator templates capture profile-screen --category screen --from ./MyApp --output ./templates --include src/screens/ProfileScreen.tsx
 ```
 
 Capture navigation files as a local navigation template:
@@ -242,9 +242,9 @@ rn-fabricator templates add navigation/app-navigator \
 Capture and register a reusable template in a local catalog:
 
 ```bash
-rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json
-rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json --include src/screens/ProfileScreen.tsx
-rn-fabricator templates add profile-screen --category screens --from ./MyApp --source ./templates/catalog.fabricator.json --dry-run
+rn-fabricator templates add profile-screen --category screen --from ./MyApp --source ./templates/catalog.fabricator.json
+rn-fabricator templates add profile-screen --category screen --from ./MyApp --source ./templates/catalog.fabricator.json --include src/screens/ProfileScreen.tsx
+rn-fabricator templates add profile-screen --category screen --from ./MyApp --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Refresh an existing local template from a compatible project:

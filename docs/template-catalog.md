@@ -140,14 +140,14 @@ Expected validate behavior:
 Capture a reusable template from a compatible Fabricator project folder:
 
 ```bash
-rn-fabricator templates capture profile-screen --category screens --from ./FabricatorBabyStep --output ./templates
+rn-fabricator templates capture profile-screen --category screen --from ./FabricatorBabyStep --output ./templates
 ```
 
 Capture and register a reusable template in a local catalog:
 
 ```bash
-rn-fabricator templates add profile-screen --category screens --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
-rn-fabricator templates add profile-screen --category screens --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json --dry-run
+rn-fabricator templates add profile-screen --category screen --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json
+rn-fabricator templates add profile-screen --category screen --from ./FabricatorBabyStep --source ./templates/catalog.fabricator.json --dry-run
 ```
 
 Refresh an existing local template from the current project files:
@@ -174,7 +174,7 @@ rn-fabricator templates remove profile-screen --source ./templates/catalog.fabri
 Expected capture behavior:
 
 - The source project must follow the Fabricator project contract.
-- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `navigation`, `services`, or `utils`.
+- `--category` should use a template category such as `screen`, `component`, `navigation`, `service`, or `util`. Older plural folder keys such as `screens`, `components`, `services`, and `utils` are still accepted.
 - Files under that folder are copied into a new template folder.
 - The generated `fabricator-template.json` includes schema v2 metadata, category, tags, `targetPath`, and `targetFolder` mappings.
 - Existing template output folders are not overwritten.

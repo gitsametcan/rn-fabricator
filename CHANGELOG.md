@@ -6,6 +6,10 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+### Fixed
+
+- `templates add`, `templates capture`, and `templates update` now normalize singular template categories such as `screen` and `component` while keeping plural folder keys backward compatible.
+
 ## 1.0.0-beta.3 - 2026-06-28
 
 ### Added

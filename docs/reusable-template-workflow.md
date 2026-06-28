@@ -113,7 +113,7 @@ Common categories:
 | `auth` | Authentication flows and helpers. |
 | `config` | Configuration examples and setup helpers. |
 
-Catalog categories describe the template type. Capture uses project folder keys from `.fabricator/project.json`, such as `screens`, `components`, `navigation`, `services`, and `utils`.
+Catalog categories describe the template type. Capture accepts user-facing categories such as `screen`, `component`, `navigation`, `service`, and `util`, then maps them to project folder keys from `.fabricator/project.json`. Plural folder keys such as `screens`, `components`, `services`, and `utils` remain supported for older scripts.
 
 Current repository examples:
 
@@ -251,14 +251,14 @@ Capture a known Fabricator project folder into a reusable template:
 
 ```bash
 rn-fabricator templates capture profile-screens \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --output ./captured-templates
 ```
 
 Important rules:
 
-- `--category` must match a folder key in `.fabricator/project.json`, such as `screens`, `components`, `navigation`, `services`, or `utils`.
+- `--category` should use a template category such as `screen`, `component`, `navigation`, `service`, or `util`. Older plural folder keys such as `screens`, `components`, `services`, and `utils` are still accepted.
 - Without `--include`, capture copies files from that folder into a new template directory.
 - With `--include`, capture copies only the selected project-relative files.
 - Capture writes `fabricator-template.json` with schema v2 metadata.
@@ -280,7 +280,7 @@ Capture one screen from the same project without capturing the whole `src/screen
 
 ```bash
 rn-fabricator templates capture profile-screen \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --output ./captured-templates \
   --include src/screens/ProfileScreen.tsx
@@ -290,7 +290,7 @@ Capture a small feature slice by selecting files from more than one Fabricator f
 
 ```bash
 rn-fabricator templates capture profile-feature \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --output ./captured-templates \
   --include src/screens/ProfileScreen.tsx \
@@ -324,7 +324,7 @@ To capture and register the selected screen through catalog commands, add it to 
 
 ```bash
 rn-fabricator templates add profile-screen \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --include src/screens/ProfileScreen.tsx \
@@ -335,7 +335,7 @@ Drop `--dry-run` to create the template directory under `./local-templates` and 
 
 ```bash
 rn-fabricator templates add profile-screen \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --include src/screens/ProfileScreen.tsx
@@ -347,9 +347,9 @@ rn-fabricator templates add profile-screen \
   "displayName": "Profile Screen",
   "description": "Captured profile screen.",
   "version": "0.1.0",
-  "category": "screens",
+  "category": "screen",
   "manifest": "profile-screen/fabricator-template.json",
-  "tags": ["screens"]
+  "tags": ["screen"]
 }
 ```
 
@@ -460,12 +460,12 @@ rn-fabricator templates apply component/primary-button \
   --output ./FabricatorBabyStep
 
 rn-fabricator templates capture baby-step-screens \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --output ./captured-templates
 
 rn-fabricator templates add baby-step-screens \
-  --category screens \
+  --category screen \
   --from ./FabricatorBabyStep \
   --source "$RN_FABRICATOR_LOCAL_TEMPLATE_SOURCE" \
   --dry-run

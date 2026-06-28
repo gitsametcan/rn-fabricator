@@ -59,10 +59,11 @@ public sealed class FabricatorTemplateCaptureService
 
         var manifest = compatibility.Manifest
             ?? throw new InvalidOperationException("Compatible Fabricator projects must include a manifest.");
+        var category = FabricatorTemplateCategoryNormalizer.Normalize(request.Category);
         var selection = FabricatorProjectTemplateFileSelector.Select(
             manifest,
             projectRoot,
-            request.Category,
+            category.FolderKey,
             request.IncludePaths,
             cancellationToken);
         if (!selection.Succeeded)
@@ -77,12 +78,12 @@ public sealed class FabricatorTemplateCaptureService
             "fabricator-template",
             request.TemplateId,
             ToDisplayName(request.TemplateId),
-            $"Captured {request.Category} template from a Fabricator project.",
+            $"Captured {category.CanonicalCategory} template from a Fabricator project.",
             "0.1.0",
             "apply",
             templateFiles,
-            Category: request.Category,
-            Tags: [request.Category]);
+            Category: category.CanonicalCategory,
+            Tags: [category.CanonicalCategory]);
 
         if (request.DryRun)
         {

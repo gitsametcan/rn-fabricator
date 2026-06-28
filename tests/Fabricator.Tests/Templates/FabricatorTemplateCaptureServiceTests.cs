@@ -42,7 +42,7 @@ public sealed class FabricatorTemplateCaptureServiceTests
         Assert.Equal(2, manifest.SchemaVersion);
         Assert.Equal("fabricator-template", manifest.Kind);
         Assert.Equal("profile-screen", manifest.Id);
-        Assert.Equal("screens", manifest.Category);
+        Assert.Equal("screen", manifest.Category);
         Assert.Contains(manifest.Files, file =>
             file.Path == "src/screens/ProfileScreen.tsx" &&
             file.TargetPath == "src/screens/ProfileScreen.tsx" &&
@@ -197,7 +197,35 @@ public sealed class FabricatorTemplateCaptureServiceTests
 
         var package = await new TemplateCatalogProvider().GetTemplateAsync(catalogPath, "profile-screen");
         Assert.Equal("profile-screen", package.Manifest.Id);
-        Assert.Equal("screens", package.Manifest.Category);
+        Assert.Equal("screen", package.Manifest.Category);
+    }
+
+    [Fact]
+    public async Task AddAsyncAcceptsSingularComponentCategoryAlias()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(project.Path, "src", "components", "InfoCard.tsx"),
+            "export function InfoCard() { return null; }\n");
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var service = new FabricatorTemplateAddService();
+
+        var result = await service.AddAsync(new FabricatorTemplateAddRequest(
+            "component/info-card",
+            "component",
+            project.Path,
+            catalogPath,
+            IncludePaths: ["src/components/InfoCard.tsx"]));
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.Errors);
+        Assert.Equal(["src/components/InfoCard.tsx"], result.CapturedFiles);
+        Assert.True(File.Exists(Path.Combine(output.Path, "component", "info-card", "src", "components", "InfoCard.tsx")));
+
+        var package = await new TemplateCatalogProvider().GetTemplateAsync(catalogPath, "component/info-card");
+        Assert.Equal("component", package.Manifest.Category);
+        Assert.Equal("components", package.Manifest.Files[0].TargetFolder);
     }
 
     [Fact]
@@ -368,7 +396,46 @@ public sealed class FabricatorTemplateCaptureServiceTests
         Assert.NotNull(manifest);
         Assert.Equal("Custom Profile Template", manifest.DisplayName);
         Assert.Equal("1.2.3", manifest.Version);
+        Assert.Equal("screen", manifest.Category);
         Assert.Contains("custom", manifest.Tags ?? []);
+    }
+
+    [Fact]
+    public async Task UpdateAsyncNormalizesExistingPluralManifestCategory()
+    {
+        using var project = CreateCompatibleProject();
+        using var output = new TemporaryDirectory();
+        var catalogPath = Path.Combine(output.Path, "catalog.fabricator.json");
+        var profilePath = Path.Combine(project.Path, "src", "screens", "ProfileScreen.tsx");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'old'; }\n");
+        var addService = new FabricatorTemplateAddService();
+        var updateService = new FabricatorTemplateUpdateService();
+
+        var addResult = await addService.AddAsync(new FabricatorTemplateAddRequest(
+            "profile-screen",
+            "screens",
+            project.Path,
+            catalogPath));
+        var manifestPath = Path.Combine(output.Path, "profile-screen", "fabricator-template.json");
+        RewriteManifestCategory(manifestPath, "screens");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'new'; }\n");
+
+        var result = await updateService.UpdateAsync(new FabricatorTemplateUpdateRequest(
+            "profile-screen",
+            project.Path,
+            catalogPath));
+
+        Assert.True(addResult.Succeeded);
+        Assert.True(result.Succeeded);
+
+        var manifest = JsonSerializer.Deserialize<FabricatorTemplateManifest>(
+            File.ReadAllText(manifestPath),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(manifest);
+        Assert.Equal("screen", manifest.Category);
+        Assert.Contains(manifest.Files, file =>
+            file.Path == "src/screens/ProfileScreen.tsx" &&
+            file.TargetFolder == "screens");
     }
 
     [Fact]
@@ -820,6 +887,21 @@ public sealed class FabricatorTemplateCaptureServiceTests
         };
 
         File.WriteAllText(manifestPath, JsonSerializer.Serialize(updated, JsonOptions));
+    }
+
+    private static void RewriteManifestCategory(string manifestPath, string category)
+    {
+        var manifest = JsonSerializer.Deserialize<FabricatorTemplateManifest>(
+            File.ReadAllText(manifestPath),
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(manifest);
+
+        File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest with
+        {
+            Category = category,
+            Tags = [category]
+        }, JsonOptions));
     }
 
     private sealed class TemporaryDirectory : IDisposable
