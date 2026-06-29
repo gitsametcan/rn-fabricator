@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "minimal-splash",
+  "displayName": "Minimal Splash",
+  "description": "Minimal React Native starter with splash and main screens plus base source folders.",
+  "version": "0.1.0",
+  "mode": "starter",
+  "category": "starter",
+  "tags": [
+    "starter",
+    "screen",
+    "splash"
+  ],
+  "files": [
+    {
+      "path": "App.tsx",
+      "type": "file",
+      "targetPath": "App.tsx",
+      "description": "Application entry point that transitions from SplashScreen to MainScreen."
+    },
+    {
+      "path": "src/screens/SplashScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/SplashScreen.tsx",
+      "description": "Initial splash screen."
+    },
+    {
+      "path": "src/screens/MainScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/MainScreen.tsx",
+      "description": "Minimal main screen."
+    },
+    {
+      "path": "src/screens/index.ts",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/index.ts",
+      "description": "Screen barrel exports."
+    },
+    {
+      "path": "src/app/index.ts",
+      "type": "file",
+      "targetFolder": "app",
+      "targetPath": "src/app/index.ts"
+    },
+    {
+      "path": "src/components/index.ts",
+      "type": "file",
+      "targetFolder": "components",
+      "targetPath": "src/components/index.ts"
+    },
+    {
+      "path": "src/config/index.ts",
+      "type": "file",
+      "targetFolder": "config",
+      "targetPath": "src/config/index.ts"
+    },
+    {
+      "path": "src/constants/index.ts",
+      "type": "file",
+      "targetFolder": "constants",
+      "targetPath": "src/constants/index.ts"
+    },
+    {
+      "path": "src/hooks/index.ts",
+      "type": "file",
+      "targetFolder": "hooks",
+      "targetPath": "src/hooks/index.ts"
+    },
+    {
+      "path": "src/navigation/AppNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/AppNavigator.tsx",
+      "description": "Application navigator shell."
+    },
+    {
+      "path": "src/navigation/AuthNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/AuthNavigator.tsx",
+      "description": "Authentication flow navigator shell."
+    },
+    {
+      "path": "src/navigation/MainNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/MainNavigator.tsx",
+      "description": "Main application navigator shell."
+    },
+    {
+      "path": "src/navigation/TabNavigator.tsx",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/TabNavigator.tsx",
+      "description": "Tab navigator shell."
+    },
+    {
+      "path": "src/navigation/routes.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/routes.ts",
+      "description": "Route constants."
+    },
+    {
+      "path": "src/navigation/types.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/types.ts",
+      "description": "Navigation type definitions."
+    },
+    {
+      "path": "src/navigation/linking.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/linking.ts",
+      "description": "Deep link configuration placeholder."
+    },
+    {
+      "path": "src/navigation/navigationRef.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/navigationRef.ts",
+      "description": "Dependency-free navigation command ref."
+    },
+    {
+      "path": "src/navigation/screenOptions.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/screenOptions.ts",
+      "description": "Shared screen option placeholders."
+    },
+    {
+      "path": "src/navigation/index.ts",
+      "type": "file",
+      "targetFolder": "navigation",
+      "targetPath": "src/navigation/index.ts",
+      "description": "Navigation barrel exports."
+    },
+    {
+      "path": "src/services/index.ts",
+      "type": "file",
+      "targetFolder": "services",
+      "targetPath": "src/services/index.ts"
+    },
+    {
+      "path": "src/storage/index.ts",
+      "type": "file",
+      "targetFolder": "storage",
+      "targetPath": "src/storage/index.ts"
+    },
+    {
+      "path": "src/theme/index.ts",
+      "type": "file",
+      "targetFolder": "theme",
+      "targetPath": "src/theme/index.ts"
+    },
+    {
+      "path": "src/types/index.ts",
+      "type": "file",
+      "targetFolder": "types",
+      "targetPath": "src/types/index.ts"
+    },
+    {
+      "path": "src/utils/index.ts",
+      "type": "file",
+      "targetFolder": "utils",
+      "targetPath": "src/utils/index.ts"
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { MainScreen } from './MainScreen';",
+      "source": "src/screens/MainScreen.tsx"
+    },
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { SplashScreen } from './SplashScreen';",
+      "source": "src/screens/SplashScreen.tsx"
+    }
+  ]
+}

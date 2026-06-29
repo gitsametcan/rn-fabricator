@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "basic-auth",
+  "displayName": "Basic Auth",
+  "description": "Optional auth starter with splash, loading, login, home, auth provider, and example configuration files.",
+  "version": "0.1.0",
+  "mode": "copy",
+  "category": "auth",
+  "tags": [
+    "auth",
+    "screen",
+    "config"
+  ],
+  "files": [
+    {
+      "path": ".env.example",
+      "type": "file",
+      "targetPath": ".env.example",
+      "description": "Environment variable example file."
+    },
+    {
+      "path": "credentials.example.json",
+      "type": "file",
+      "targetPath": "credentials.example.json",
+      "description": "Credential configuration example file."
+    },
+    {
+      "path": "CONFIGURATION.md",
+      "type": "file",
+      "targetPath": "CONFIGURATION.md",
+      "description": "Manual setup notes for real auth configuration."
+    },
+    {
+      "path": "App.tsx",
+      "type": "file",
+      "targetPath": "App.tsx"
+    },
+    {
+      "path": "src/auth/AuthProvider.tsx",
+      "type": "file",
+      "targetPath": "src/auth/AuthProvider.tsx",
+      "description": "Auth provider and session state."
+    },
+    {
+      "path": "src/auth/index.ts",
+      "type": "file",
+      "targetPath": "src/auth/index.ts"
+    },
+    {
+      "path": "src/screens/SplashScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/SplashScreen.tsx"
+    },
+    {
+      "path": "src/screens/LoadingScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/LoadingScreen.tsx"
+    },
+    {
+      "path": "src/screens/LoginScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/LoginScreen.tsx"
+    },
+    {
+      "path": "src/screens/HomeScreen.tsx",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/HomeScreen.tsx"
+    },
+    {
+      "path": "src/screens/index.ts",
+      "type": "file",
+      "targetFolder": "screens",
+      "targetPath": "src/screens/index.ts"
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { HomeScreen } from './HomeScreen';",
+      "source": "src/screens/HomeScreen.tsx"
+    },
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { LoadingScreen } from './LoadingScreen';",
+      "source": "src/screens/LoadingScreen.tsx"
+    },
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { LoginScreen } from './LoginScreen';",
+      "source": "src/screens/LoginScreen.tsx"
+    },
+    {
+      "integrationPoint": "screensBarrel",
+      "statement": "export { SplashScreen } from './SplashScreen';",
+      "source": "src/screens/SplashScreen.tsx"
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "App.tsx",
+      "message": "Review App.tsx before replacing an existing application shell."
+    },
+    {
+      "type": "manual",
+      "target": ".env",
+      "message": "Create real local configuration files from the generated examples and keep them out of Git."
+    }
+  ]
+}

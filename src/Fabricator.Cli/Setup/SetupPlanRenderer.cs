@@ -11,11 +11,17 @@ public sealed class SetupPlanRenderer
         _writer = writer;
     }
 
-    public void Render(SetupPlan plan)
+    public void Render(SetupPlan plan, bool includeReadOnlyFooter = true)
     {
         _writer.WriteLine("React Native setup plan");
         _writer.WriteLine();
         _writer.WriteLine($"Platform: {plan.PlatformName}");
+        if (plan.ToolchainProfile is not null)
+        {
+            _writer.WriteLine($"Toolchain profile: {plan.ToolchainProfile.DisplayName} ({plan.ToolchainProfile.Id})");
+            _writer.WriteLine($"React Native: {plan.ToolchainProfile.ReactNativeVersion}");
+        }
+
         _writer.WriteLine($"Package manager: {FormatPackageManager(plan.PackageManager)}");
         _writer.WriteLine();
 
@@ -33,7 +39,10 @@ public sealed class SetupPlanRenderer
 
         _writer.WriteLine(
             $"Summary: {plan.CommandCount} command, {plan.ManualCount} manual, {plan.EnvironmentCount} environment step(s).");
-        _writer.WriteLine("No install commands were executed. Review the plan before running any setup commands.");
+        if (includeReadOnlyFooter)
+        {
+            _writer.WriteLine("No install commands were executed. Review the plan before running any setup commands.");
+        }
     }
 
     private void RenderItem(SetupPlanItem item)

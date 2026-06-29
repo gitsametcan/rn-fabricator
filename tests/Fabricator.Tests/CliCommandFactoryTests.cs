@@ -22,6 +22,7 @@ public sealed class CliCommandFactoryTests
         Assert.Contains("doctor", commandNames);
         Assert.Contains("setup", commandNames);
         Assert.Contains("create", commandNames);
+        Assert.Contains("templates", commandNames);
     }
 
     [Fact]
@@ -32,6 +33,7 @@ public sealed class CliCommandFactoryTests
         var subcommandNames = setupCommand.Subcommands.Select(command => command.Name).ToArray();
 
         Assert.Contains("plan", subcommandNames);
+        Assert.Contains("apply", subcommandNames);
         Assert.Contains("doctor command is read-only", setupCommand.Description);
     }
 
@@ -47,17 +49,59 @@ public sealed class CliCommandFactoryTests
     }
 
     [Fact]
+    public void SetupPlanCommandDefinesProfileOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var setupCommand = rootCommand.Subcommands.Single(command => command.Name == "setup");
+        var planCommand = setupCommand.Subcommands.Single(command => command.Name == "plan");
+
+        Assert.Contains(
+            planCommand.Options,
+            option => option.Name == "--profile" && option.Aliases.Contains("-p"));
+        Assert.Contains(
+            planCommand.Options,
+            option => option.Name == "--react-native");
+        Assert.Empty(rootCommand.Parse(["setup", "plan", "--react-native", "0.76.x"]).Errors);
+    }
+
+    [Fact]
+    public void SetupApplyCommandDefinesProfileOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var setupCommand = rootCommand.Subcommands.Single(command => command.Name == "setup");
+        var applyCommand = setupCommand.Subcommands.Single(command => command.Name == "apply");
+
+        Assert.Contains("per-step confirmation", applyCommand.Description);
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--profile" && option.Aliases.Contains("-p"));
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--react-native");
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--dry-run");
+        Assert.Contains(
+            applyCommand.Options,
+            option => option.Name == "--yes");
+        Assert.Empty(rootCommand.Parse(["setup", "apply", "--profile", "react-native-stable"]).Errors);
+        Assert.Empty(rootCommand.Parse(["setup", "apply", "--dry-run"]).Errors);
+        Assert.Empty(rootCommand.Parse(["setup", "apply", "--yes"]).Errors);
+    }
+
+    [Fact]
     public void CreateCommandAcceptsProjectNameAndTemplateOption()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
-        var parseResult = rootCommand.Parse(["create", "MyApp", "--template", "basic-auth"]);
+        var parseResult = rootCommand.Parse(
+            ["create", "MyApp", "--template", "minimal-splash", "--template-source", "templates/catalog.fabricator.json"]);
 
         Assert.Empty(parseResult.Errors);
         Assert.Equal("create", parseResult.CommandResult.Command.Name);
     }
 
     [Fact]
-    public void CreateCommandDefaultsToBasicAuthTemplate()
+    public void CreateCommandDefaultsToMinimalSplashTemplate()
     {
         var rootCommand = CliCommandFactory.CreateRootCommand();
         var parseResult = rootCommand.Parse(["create", "MyApp"]);
@@ -79,6 +123,173 @@ public sealed class CliCommandFactoryTests
         Assert.Contains(
             createCommand.Options,
             option => option.Name == "--output" && option.Aliases.Contains("-o"));
+        Assert.Contains(
+            createCommand.Options,
+            option => option.Name == "--template-source");
+    }
+
+    [Fact]
+    public void TemplatesListCommandAcceptsSourceOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            ["templates", "list", "--source", "templates/catalog.fabricator.json", "--category", "auth"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("list", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandAcceptsTemplateAndSourceOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(["templates", "info", "basic-auth", "--source", "templates/catalog.fabricator.json"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("info", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesValidateCommandAcceptsSourceOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(["templates", "validate", "--source", "templates/catalog.fabricator.json"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("validate", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesStatusCommandAcceptsProjectOption()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(["templates", "status", "--project", "MyApp"]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("status", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesAddCommandAcceptsTemplateCategoryFromAndSourceOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "add",
+                "profile-screen",
+                "--category",
+                "screens",
+                "--from",
+                "MyApp",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--dry-run"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("add", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesUpdateCommandAcceptsTemplateFromAndSourceOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "update",
+                "profile-screen",
+                "--from",
+                "MyApp",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--dry-run"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("update", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesRemoveCommandAcceptsTemplateSourceAndDeleteFilesOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "remove",
+                "profile-screen",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--delete-files",
+                "--dry-run"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("remove", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesCopyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "copy",
+                "basic-auth",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--output",
+                "sandbox",
+                "--overwrite"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("copy", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandAcceptsTemplateSourceOutputAndOverwriteOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "apply",
+                "basic-auth",
+                "--source",
+                "templates/catalog.fabricator.json",
+                "--output",
+                "MyApp",
+                "--overwrite",
+                "--dry-run"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("apply", parseResult.CommandResult.Command.Name);
+    }
+
+    [Fact]
+    public void TemplatesCaptureCommandAcceptsTemplateCategoryFromAndOutputOptions()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var parseResult = rootCommand.Parse(
+            [
+                "templates",
+                "capture",
+                "profile-screen",
+                "--category",
+                "screens",
+                "--from",
+                "MyApp",
+                "--output",
+                "templates"
+            ]);
+
+        Assert.Empty(parseResult.Errors);
+        Assert.Equal("capture", parseResult.CommandResult.Command.Name);
     }
 
     [Fact]

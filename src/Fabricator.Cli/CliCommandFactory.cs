@@ -1,7 +1,9 @@
 using Fabricator.Core;
+using Fabricator.Core.Projects;
 using Fabricator.Cli.Doctor;
 using Fabricator.Cli.Projects;
 using Fabricator.Cli.Setup;
+using Fabricator.Cli.Templates;
 using System.CommandLine;
 
 namespace Fabricator.Cli;
@@ -13,7 +15,8 @@ public static class CliCommandFactory
         return CreateRootCommand(
             () => DoctorDependencies.CreateDefaultHandler(Console.Out),
             () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error),
-            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out),
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
     }
 
     public static RootCommand CreateRootCommand(Func<DoctorCommandHandler> doctorHandlerFactory)
@@ -21,7 +24,8 @@ public static class CliCommandFactory
         return CreateRootCommand(
             doctorHandlerFactory,
             () => CreateProjectDependencies.CreateDefaultHandler(Console.Out, Console.Error),
-            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out),
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
     }
 
     public static RootCommand CreateRootCommand(
@@ -31,7 +35,8 @@ public static class CliCommandFactory
         return CreateRootCommand(
             doctorHandlerFactory,
             createHandlerFactory,
-            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out));
+            () => SetupDependencies.CreateDefaultPlanHandler(Console.Out),
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
     }
 
     public static RootCommand CreateRootCommand(
@@ -39,12 +44,26 @@ public static class CliCommandFactory
         Func<CreateCommandHandler> createHandlerFactory,
         Func<SetupPlanCommandHandler> setupPlanHandlerFactory)
     {
+        return CreateRootCommand(
+            doctorHandlerFactory,
+            createHandlerFactory,
+            setupPlanHandlerFactory,
+            () => SetupDependencies.CreateDefaultApplyHandler(Console.In, Console.Out));
+    }
+
+    public static RootCommand CreateRootCommand(
+        Func<DoctorCommandHandler> doctorHandlerFactory,
+        Func<CreateCommandHandler> createHandlerFactory,
+        Func<SetupPlanCommandHandler> setupPlanHandlerFactory,
+        Func<SetupApplyCommandHandler> setupApplyHandlerFactory)
+    {
         var rootCommand = new RootCommand(ProductInfo.Description);
         ConfigureVersionOption(rootCommand);
 
         rootCommand.Subcommands.Add(CreateDoctorCommand(doctorHandlerFactory));
-        rootCommand.Subcommands.Add(CreateSetupCommand(setupPlanHandlerFactory));
+        rootCommand.Subcommands.Add(CreateSetupCommand(setupPlanHandlerFactory, setupApplyHandlerFactory));
         rootCommand.Subcommands.Add(CreateCreateCommand(createHandlerFactory));
+        rootCommand.Subcommands.Add(CreateTemplatesCommand());
 
         return rootCommand;
     }
@@ -76,7 +95,9 @@ public static class CliCommandFactory
         return command;
     }
 
-    private static Command CreateSetupCommand(Func<SetupPlanCommandHandler> setupPlanHandlerFactory)
+    private static Command CreateSetupCommand(
+        Func<SetupPlanCommandHandler> setupPlanHandlerFactory,
+        Func<SetupApplyCommandHandler> setupApplyHandlerFactory)
     {
         var command = new Command(
             "setup",
@@ -84,14 +105,61 @@ public static class CliCommandFactory
         var planCommand = new Command(
             "plan",
             "Run read-only environment checks and print setup actions without executing install commands.");
-
-        planCommand.SetAction(async (_, cancellationToken) =>
+        var applyCommand = new Command(
+            "apply",
+            "Run setup plan and apply safe command steps after per-step confirmation.");
+        var profileOption = new Option<string>("--profile", "-p")
         {
+            Description = "Toolchain profile id to use for setup recommendations."
+        };
+        var reactNativeOption = new Option<string>("--react-native")
+        {
+            Description = "React Native version to use for setup recommendations."
+        };
+        var applyProfileOption = new Option<string>("--profile", "-p")
+        {
+            Description = "Toolchain profile id to use for setup recommendations."
+        };
+        var applyReactNativeOption = new Option<string>("--react-native")
+        {
+            Description = "React Native version to use for setup recommendations."
+        };
+        var applyDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show eligible setup commands without executing them."
+        };
+        var applyYesOption = new Option<bool>("--yes")
+        {
+            Description = "Run safe allowlisted setup commands without per-step prompts."
+        };
+
+        planCommand.Options.Add(profileOption);
+        planCommand.Options.Add(reactNativeOption);
+        applyCommand.Options.Add(applyProfileOption);
+        applyCommand.Options.Add(applyReactNativeOption);
+        applyCommand.Options.Add(applyDryRunOption);
+        applyCommand.Options.Add(applyYesOption);
+
+        planCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var profile = parseResult.GetValue(profileOption);
+            var reactNativeVersion = parseResult.GetValue(reactNativeOption);
             var handler = setupPlanHandlerFactory();
-            return await handler.RunAsync(cancellationToken);
+            return await handler.RunAsync(profile, reactNativeVersion, cancellationToken);
+        });
+
+        applyCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var profile = parseResult.GetValue(applyProfileOption);
+            var reactNativeVersion = parseResult.GetValue(applyReactNativeOption);
+            var dryRun = parseResult.GetValue(applyDryRunOption);
+            var yes = parseResult.GetValue(applyYesOption);
+            var handler = setupApplyHandlerFactory();
+            return await handler.RunAsync(profile, reactNativeVersion, dryRun, yes, cancellationToken);
         });
 
         command.Subcommands.Add(planCommand);
+        command.Subcommands.Add(applyCommand);
         return command;
     }
 
@@ -105,7 +173,7 @@ public static class CliCommandFactory
         var templateOption = new Option<string>("--template", "-t")
         {
             Description = "Starter template to apply.",
-            DefaultValueFactory = _ => "basic-auth"
+            DefaultValueFactory = _ => CreateProjectService.DefaultStarterId
         };
 
         var outputOption = new Option<string>("--output", "-o")
@@ -113,22 +181,342 @@ public static class CliCommandFactory
             Description = "Directory where the React Native project will be created.",
             DefaultValueFactory = _ => Directory.GetCurrentDirectory()
         };
+        var templateSourceOption = new Option<string>("--template-source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path."
+        };
 
         var command = new Command("create", "Create a new React Native CLI project.");
         command.Arguments.Add(nameArgument);
         command.Options.Add(templateOption);
         command.Options.Add(outputOption);
+        command.Options.Add(templateSourceOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
             var name = parseResult.GetRequiredValue(nameArgument);
-            var template = parseResult.GetValue(templateOption) ?? "basic-auth";
+            var template = parseResult.GetValue(templateOption) ?? CreateProjectService.DefaultStarterId;
             var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
+            var templateSource = parseResult.GetValue(templateSourceOption);
 
             var handler = createHandlerFactory();
-            return await handler.RunAsync(name, template, outputDirectory, cancellationToken);
+            return await handler.RunAsync(name, template, outputDirectory, templateSource, cancellationToken);
         });
 
+        return command;
+    }
+
+    private static Command CreateTemplatesCommand()
+    {
+        var command = new Command("templates", "List, inspect, validate, status, add, update, remove, copy, apply, and capture Fabricator templates.");
+        var listCommand = new Command("list", "List templates from a Fabricator template catalog.");
+        var infoCommand = new Command("info", "Show details for a template from a Fabricator template catalog.");
+        var validateCommand = new Command("validate", "Validate a Fabricator template catalog.");
+        var statusCommand = new Command("status", "Show templates applied to a compatible Fabricator project.");
+        var addCommand = new Command("add", "Capture and register a reusable template in a local Fabricator catalog.");
+        var updateCommand = new Command("update", "Refresh an existing local template from a compatible Fabricator project.");
+        var removeCommand = new Command("remove", "Remove a template entry from a local Fabricator catalog.");
+        var applyCommand = new Command("apply", "Apply a template to a compatible Fabricator project.");
+        var captureCommand = new Command("capture", "Capture files from a compatible Fabricator project as a reusable template.");
+        var copyCommand = new Command("copy", "Copy a template from a Fabricator template catalog.");
+        var templateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to copy."
+        };
+        var infoTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to inspect."
+        };
+        var applyTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to apply."
+        };
+        var addTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to add."
+        };
+        var updateTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to update."
+        };
+        var removeTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to remove."
+        };
+        var captureTemplateArgument = new Argument<string>("template")
+        {
+            Description = "Template id to capture."
+        };
+        var sourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var categoryOption = new Option<string>("--category")
+        {
+            Description = "Filter listed templates by category."
+        };
+        var infoSourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var copySourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var applySourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var validateSourceOption = new Option<string>("--source")
+        {
+            Description = "Fabricator template catalog URL or local catalog file path. When omitted, the CLI resolves a local source automatically."
+        };
+        var statusProjectOption = new Option<string>("--project")
+        {
+            Description = "Compatible Fabricator project directory to inspect.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
+        };
+        var outputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Directory where template files will be copied.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
+        };
+        var applyOutputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Compatible Fabricator project directory where template files will be applied.",
+            DefaultValueFactory = _ => Directory.GetCurrentDirectory()
+        };
+        var overwriteOption = new Option<bool>("--overwrite")
+        {
+            Description = "Overwrite existing files instead of skipping them."
+        };
+        var applyOverwriteOption = new Option<bool>("--overwrite")
+        {
+            Description = "Overwrite existing files instead of skipping them."
+        };
+        var applyDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template apply without writing project files, exports, or fabricator.json."
+        };
+        var captureCategoryOption = new Option<string>("--category")
+        {
+            Description = "Template category to capture, such as screen, component, navigation, service, or util. Plural folder keys remain supported."
+        };
+        var captureIncludeOption = new Option<string[]>("--include")
+        {
+            Description = "Project-relative file path to capture. Can be provided multiple times.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var captureFromOption = new Option<string>("--from")
+        {
+            Description = "Compatible Fabricator project directory to capture from."
+        };
+        var captureOutputOption = new Option<string>("--output", "-o")
+        {
+            Description = "Directory where captured template folders will be created.",
+            DefaultValueFactory = _ => Path.Combine(Directory.GetCurrentDirectory(), "templates")
+        };
+        var addCategoryOption = new Option<string>("--category")
+        {
+            Description = "Template category to capture, such as screen, component, navigation, service, or util. Plural folder keys remain supported."
+        };
+        var addIncludeOption = new Option<string[]>("--include")
+        {
+            Description = "Project-relative file path to capture. Can be provided multiple times.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var addFromOption = new Option<string>("--from")
+        {
+            Description = "Compatible Fabricator project directory to capture from."
+        };
+        var addSourceOption = new Option<string>("--source")
+        {
+            Description = "Local Fabricator template catalog file path to update."
+        };
+        var addDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template add without writing template files or catalog changes."
+        };
+        var updateFromOption = new Option<string>("--from")
+        {
+            Description = "Compatible Fabricator project directory to refresh from."
+        };
+        var updateIncludeOption = new Option<string[]>("--include")
+        {
+            Description = "Project-relative file path to refresh. Can be provided multiple times.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var updateSourceOption = new Option<string>("--source")
+        {
+            Description = "Local Fabricator template catalog file path to update."
+        };
+        var updateDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template update without writing template files or catalog changes."
+        };
+        var removeSourceOption = new Option<string>("--source")
+        {
+            Description = "Local Fabricator template catalog file path to update."
+        };
+        var removeDeleteFilesOption = new Option<bool>("--delete-files")
+        {
+            Description = "Also delete the template folder when it can be resolved safely."
+        };
+        var removeDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Preview template remove without writing catalog changes or deleting files."
+        };
+
+        listCommand.Options.Add(sourceOption);
+        listCommand.Options.Add(categoryOption);
+        listCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var source = parseResult.GetValue(sourceOption) ?? string.Empty;
+            var category = parseResult.GetValue(categoryOption);
+            var handler = TemplatesDependencies.CreateDefaultListHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(source, category, cancellationToken);
+        });
+
+        infoCommand.Arguments.Add(infoTemplateArgument);
+        infoCommand.Options.Add(infoSourceOption);
+        infoCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(infoTemplateArgument);
+            var source = parseResult.GetValue(infoSourceOption) ?? string.Empty;
+            var handler = TemplatesDependencies.CreateDefaultInfoHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, cancellationToken);
+        });
+
+        validateCommand.Options.Add(validateSourceOption);
+        validateCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var source = parseResult.GetValue(validateSourceOption) ?? string.Empty;
+            var handler = TemplatesDependencies.CreateDefaultValidateHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(source, cancellationToken);
+        });
+
+        statusCommand.Options.Add(statusProjectOption);
+        statusCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var projectDirectory = parseResult.GetValue(statusProjectOption) ?? Directory.GetCurrentDirectory();
+            var handler = TemplatesDependencies.CreateDefaultStatusHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(projectDirectory, cancellationToken);
+        });
+
+        applyCommand.Arguments.Add(applyTemplateArgument);
+        applyCommand.Options.Add(applySourceOption);
+        applyCommand.Options.Add(applyOutputOption);
+        applyCommand.Options.Add(applyOverwriteOption);
+        applyCommand.Options.Add(applyDryRunOption);
+        applyCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(applyTemplateArgument);
+            var source = parseResult.GetValue(applySourceOption) ?? string.Empty;
+            var outputDirectory = parseResult.GetValue(applyOutputOption) ?? Directory.GetCurrentDirectory();
+            var overwrite = parseResult.GetValue(applyOverwriteOption);
+            var dryRun = parseResult.GetValue(applyDryRunOption);
+            var handler = TemplatesDependencies.CreateDefaultApplyHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, outputDirectory, overwrite, dryRun, cancellationToken);
+        });
+
+        addCommand.Arguments.Add(addTemplateArgument);
+        addCommand.Options.Add(addCategoryOption);
+        addCommand.Options.Add(addIncludeOption);
+        addCommand.Options.Add(addFromOption);
+        addCommand.Options.Add(addSourceOption);
+        addCommand.Options.Add(addDryRunOption);
+        addCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(addTemplateArgument);
+            var category = parseResult.GetValue(addCategoryOption) ?? string.Empty;
+            var sourceProjectDirectory = parseResult.GetValue(addFromOption) ?? string.Empty;
+            var source = parseResult.GetValue(addSourceOption) ?? string.Empty;
+            var dryRun = parseResult.GetValue(addDryRunOption);
+            var includePaths = parseResult.GetValue(addIncludeOption) ?? [];
+            var handler = TemplatesDependencies.CreateDefaultAddHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, category, sourceProjectDirectory, source, dryRun, includePaths, cancellationToken);
+        });
+
+        updateCommand.Arguments.Add(updateTemplateArgument);
+        updateCommand.Options.Add(updateFromOption);
+        updateCommand.Options.Add(updateIncludeOption);
+        updateCommand.Options.Add(updateSourceOption);
+        updateCommand.Options.Add(updateDryRunOption);
+        updateCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(updateTemplateArgument);
+            var sourceProjectDirectory = parseResult.GetValue(updateFromOption) ?? string.Empty;
+            var source = parseResult.GetValue(updateSourceOption) ?? string.Empty;
+            var dryRun = parseResult.GetValue(updateDryRunOption);
+            var includePaths = parseResult.GetValue(updateIncludeOption) ?? [];
+            var handler = TemplatesDependencies.CreateDefaultUpdateHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, sourceProjectDirectory, source, dryRun, includePaths, cancellationToken);
+        });
+
+        removeCommand.Arguments.Add(removeTemplateArgument);
+        removeCommand.Options.Add(removeSourceOption);
+        removeCommand.Options.Add(removeDeleteFilesOption);
+        removeCommand.Options.Add(removeDryRunOption);
+        removeCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(removeTemplateArgument);
+            var source = parseResult.GetValue(removeSourceOption) ?? string.Empty;
+            var deleteFiles = parseResult.GetValue(removeDeleteFilesOption);
+            var dryRun = parseResult.GetValue(removeDryRunOption);
+            var handler = TemplatesDependencies.CreateDefaultRemoveHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, deleteFiles, dryRun, cancellationToken);
+        });
+
+        captureCommand.Arguments.Add(captureTemplateArgument);
+        captureCommand.Options.Add(captureCategoryOption);
+        captureCommand.Options.Add(captureIncludeOption);
+        captureCommand.Options.Add(captureFromOption);
+        captureCommand.Options.Add(captureOutputOption);
+        captureCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(captureTemplateArgument);
+            var category = parseResult.GetValue(captureCategoryOption) ?? string.Empty;
+            var sourceProjectDirectory = parseResult.GetValue(captureFromOption) ?? string.Empty;
+            var outputDirectory = parseResult.GetValue(captureOutputOption) ?? Path.Combine(Directory.GetCurrentDirectory(), "templates");
+            var includePaths = parseResult.GetValue(captureIncludeOption) ?? [];
+            var handler = TemplatesDependencies.CreateDefaultCaptureHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, category, sourceProjectDirectory, outputDirectory, includePaths, cancellationToken);
+        });
+
+        copyCommand.Arguments.Add(templateArgument);
+        copyCommand.Options.Add(copySourceOption);
+        copyCommand.Options.Add(outputOption);
+        copyCommand.Options.Add(overwriteOption);
+        copyCommand.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var template = parseResult.GetRequiredValue(templateArgument);
+            var source = parseResult.GetValue(copySourceOption) ?? string.Empty;
+            var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
+            var overwrite = parseResult.GetValue(overwriteOption);
+            var handler = TemplatesDependencies.CreateDefaultCopyHandler(Console.Out, Console.Error);
+
+            return await handler.RunAsync(template, source, outputDirectory, overwrite, cancellationToken);
+        });
+
+        command.Subcommands.Add(listCommand);
+        command.Subcommands.Add(infoCommand);
+        command.Subcommands.Add(validateCommand);
+        command.Subcommands.Add(statusCommand);
+        command.Subcommands.Add(addCommand);
+        command.Subcommands.Add(updateCommand);
+        command.Subcommands.Add(removeCommand);
+        command.Subcommands.Add(applyCommand);
+        command.Subcommands.Add(captureCommand);
+        command.Subcommands.Add(copyCommand);
         return command;
     }
 }

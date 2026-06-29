@@ -1,9 +1,12 @@
 using System.Diagnostics;
+using System.Text;
 
 namespace Fabricator.Core.Processes;
 
 public sealed class ProcessRunner : IProcessRunner
 {
+    private const int BufferSize = 4096;
+
     public async Task<ProcessRunResult> RunAsync(
         ProcessRunRequest request,
         CancellationToken cancellationToken = default)
@@ -39,17 +42,49 @@ public sealed class ProcessRunner : IProcessRunner
                 ex.Message);
         }
 
-        var standardOutputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var standardOutput = new StringBuilder();
+        var standardError = new StringBuilder();
+        var standardOutputTask = ReadStreamAsync(
+            process.StandardOutput,
+            standardOutput,
+            request.OnStandardOutput,
+            cancellationToken);
+        var standardErrorTask = ReadStreamAsync(
+            process.StandardError,
+            standardError,
+            request.OnStandardError,
+            cancellationToken);
 
         await process.WaitForExitAsync(cancellationToken);
 
-        var standardOutput = await standardOutputTask;
-        var standardError = await standardErrorTask;
+        await standardOutputTask;
+        await standardErrorTask;
 
         return new ProcessRunResult(
             process.ExitCode,
-            standardOutput,
-            standardError);
+            standardOutput.ToString(),
+            standardError.ToString());
+    }
+
+    private static async Task ReadStreamAsync(
+        StreamReader reader,
+        StringBuilder output,
+        Action<string>? onData,
+        CancellationToken cancellationToken)
+    {
+        var buffer = new char[BufferSize];
+
+        while (true)
+        {
+            var read = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+            if (read == 0)
+            {
+                return;
+            }
+
+            var chunk = new string(buffer, 0, read);
+            output.Append(chunk);
+            onData?.Invoke(chunk);
+        }
     }
 }

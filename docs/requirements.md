@@ -34,20 +34,24 @@ Expected behavior:
 - Invoke React Native CLI project creation.
 - Refuse to overwrite an existing target project path.
 - Clean up a partial generated project directory when React Native CLI fails.
-- Apply the selected template.
-- Generate example environment files.
+- Apply the default `minimal-splash` starter.
 - Print next steps after successful creation.
-  Until template application ships, the command must clearly say that example config files are not generated yet.
 
 Example:
 
 ```bash
-rn-fabricator create MyApp --template basic-auth
+rn-fabricator create MyApp
+```
+
+Use a local Fabricator template catalog while dogfooding:
+
+```bash
+rn-fabricator create MyApp --template-source ./templates/catalog.fabricator.json
 ```
 
 ### template: basic-auth
 
-The `basic-auth` template adds a simple authentication starter flow.
+The `basic-auth` template adds a simple authentication starter flow. It is planned as an optional catalog template that users copy after project creation.
 
 Initial template contents:
 

@@ -149,8 +149,12 @@ public sealed class AndroidToolDependencyCheckServiceTests
         var summary = await service.CheckAndroidToolsAsync();
 
         var androidSdkResult = summary.Results.Single(result => result.Name == "Android SDK");
+        Assert.Contains("More Actions > SDK Manager", androidSdkResult.RemediationHint);
+        Assert.Contains("Android Studio > Settings > Languages & Frameworks > Android SDK", androidSdkResult.RemediationHint);
+        Assert.Contains("nano ~/.zshrc", androidSdkResult.RemediationHint);
         Assert.Contains("$HOME/Library/Android/sdk", androidSdkResult.RemediationHint);
-        Assert.Contains("platform-tools", androidSdkResult.RemediationHint);
+        Assert.Contains("source ~/.zshrc", androidSdkResult.RemediationHint);
+        Assert.Contains("adb --version", androidSdkResult.RemediationHint);
     }
 
     [Fact]

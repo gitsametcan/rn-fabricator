@@ -66,6 +66,8 @@ dotnet tool install rn-fabricator --tool-path /tmp/rn-fabricator-release-check -
 /tmp/rn-fabricator-release-check/rn-fabricator --help
 /tmp/rn-fabricator-release-check/rn-fabricator doctor --help
 /tmp/rn-fabricator-release-check/rn-fabricator create --help
+/tmp/rn-fabricator-release-check/rn-fabricator templates list --help
+/tmp/rn-fabricator-release-check/rn-fabricator templates copy --help
 ```
 
 Inspect the package contents before attaching or publishing it:
@@ -79,7 +81,10 @@ The package must include:
 - `tools/net8.0/any/rn-fabricator.dll`
 - `tools/net8.0/any/Fabricator.Core.dll`
 - `tools/net8.0/any/Templates/basic-auth`
+- `tools/net8.0/any/ToolchainProfiles/react-native-stable.json`
 - `README.md`
+
+Catalog templates also live in the repository-level `templates/` directory and are consumed with explicit local paths or raw GitHub URLs.
 
 ## Release Pull Request
 

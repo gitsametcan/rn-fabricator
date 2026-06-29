@@ -14,6 +14,7 @@ public sealed class CreateProjectValidator
         var projectName = request.ProjectName.Trim();
         var templateName = request.TemplateName.Trim();
         var outputDirectory = request.OutputDirectory.Trim();
+        var templateSource = request.TemplateSource?.Trim();
 
         ValidateProjectName(projectName, errors);
         ValidateTemplateName(templateName, errors);
@@ -37,7 +38,8 @@ public sealed class CreateProjectValidator
             {
                 ProjectName = projectName,
                 TemplateName = templateName,
-                OutputDirectory = outputDirectory
+                OutputDirectory = outputDirectory,
+                TemplateSource = string.IsNullOrWhiteSpace(templateSource) ? null : templateSource
             },
             fullOutputDirectory,
             fullProjectPath,

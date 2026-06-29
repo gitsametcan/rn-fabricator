@@ -69,7 +69,7 @@ Decision:
 
 ```text
 rn-fabricator setup plan
-rn-fabricator setup run
+rn-fabricator setup apply
 ```
 
 Reason:
@@ -78,6 +78,7 @@ Dependency installation can mutate the user's machine, require admin access, ope
 Consequences:
 
 - `setup plan` should be implemented before any command execution.
-- `setup run` must print the plan and require explicit confirmation.
+- `setup apply` must print the plan and require per-step confirmation by default.
 - Dry-run support is required before real install execution.
 - Manual steps such as Xcode installation and shell profile edits stay manual in the first implementation.
+- `--yes` may execute only explicitly allowlisted safe commands.

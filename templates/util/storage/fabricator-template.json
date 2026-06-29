@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "util/storage",
+  "displayName": "Storage Utilities",
+  "description": "Small JSON storage adapter for replaceable local persistence.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "util",
+  "tags": [
+    "util",
+    "storage",
+    "persistence"
+  ],
+  "files": [
+    {
+      "path": "src/utils/storage.ts",
+      "type": "file",
+      "targetFolder": "utils",
+      "targetPath": "src/utils/storage.ts",
+      "description": "Replaceable JSON storage helpers."
+    }
+  ],
+  "integrationHints": [
+    {
+      "type": "manual",
+      "target": "storage-engine",
+      "message": "Connect these helpers to AsyncStorage, SecureStore, or another project storage engine."
+    }
+  ]
+}

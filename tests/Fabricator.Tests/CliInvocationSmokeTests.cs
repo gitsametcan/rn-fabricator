@@ -9,12 +9,18 @@ using Fabricator.Core.Projects;
 using Fabricator.Core.Setup;
 using System.CommandLine;
 using System.Reflection;
+using System.Text.Json;
 
 namespace Fabricator.Tests;
 
 [Collection("ConsoleOutput")]
 public sealed class CliInvocationSmokeTests
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
+
     [Fact]
     public void VersionOptionWritesCleanPackageVersion()
     {
@@ -94,8 +100,981 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("2. npm start", output.ToString());
         Assert.Contains("3. npm run ios", output.ToString());
         Assert.Contains("4. npm run android", output.ToString());
+        Assert.Contains("Starter applied: minimal-splash", output.ToString());
+        Assert.Contains("Starter files generated:", output.ToString());
         Assert.Contains("Template selected: basic-auth", output.ToString());
-        Assert.Contains("Example config files: not generated yet", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandReturnsSuccessAndWritesCatalogTemplates()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Fabricator templates", output.ToString());
+        Assert.Contains($"Source: {source}", output.ToString());
+        Assert.Contains("minimal-splash (0.1.0)", output.ToString());
+        Assert.Contains("Basic Auth", output.ToString());
+        Assert.Contains("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("screen/settings-screen (0.1.0)", output.ToString());
+        Assert.Contains("navigation/app-navigator (0.1.0)", output.ToString());
+        Assert.Contains("service/api-client (0.1.0)", output.ToString());
+        Assert.Contains("component/primary-button (0.1.0)", output.ToString());
+        Assert.Contains("component/empty-state (0.1.0)", output.ToString());
+        Assert.Contains("Category: starter", output.ToString());
+        Assert.Contains("Category: auth", output.ToString());
+        Assert.Contains("Category: screen", output.ToString());
+        Assert.Contains("Category: navigation", output.ToString());
+        Assert.Contains("Summary:", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "auth"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Category: auth", output.ToString());
+        Assert.Contains("basic-auth (0.1.0)", output.ToString());
+        Assert.DoesNotContain("minimal-splash (0.1.0)", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersComponentTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "component"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("component/primary-button (0.1.0)", output.ToString());
+        Assert.Contains("component/empty-state (0.1.0)", output.ToString());
+        Assert.DoesNotContain("screen/main-menu (0.1.0)", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersScreenTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "screen"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("screen/settings-screen (0.1.0)", output.ToString());
+        Assert.DoesNotContain("component/primary-button (0.1.0)", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandFiltersNavigationTemplatesByCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", "navigation"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("navigation/app-navigator (0.1.0)", output.ToString());
+        Assert.Contains("Category: navigation", output.ToString());
+        Assert.DoesNotContain("screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("Summary: 1 template(s) shown.", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesListCommandReturnsInvalidInputForEmptyCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "list", "--source", source, "--category", string.Empty]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Contains("Template category cannot be empty", output.ErrorOutput);
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsSuccessAndWritesTemplateDetails()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "basic-auth", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template: basic-auth (0.1.0)", output.ToString());
+        Assert.Contains("Category: auth", output.ToString());
+        Assert.Contains("Tags: auth, screen, config", output.ToString());
+        Assert.Contains("Files: 11", output.ToString());
+        Assert.Contains("Target path: src/auth/AuthProvider.tsx", output.ToString());
+        Assert.Contains("Exports: 4", output.ToString());
+        Assert.Contains("Integration hints: 2", output.ToString());
+        Assert.Contains("Summary:", output.ToString());
+        Assert.Contains("Next:", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsSuccessForReusableExampleTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "screen/main-menu", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template: screen/main-menu (0.1.0)", output.ToString());
+        Assert.Contains("Category: screen", output.ToString());
+        Assert.Contains("Target path: src/screens/MainMenuScreen.tsx", output.ToString());
+        Assert.Contains("Exports: 1", output.ToString());
+        Assert.Contains("Integration hints: 1", output.ToString());
+    }
+
+    [Theory]
+    [InlineData("screen/settings-screen", "Category: screen", "Target path: src/screens/SettingsScreen.tsx")]
+    [InlineData("component/empty-state", "Category: component", "Target path: src/components/EmptyState.tsx")]
+    public void TemplatesInfoCommandReturnsSuccessForAdditionalExampleTemplates(
+        string templateId,
+        string expectedCategory,
+        string expectedTargetPath)
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", templateId, "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains($"Template: {templateId} (0.1.0)", output.ToString());
+        Assert.Contains(expectedCategory, output.ToString());
+        Assert.Contains(expectedTargetPath, output.ToString());
+        Assert.Contains("Files: 1", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsSuccessForNavigationExampleTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "navigation/app-navigator", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template: navigation/app-navigator (0.1.0)", output.ToString());
+        Assert.Contains("Category: navigation", output.ToString());
+        Assert.Contains("Target path: src/navigation/AppNavigator.tsx", output.ToString());
+        Assert.Contains("Files: 10", output.ToString());
+        Assert.Contains("Integration hints: 2", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesInfoCommandReturnsInvalidInputForUnknownTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "info", "missing-template", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Contains("Template could not be read.", output.ErrorOutput);
+        Assert.Contains("missing-template", output.ErrorOutput);
+    }
+
+    [Fact]
+    public void TemplatesValidateCommandReturnsSuccessForRepositoryCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["templates", "validate", "--source", source]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("Template catalog validation", output.ToString());
+        Assert.Contains($"Source: {source}", output.ToString());
+        Assert.Contains("Result: valid", output.ToString());
+        Assert.Contains("Summary: catalog is valid.", output.ToString());
+    }
+
+    [Fact]
+    public void TemplatesValidateCommandReturnsInvalidInputForBrokenCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var outputDirectory = CreateTemporaryDirectory();
+        var source = Path.Combine(outputDirectory, "catalog.fabricator.json");
+
+        try
+        {
+            File.WriteAllText(
+                source,
+                """
+                {
+                  "schemaVersion": 1,
+                  "kind": "fabricator-template-catalog",
+                  "displayName": "Broken catalog",
+                  "description": "Broken catalog.",
+                  "templates": [
+                    {
+                      "id": "missing-template",
+                      "displayName": "Missing Template",
+                      "description": "Template with missing manifest.",
+                      "version": "0.1.0",
+                      "manifest": "missing-template/fabricator-template.json",
+                      "tags": ["test"]
+                    }
+                  ]
+                }
+                """);
+
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(["templates", "validate", "--source", source]).Invoke();
+
+            Assert.Equal(ExitCodes.InvalidInput, exitCode);
+            Assert.Contains("Result: invalid", output.ToString());
+            Assert.Contains("template-read-failed", output.ToString());
+            Assert.Contains("Summary: catalog has 1 issue(s).", output.ToString());
+            Assert.Contains("Next:", output.ToString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCopyCommandCopiesTemplateFilesToOutputDirectory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "copy", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template copied: basic-auth", output.ToString());
+            Assert.Contains("Generated:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCopyCommandSkipsExistingFilesByDefault()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+        var appPath = Path.Combine(outputDirectory, "App.tsx");
+        File.WriteAllText(appPath, "existing app\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "copy", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Skipped:", output.ToString());
+            Assert.Contains("- App.tsx", output.ToString());
+            Assert.Equal("existing app\n", File.ReadAllText(appPath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandAppliesTemplateFilesToCompatibleProject()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template applied: basic-auth", output.ToString());
+            Assert.Contains("Generated:", output.ToString());
+            Assert.Contains("Exports applied: 4", output.ToString());
+            Assert.Contains("Integration notes: 2", output.ToString());
+            Assert.Contains("State tracking: fabricator.json updated", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "App.tsx")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, ".env.example")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "screens", "HomeScreen.tsx")));
+            Assert.Contains(
+                "export { HomeScreen } from './HomeScreen';",
+                File.ReadAllText(Path.Combine(outputDirectory, "src", "screens", "index.ts")));
+            AssertAppliedTemplateState(outputDirectory, "basic-auth");
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandAppliesReusableExampleTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "component/primary-button", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template applied: component/primary-button", output.ToString());
+            Assert.Contains("Exports applied: 1", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "src", "components", "PrimaryButton.tsx")));
+            Assert.Contains(
+                "export { PrimaryButton } from './PrimaryButton';",
+                File.ReadAllText(Path.Combine(outputDirectory, "src", "components", "index.ts")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandDryRunDoesNotWriteFilesExportsOrState()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+        var statePath = Path.Combine(outputDirectory, FabricatorProjectStateContract.StateRelativePath);
+        var screensBarrelPath = Path.Combine(outputDirectory, "src", "screens", "index.ts");
+        var originalState = File.ReadAllText(statePath);
+        var originalScreensBarrel = File.ReadAllText(screensBarrelPath);
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory, "--dry-run"]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template apply dry-run: basic-auth", output.ToString());
+            Assert.Contains("Mode: dry-run", output.ToString());
+            Assert.Contains("Would generate:", output.ToString());
+            Assert.Contains("Exports to apply:", output.ToString());
+            Assert.Contains("State tracking: skipped (dry-run)", output.ToString());
+            Assert.False(File.Exists(Path.Combine(outputDirectory, ".env.example")));
+            Assert.False(File.Exists(Path.Combine(outputDirectory, "src", "auth", "AuthProvider.tsx")));
+            Assert.Equal(originalScreensBarrel, File.ReadAllText(screensBarrelPath));
+            Assert.Equal(originalState, File.ReadAllText(statePath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandSkipsExistingFilesByDefault()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+        var appPath = Path.Combine(outputDirectory, "App.tsx");
+        File.WriteAllText(appPath, "existing app\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Skipped:", output.ToString());
+            Assert.Contains("- App.tsx", output.ToString());
+            Assert.Contains("Exports applied: 4", output.ToString());
+            Assert.Equal("existing app\n", File.ReadAllText(appPath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandOverwritesExistingFilesWhenRequested()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateCompatibleFabricatorProject();
+        var buttonPath = Path.Combine(outputDirectory, "src", "components", "PrimaryButton.tsx");
+        File.WriteAllText(buttonPath, "existing button\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "apply",
+                    "component/primary-button",
+                    "--source",
+                    source,
+                    "--output",
+                    outputDirectory,
+                    "--overwrite"
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Overwrite: yes", output.ToString());
+            Assert.Contains("Exports applied: 1", output.ToString());
+            Assert.Contains("export function PrimaryButton", File.ReadAllText(buttonPath));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesApplyCommandReturnsFailureForNonFabricatorProject()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "apply", "basic-auth", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.GeneralFailure, exitCode);
+            Assert.Contains("Template apply failed.", output.ErrorOutput);
+            Assert.Contains("Fabricator project manifest was not found", output.ErrorOutput);
+            Assert.Contains("Next:", output.ErrorOutput);
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesStatusCommandWritesAppliedTemplateState()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var outputDirectory = CreateCompatibleFabricatorProject();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(["templates", "status", "--project", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Fabricator template status", output.ToString());
+            Assert.Contains($"Project: {outputDirectory}", output.ToString());
+            Assert.Contains("Applied templates: 1", output.ToString());
+            Assert.Contains("minimal-splash (0.1.0)", output.ToString());
+            Assert.Contains("Operation: create", output.ToString());
+            Assert.Contains("Catalog: not checked for embedded or remote source", output.ToString());
+            Assert.Contains("Summary: 1 applied template record(s).", output.ToString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCaptureCommandCapturesProjectFolderAsTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "capture",
+                    "profile-screen",
+                    "--category",
+                    "screen",
+                    "--from",
+                    projectDirectory,
+                    "--output",
+                    outputDirectory
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template captured: profile-screen", output.ToString());
+            Assert.Contains("Captured files:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.Contains("Next:", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesAddCommandCapturesTemplateAndUpdatesLocalCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "add",
+                    "profile-screen",
+                    "--category",
+                    "screen",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template added: profile-screen", output.ToString());
+            Assert.Contains($"Catalog: {catalogPath}", output.ToString());
+            Assert.Contains("Captured files:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.Contains("Next:", output.ToString());
+            Assert.True(File.Exists(catalogPath));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "profile-screen", "fabricator-template.json")));
+
+            using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+            var template = Assert.Single(document.RootElement.GetProperty("templates").EnumerateArray());
+            Assert.Equal("profile-screen", template.GetProperty("id").GetString());
+            Assert.Equal("screen", template.GetProperty("category").GetString());
+            Assert.Equal("profile-screen/fabricator-template.json", template.GetProperty("manifest").GetString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesAddCommandAcceptsSingularComponentCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "components", "InfoCard.tsx"),
+            "export function InfoCard() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "add",
+                    "component/info-card",
+                    "--category",
+                    "component",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath,
+                    "--include",
+                    "src/components/InfoCard.tsx"
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template added: component/info-card", output.ToString());
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "component", "info-card", "fabricator-template.json")));
+            Assert.True(File.Exists(Path.Combine(outputDirectory, "component", "info-card", "src", "components", "InfoCard.tsx")));
+
+            using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+            var template = Assert.Single(document.RootElement.GetProperty("templates").EnumerateArray());
+            Assert.Equal("component/info-card", template.GetProperty("id").GetString());
+            Assert.Equal("component", template.GetProperty("category").GetString());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesAddCommandDryRunDoesNotWriteTemplateOrCatalog()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "add",
+                    "profile-screen",
+                    "--category",
+                    "screens",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath,
+                    "--dry-run"
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Template add dry-run: profile-screen", output.ToString());
+            Assert.Contains("Mode: dry-run", output.ToString());
+            Assert.Contains("Catalog entry would be added: yes", output.ToString());
+            Assert.False(File.Exists(catalogPath));
+            Assert.False(Directory.Exists(Path.Combine(outputDirectory, "profile-screen")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesUpdateCommandRefreshesExistingLocalTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        var profilePath = Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx");
+        File.WriteAllText(profilePath, "export function ProfileScreen() { return 'old'; }\n");
+
+        try
+        {
+            int addExitCode;
+            using (ConsoleOutputScope.Capture())
+            {
+                addExitCode = rootCommand.Parse(
+                    [
+                        "templates",
+                        "add",
+                        "profile-screen",
+                        "--category",
+                        "screens",
+                        "--from",
+                        projectDirectory,
+                        "--source",
+                        catalogPath
+                    ]).Invoke();
+            }
+
+            File.WriteAllText(profilePath, "export function ProfileScreen() { return 'new'; }\n");
+            File.WriteAllText(
+                Path.Combine(projectDirectory, "src", "screens", "SettingsScreen.tsx"),
+                "export function SettingsScreen() { return null; }\n");
+
+            using var output = ConsoleOutputScope.Capture();
+            var updateExitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "update",
+                    "profile-screen",
+                    "--from",
+                    projectDirectory,
+                    "--source",
+                    catalogPath
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, addExitCode);
+            Assert.Equal(ExitCodes.Success, updateExitCode);
+            Assert.Contains("Template updated: profile-screen", output.ToString());
+            Assert.Contains("Files:", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.Contains("Next:", output.ToString());
+            Assert.Contains("Changed:", output.ToString());
+            Assert.Contains("src/screens/ProfileScreen.tsx", output.ToString());
+            Assert.Contains("Added:", output.ToString());
+            Assert.Contains("src/screens/SettingsScreen.tsx", output.ToString());
+            Assert.Contains(
+                "return 'new'",
+                File.ReadAllText(Path.Combine(outputDirectory, "profile-screen", "src", "screens", "ProfileScreen.tsx")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesRemoveCommandRemovesCatalogEntryAndKeepsFilesByDefault()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+        var catalogPath = Path.Combine(outputDirectory, "catalog.fabricator.json");
+        File.WriteAllText(
+            Path.Combine(projectDirectory, "src", "screens", "ProfileScreen.tsx"),
+            "export function ProfileScreen() { return null; }\n");
+
+        try
+        {
+            int addExitCode;
+            using (ConsoleOutputScope.Capture())
+            {
+                addExitCode = rootCommand.Parse(
+                    [
+                        "templates",
+                        "add",
+                        "profile-screen",
+                        "--category",
+                        "screens",
+                        "--from",
+                        projectDirectory,
+                        "--source",
+                        catalogPath
+                    ]).Invoke();
+            }
+
+            using var output = ConsoleOutputScope.Capture();
+            var removeExitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "remove",
+                    "profile-screen",
+                    "--source",
+                    catalogPath
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.Success, addExitCode);
+            Assert.Equal(ExitCodes.Success, removeExitCode);
+            Assert.Contains("Template removed: profile-screen", output.ToString());
+            Assert.Contains("Catalog entry removed: yes", output.ToString());
+            Assert.Contains("Template files kept: yes", output.ToString());
+            Assert.Contains("Summary:", output.ToString());
+            Assert.True(Directory.Exists(Path.Combine(outputDirectory, "profile-screen")));
+
+            using var document = JsonDocument.Parse(File.ReadAllText(catalogPath));
+            Assert.Empty(document.RootElement.GetProperty("templates").EnumerateArray());
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCaptureCommandReturnsInvalidInputForUnknownCategory()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var projectDirectory = CreateCompatibleFabricatorProject();
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                [
+                    "templates",
+                    "capture",
+                    "auth-template",
+                    "--category",
+                    "auth",
+                    "--from",
+                    projectDirectory,
+                    "--output",
+                    outputDirectory
+                ]).Invoke();
+
+            Assert.Equal(ExitCodes.InvalidInput, exitCode);
+            Assert.Contains("Template capture failed.", output.ErrorOutput);
+            Assert.Contains("Category must match a Fabricator template category or project folder key", output.ErrorOutput);
+            Assert.Contains("Next:", output.ErrorOutput);
+            Assert.False(Directory.Exists(Path.Combine(outputDirectory, "auth-template")));
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(projectDirectory);
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    [Fact]
+    public void TemplatesCopyCommandReturnsInvalidInputForUnknownTemplate()
+    {
+        var rootCommand = CliCommandFactory.CreateRootCommand();
+        var source = FindRepositoryFile(Path.Combine("templates", "catalog.fabricator.json"));
+        var outputDirectory = CreateTemporaryDirectory();
+
+        try
+        {
+            using var output = ConsoleOutputScope.Capture();
+            var exitCode = rootCommand.Parse(
+                ["templates", "copy", "missing-template", "--source", source, "--output", outputDirectory]).Invoke();
+
+            Assert.Equal(ExitCodes.InvalidInput, exitCode);
+            Assert.Contains("Template could not be read.", output.ErrorOutput);
+            Assert.Contains("missing-template", output.ErrorOutput);
+            Assert.Contains("Next:", output.ErrorOutput);
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(outputDirectory);
+        }
+    }
+
+    private static string FindRepositoryFile(string relativePath)
+    {
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException($"Could not find repository file: {relativePath}");
+    }
+
+    private static string CreateTemporaryDirectory()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"rn-fabricator-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static string CreateCompatibleFabricatorProject()
+    {
+        var path = CreateTemporaryDirectory();
+        var manifest = FabricatorProjectContract.CreateManifest(ProductInfo.Version);
+
+        Directory.CreateDirectory(Path.Combine(path, ".fabricator"));
+        Directory.CreateDirectory(Path.Combine(path, "src"));
+
+        foreach (var folder in manifest.Folders)
+        {
+            Directory.CreateDirectory(Path.Combine(path, folder.Path));
+        }
+
+        foreach (var integrationPoint in manifest.IntegrationPoints)
+        {
+            var integrationPath = Path.Combine(path, integrationPoint.Path);
+            var directory = Path.GetDirectoryName(integrationPath);
+
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(integrationPath, "export {};\n");
+        }
+
+        File.WriteAllText(
+            Path.Combine(path, FabricatorProjectContract.ManifestRelativePath),
+            JsonSerializer.Serialize(manifest, JsonOptions));
+        File.WriteAllText(
+            Path.Combine(path, FabricatorProjectStateContract.StateRelativePath),
+            JsonSerializer.Serialize(
+                FabricatorProjectStateContract.CreateInitialState(
+                    "TestApp",
+                    ProductInfo.Version,
+                    CreateProjectService.DefaultStarterId,
+                    "0.1.0",
+                    "starter",
+                    null,
+                    ["App.tsx"]),
+                JsonOptions));
+
+        return path;
+    }
+
+    private static void AssertAppliedTemplateState(string projectDirectory, string expectedTemplateId)
+    {
+        using var document = JsonDocument.Parse(
+            File.ReadAllText(Path.Combine(projectDirectory, FabricatorProjectStateContract.StateRelativePath)));
+        var appliedTemplates = document.RootElement.GetProperty("appliedTemplates").EnumerateArray().ToArray();
+        var operation = appliedTemplates.Last();
+
+        Assert.Equal(expectedTemplateId, operation.GetProperty("id").GetString());
+        Assert.Equal("apply", operation.GetProperty("operation").GetString());
+        Assert.Equal("applied", operation.GetProperty("result").GetString());
+        Assert.Contains(
+            operation.GetProperty("files").GetProperty("written").EnumerateArray(),
+            file => file.GetString() == "src/auth/AuthProvider.tsx");
+        Assert.Contains(
+            operation.GetProperty("exports").EnumerateArray(),
+            item => item.GetProperty("integrationPoint").GetString() == "screensBarrel");
+    }
+
+    private static void DeleteTemporaryDirectory(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            Directory.Delete(path, recursive: true);
+        }
     }
 
     [Fact]
@@ -127,6 +1106,184 @@ public sealed class CliInvocationSmokeTests
         Assert.Contains("React Native setup plan", output.ToString());
         Assert.Contains("[command] Watchman: Install Watchman", output.ToString());
         Assert.Contains("No install commands were executed.", output.ToString());
+    }
+
+    [Fact]
+    public void SetupPlanCommandPassesReactNativeVersionToHandler()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                PackageManagerInfo.NotDetected(),
+                [])
+        };
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "plan", "--react-native", "0.76.x"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal("0.76.x", setupPlanService.LastRequest?.ReactNativeVersion);
+        Assert.Null(setupPlanService.LastRequest?.ProfileId);
+        Assert.Contains("React Native setup plan", output.ToString());
+    }
+
+    [Fact]
+    public void SetupPlanCommandReturnsInvalidInputWhenProfileAndReactNativeAreProvided()
+    {
+        var setupPlanService = new FakeSetupPlanService();
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out), Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse([
+            "setup",
+            "plan",
+            "--profile",
+            "react-native-stable",
+            "--react-native",
+            "0.76.x"
+        ]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Equal(0, setupPlanService.CallCount);
+        Assert.Contains("Choose either --profile or --react-native, not both.", output.ErrorOutput);
+    }
+
+    [Fact]
+    public void SetupPlanCommandReturnsInvalidInputWhenProfileLookupFails()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            ExceptionToThrow = new SetupPlanException([
+                "Unsupported React Native toolchain profile: 0.99.x."
+            ])
+        };
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out), Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "plan", "--react-native", "0.99.x"]).Invoke();
+
+        Assert.Equal(ExitCodes.InvalidInput, exitCode);
+        Assert.Contains("Invalid setup plan input:", output.ErrorOutput);
+        Assert.Contains("Unsupported React Native toolchain profile: 0.99.x.", output.ErrorOutput);
+    }
+
+    [Fact]
+    public void SetupApplyCommandReturnsSuccessAndExecutesAcceptedCommand()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                new PackageManagerInfo("Homebrew", true, "brew"),
+                [
+                    new SetupPlanItem(
+                        "Watchman",
+                        SetupPlanItemKind.Command,
+                        "Install Watchman",
+                        ["brew install watchman"])
+                ])
+        };
+        var processRunner = new FakeProcessRunner();
+        processRunner.Enqueue(new ProcessRunResult(ExitCodes.Success, "installed", string.Empty));
+        using var reader = new StringReader("y\n");
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)),
+            () => new SetupApplyCommandHandler(
+                setupPlanService,
+                new SetupPlanRenderer(Console.Out),
+                new SetupExecutionResultRenderer(Console.Out),
+                processRunner,
+                reader,
+                Console.Out,
+                Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "apply"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Single(processRunner.Requests);
+        Assert.Contains("Setup apply", output.ToString());
+        Assert.Contains("[succeeded] Watchman", output.ToString());
+    }
+
+    [Fact]
+    public void SetupApplyCommandPassesReactNativeVersionToHandler()
+    {
+        var setupPlanService = new FakeSetupPlanService();
+        var processRunner = new FakeProcessRunner();
+        using var reader = new StringReader(string.Empty);
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)),
+            () => new SetupApplyCommandHandler(
+                setupPlanService,
+                new SetupPlanRenderer(Console.Out),
+                new SetupExecutionResultRenderer(Console.Out),
+                processRunner,
+                reader,
+                Console.Out,
+                Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "apply", "--react-native", "0.76.x"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal("0.76.x", setupPlanService.LastRequest?.ReactNativeVersion);
+        Assert.Null(setupPlanService.LastRequest?.ProfileId);
+    }
+
+    [Fact]
+    public void SetupApplyCommandSupportsDryRunMode()
+    {
+        var setupPlanService = new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                new PackageManagerInfo("Homebrew", true, "brew"),
+                [
+                    new SetupPlanItem(
+                        "Watchman",
+                        SetupPlanItemKind.Command,
+                        "Install Watchman",
+                        ["brew install watchman"])
+                ])
+        };
+        var processRunner = new FakeProcessRunner();
+        using var reader = new StringReader(string.Empty);
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(new FakeCreateProjectService(), Console.Out, Console.Error),
+            () => new SetupPlanCommandHandler(setupPlanService, new SetupPlanRenderer(Console.Out)),
+            () => new SetupApplyCommandHandler(
+                setupPlanService,
+                new SetupPlanRenderer(Console.Out),
+                new SetupExecutionResultRenderer(Console.Out),
+                processRunner,
+                reader,
+                Console.Out,
+                Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["setup", "apply", "--dry-run"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Empty(processRunner.Requests);
+        Assert.Contains("Mode: dry-run", output.ToString());
+        Assert.Contains("[dry-run] Watchman: would run brew install watchman", output.ToString());
     }
 
     [Fact]
@@ -231,6 +1388,9 @@ public sealed class CliInvocationSmokeTests
             validation,
             command,
             processResult ?? new ProcessRunResult(ExitCodes.Success, "created", string.Empty),
-            rollback ?? CreateProjectRollbackResult.NotRequired("Rollback was not required."));
+            rollback ?? CreateProjectRollbackResult.NotRequired("Rollback was not required."),
+            processResult is null || processResult.Succeeded
+                ? CreateProjectStarterResult.Applied(CreateProjectService.DefaultStarterId, ["App.tsx"])
+                : null);
     }
 }

@@ -299,7 +299,8 @@ public sealed class DependencyCheckService : IDependencyCheckService
     private static string CreateCocoaPodsHint()
     {
         return CreateHint(
-            "Install CocoaPods with `sudo gem install cocoapods` or your preferred Ruby environment.",
+            "Install CocoaPods with `brew install cocoapods` on macOS when Homebrew is available.",
+            "Alternatively install with `sudo gem install cocoapods` or your preferred Ruby environment.",
             "Verify with `pod --version`.");
     }
 
@@ -338,9 +339,14 @@ public sealed class DependencyCheckService : IDependencyCheckService
         {
             return CreateHint(
                 "Install Android Studio from https://developer.android.com/studio.",
-                "Open SDK Manager and install Android SDK Platform and Android SDK Platform-Tools.",
-                "Add `export ANDROID_HOME=\"$HOME/Library/Android/sdk\"` and `export PATH=\"$PATH:$ANDROID_HOME/platform-tools\"` to your shell profile.",
-                "Restart your terminal and verify with `echo $ANDROID_HOME`.");
+                "Open SDK Manager from the Android Studio welcome screen with `More Actions > SDK Manager`.",
+                "If a project is open, use `Android Studio > Settings > Languages & Frameworks > Android SDK`.",
+                "Install Android SDK Platform and Android SDK Platform-Tools.",
+                "For the default macOS zsh shell, run `nano ~/.zshrc`.",
+                "Add `export ANDROID_HOME=\"$HOME/Library/Android/sdk\"` and `export PATH=\"$PATH:$ANDROID_HOME/platform-tools\"`.",
+                "Save and exit nano with `Ctrl+O`, `Enter`, then `Ctrl+X`.",
+                "Restart your terminal or run `source ~/.zshrc`.",
+                "Verify with `echo $ANDROID_HOME` and `adb --version`.");
         }
 
         if (_systemPlatform.IsWindows)

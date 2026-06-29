@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "kind": "fabricator-template",
+  "id": "component/primary-button",
+  "displayName": "Primary Button",
+  "description": "Reusable React Native primary button component.",
+  "version": "0.1.0",
+  "mode": "apply",
+  "category": "component",
+  "tags": [
+    "component",
+    "button",
+    "ui"
+  ],
+  "files": [
+    {
+      "path": "src/components/PrimaryButton.tsx",
+      "type": "file",
+      "targetFolder": "components",
+      "targetPath": "src/components/PrimaryButton.tsx",
+      "description": "Primary button component."
+    }
+  ],
+  "exports": [
+    {
+      "integrationPoint": "componentsBarrel",
+      "statement": "export { PrimaryButton } from './PrimaryButton';",
+      "source": "src/components/PrimaryButton.tsx"
+    }
+  ]
+}

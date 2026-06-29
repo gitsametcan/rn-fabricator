@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "kind": "fabricator-template-catalog",
+  "displayName": "rn-fabricator template catalog",
+  "description": "Repository-hosted template catalog for rn-fabricator dogfooding and early template workflow development.",
+  "templates": [
+    {
+      "id": "minimal-splash",
+      "displayName": "Minimal Splash",
+      "description": "Minimal React Native starter with splash and main screens plus base source folders.",
+      "version": "0.1.0",
+      "category": "starter",
+      "manifest": "minimal-splash/fabricator-template.json",
+      "tags": [
+        "starter",
+        "splash"
+      ]
+    },
+    {
+      "id": "basic-auth",
+      "displayName": "Basic Auth",
+      "description": "Optional auth starter with splash, loading, login, home, auth provider, and example configuration files.",
+      "version": "0.1.0",
+      "category": "auth",
+      "manifest": "basic-auth/fabricator-template.json",
+      "tags": [
+        "auth",
+        "starter"
+      ]
+    },
+    {
+      "id": "screen/main-menu",
+      "displayName": "Main Menu Screen",
+      "description": "Reusable main menu screen with simple action rows.",
+      "version": "0.1.0",
+      "category": "screen",
+      "manifest": "screen/main-menu/fabricator-template.json",
+      "tags": [
+        "screen",
+        "menu",
+        "navigation"
+      ]
+    },
+    {
+      "id": "screen/settings-screen",
+      "displayName": "Settings Screen",
+      "description": "Reusable settings screen with toggle and action rows.",
+      "version": "0.1.0",
+      "category": "screen",
+      "manifest": "screen/settings-screen/fabricator-template.json",
+      "tags": [
+        "screen",
+        "settings",
+        "form"
+      ]
+    },
+    {
+      "id": "service/api-client",
+      "displayName": "API Client",
+      "description": "Small fetch-based API client with typed request helpers.",
+      "version": "0.1.0",
+      "category": "service",
+      "manifest": "service/api-client/fabricator-template.json",
+      "tags": [
+        "service",
+        "api",
+        "network"
+      ]
+    },
+    {
+      "id": "util/storage",
+      "displayName": "Storage Utilities",
+      "description": "Small JSON storage adapter for replaceable local persistence.",
+      "version": "0.1.0",
+      "category": "util",
+      "manifest": "util/storage/fabricator-template.json",
+      "tags": [
+        "util",
+        "storage",
+        "persistence"
+      ]
+    },
+    {
+      "id": "layout/app-shell",
+      "displayName": "App Shell",
+      "description": "Reusable app shell layout with header, content, and footer regions.",
+      "version": "0.1.0",
+      "category": "layout",
+      "manifest": "layout/app-shell/fabricator-template.json",
+      "tags": [
+        "layout",
+        "app",
+        "shell"
+      ]
+    },
+    {
+      "id": "navigation/app-navigator",
+      "displayName": "App Navigator",
+      "description": "Reusable dependency-free navigation starter with app, auth, main, tab, route, linking, ref, and screen option files.",
+      "version": "0.1.0",
+      "category": "navigation",
+      "manifest": "navigation/app-navigator/fabricator-template.json",
+      "tags": [
+        "navigation",
+        "navigator",
+        "routes"
+      ]
+    },
+    {
+      "id": "component/primary-button",
+      "displayName": "Primary Button",
+      "description": "Reusable React Native primary button component.",
+      "version": "0.1.0",
+      "category": "component",
+      "manifest": "component/primary-button/fabricator-template.json",
+      "tags": [
+        "component",
+        "button",
+        "ui"
+      ]
+    },
+    {
+      "id": "component/empty-state",
+      "displayName": "Empty State",
+      "description": "Reusable empty state component with optional call-to-action.",
+      "version": "0.1.0",
+      "category": "component",
+      "manifest": "component/empty-state/fabricator-template.json",
+      "tags": [
+        "component",
+        "empty-state",
+        "ui"
+      ]
+    }
+  ]
+}

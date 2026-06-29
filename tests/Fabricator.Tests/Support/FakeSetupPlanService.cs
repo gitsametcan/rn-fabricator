@@ -11,9 +11,22 @@ public sealed class FakeSetupPlanService : ISetupPlanService
 
     public int CallCount { get; private set; }
 
-    public Task<SetupPlan> BuildPlanAsync(CancellationToken cancellationToken = default)
+    public SetupPlanRequest? LastRequest { get; private set; }
+
+    public SetupPlanException? ExceptionToThrow { get; set; }
+
+    public Task<SetupPlan> BuildPlanAsync(
+        SetupPlanRequest request,
+        CancellationToken cancellationToken = default)
     {
         CallCount++;
+        LastRequest = request;
+
+        if (ExceptionToThrow is not null)
+        {
+            throw ExceptionToThrow;
+        }
+
         return Task.FromResult(Plan);
     }
 }
