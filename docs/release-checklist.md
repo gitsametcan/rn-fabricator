@@ -14,6 +14,17 @@ This checklist defines the initial release readiness expectations for rn-fabrica
 - License and security policy are present.
 - Generated templates have been tested on a clean machine or clean workspace.
 - Packaged tool can be installed from `artifacts/packages`.
+- Desktop app builds for the release target runtimes when UI changes are included.
+- Desktop smoke tests pass through the normal solution test command.
+- Desktop release artifacts are attached or explicitly deferred in the release notes.
+
+## Desktop UI Release
+
+- macOS artifact is built with the intended runtime identifier.
+- Windows artifact is built with the intended runtime identifier.
+- Desktop app starts locally on at least one supported platform before release.
+- Command bridge and UI smoke tests pass without invoking real external tools.
+- Code signing, notarization, installers, and auto-update support are documented as included or intentionally deferred.
 
 ## Generated React Native Project
 

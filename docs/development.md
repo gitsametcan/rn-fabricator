@@ -108,6 +108,15 @@ dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration 
 
 Use the runtime that matches the machine or release artifact being validated.
 
+UI changes follow the same branch workflow as the CLI:
+
+- Start from a GitHub issue.
+- Branch from `develop`.
+- Open the pull request back into `develop`.
+- Include local build and test output in the pull request body.
+
+See [UI Plan](ui.md) for the UI-specific command bridge, packaging, and release expectations.
+
 ## Project Layout
 
 ```text

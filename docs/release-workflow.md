@@ -59,6 +59,15 @@ dotnet test rn-fabricator.sln --no-build --configuration Release
 dotnet pack src/Fabricator.Cli/Fabricator.Cli.csproj --no-build --configuration Release --output artifacts/packages
 ```
 
+When a release includes desktop UI changes, also build the target desktop artifacts:
+
+```bash
+dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release --runtime osx-arm64 --self-contained false
+dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release --runtime win-x64 --self-contained false
+```
+
+Record which desktop runtime artifacts were verified in the release pull request. If desktop distribution polish such as signing, notarization, installers, or auto-update is not included, call that out explicitly in the release notes.
+
 Verify the package can be installed as a local .NET tool:
 
 ```bash
