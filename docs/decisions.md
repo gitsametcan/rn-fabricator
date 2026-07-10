@@ -83,22 +83,31 @@ Consequences:
 - Manual steps such as Xcode installation and shell profile edits stay manual in the first implementation.
 - `--yes` may execute only explicitly allowlisted safe commands.
 
-## ADR-007: Build The First UI As A Local Web Companion
+## ADR-007: Build The First UI As A Cross-Platform Desktop App
 
 Status: Accepted
 
 Decision:
-The first rn-fabricator UI will be a local web companion built with React, TypeScript, and Vite, served by a future .NET 8 host started from the existing tool surface.
+The first rn-fabricator UI will be a cross-platform desktop application for macOS and Windows built with Avalonia UI.
 
-The UI should run in the user's browser against a local-only command bridge instead of shipping as a native desktop binary in the first implementation. The bridge should preserve command request data, stdout, stderr, exit code, and long-running command state. Where practical, UI workflows should delegate to `Fabricator.Core` services; where parity with current behavior matters, the bridge may invoke existing CLI command behavior behind a testable abstraction.
+The desktop app should reuse `Fabricator.Core` services for product behavior and keep CLI-specific parsing and console rendering in `Fabricator.Cli`. Where parity with current CLI behavior matters, desktop workflows may call existing command behavior through a testable application boundary instead of duplicating command orchestration in the UI layer.
+
+The UI command boundary should preserve the same operational facts a CLI user relies on: command name, arguments, working directory, stdout, stderr, exit code, start/running/completed/canceled/failed states, and structured errors.
 
 Reason:
-rn-fabricator is already distributed as a .NET tool and has most product behavior in testable .NET services. A local web UI keeps the first visual surface lightweight, cross-platform, and close to the existing release model without introducing Electron, Tauri, native installers, or app-store-style packaging before the UI workflows are proven.
+rn-fabricator is already a .NET 8 codebase with most product behavior in testable C# services. Avalonia keeps the first visual surface in the same language and runtime, supports macOS and Windows from one UI codebase, and avoids introducing a separate JavaScript, Rust, Chromium, or localhost web-host architecture as the primary product surface.
+
+Alternatives considered:
+
+- .NET MAUI supports Windows and macOS, but its product center of gravity is shared mobile and desktop app development. rn-fabricator needs a focused desktop developer tool first.
+- Tauri can produce small cross-platform desktop apps, but it adds a Rust host and web frontend stack that would split product behavior across more runtimes.
+- Electron is mature and cross-platform, but it adds Chromium and Node.js packaging weight that does not match the current .NET tool architecture.
+- A local web companion would be lightweight to start, but it does not meet the product direction of a desktop app for macOS and Windows.
 
 Consequences:
 
-- The first UI milestone should add a web project skeleton and command bridge contract before implementing product workflows.
+- The first UI milestone should add an Avalonia desktop project skeleton and command boundary contract before implementing full product workflows.
 - The UI remains a companion for `doctor`, `setup`, `create`, and template lifecycle workflows, not a visual React Native app builder.
-- A future `rn-fabricator ui` command can serve packaged static UI assets from the .NET tool package.
-- Release validation must include the UI build and any packaged static assets once the UI is included in release artifacts.
-- Desktop-specific packaging remains a later decision after the local web companion proves useful.
+- The .NET tool package remains the primary CLI artifact, while desktop app packaging becomes a separate release artifact for macOS and Windows.
+- Release validation must build and smoke test the desktop app on supported platforms once the UI is included in release artifacts.
+- Linux desktop support remains possible through Avalonia, but macOS and Windows are the first supported desktop targets.
