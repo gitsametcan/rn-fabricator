@@ -75,6 +75,39 @@ The expected future package shape is:
 
 App-store distribution, auto-update infrastructure, code signing, notarization, and full installer polish are outside the UI foundation milestone unless they are required for basic local smoke testing.
 
+## Development Workflow
+
+UI work follows the same issue-first workflow as CLI work:
+
+- Start every UI implementation from a GitHub issue in the active milestone.
+- Branch from `develop` with a focused `feature/...` branch name.
+- Open pull requests back into `develop`.
+- Keep UI changes scoped to the desktop project, shared core contracts, tests, and documentation needed for the issue.
+- Do not bypass existing CLI checks; UI pull requests must still restore, build, and test the full solution.
+
+First-time UI setup is the same as repository setup:
+
+```bash
+dotnet restore rn-fabricator.sln
+```
+
+Run the desktop app locally:
+
+```bash
+dotnet run --project src/Fabricator.Desktop/Fabricator.Desktop.csproj
+```
+
+Run UI-ready local checks:
+
+```bash
+dotnet build rn-fabricator.sln --configuration Release
+dotnet test rn-fabricator.sln --configuration Release
+dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release --runtime osx-arm64 --self-contained false
+dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release --runtime win-x64 --self-contained false
+```
+
+Use the runtime publish command that matches the artifact being validated. Avalonia Headless smoke tests run through the normal solution test command and should stay free of real external tool invocations.
+
 ## First Milestone Boundaries
 
 `v1.1.0 - UI Foundation` should establish:
