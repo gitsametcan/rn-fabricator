@@ -85,12 +85,36 @@ Guided dependency setup is planned as a separate command family. See [Guided Set
 
 For real usage testing, install the packed tool in a repo-external playground. See [Dogfooding Workflow](dogfooding.md).
 
+## Run The Desktop App
+
+The desktop UI is an Avalonia app for macOS and Windows:
+
+```bash
+dotnet run --project src/Fabricator.Desktop/Fabricator.Desktop.csproj
+```
+
+Build the desktop project locally:
+
+```bash
+dotnet build src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release
+```
+
+Publish local desktop artifacts:
+
+```bash
+dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release --runtime osx-arm64 --self-contained false
+dotnet publish src/Fabricator.Desktop/Fabricator.Desktop.csproj --configuration Release --runtime win-x64 --self-contained false
+```
+
+Use the runtime that matches the machine or release artifact being validated.
+
 ## Project Layout
 
 ```text
 src/
   Fabricator.Core/   reusable application logic
   Fabricator.Cli/    command-line entry point and command definitions
+  Fabricator.Desktop/ Avalonia desktop app for macOS and Windows
 
 tests/
   Fabricator.Tests/  xUnit test project
