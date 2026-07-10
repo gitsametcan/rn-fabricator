@@ -56,7 +56,7 @@ dotnet test rn-fabricator.sln --no-build --configuration Release
 dotnet test rn-fabricator.sln --configuration Release
 ```
 
-The test project uses xUnit. See [tests/README.md](../tests/README.md) for the current test structure.
+The test project uses xUnit. The desktop UI smoke tests use Avalonia Headless, so they run from the same solution test command without opening a real window. See [tests/README.md](../tests/README.md) for the current test structure.
 
 ## Run The CLI
 
