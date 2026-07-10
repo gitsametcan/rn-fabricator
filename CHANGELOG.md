@@ -6,6 +6,10 @@ This project follows the spirit of Keep a Changelog and will use semantic versio
 
 ## Unreleased
 
+### Added
+
+- UI foundation planning documentation for the macOS and Windows desktop app technology and packaging strategy.
+
 ## 1.0.0 - 2026-06-29
 
 ### Added

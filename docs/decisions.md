@@ -82,3 +82,32 @@ Consequences:
 - Dry-run support is required before real install execution.
 - Manual steps such as Xcode installation and shell profile edits stay manual in the first implementation.
 - `--yes` may execute only explicitly allowlisted safe commands.
+
+## ADR-007: Build The First UI As A Cross-Platform Desktop App
+
+Status: Accepted
+
+Decision:
+The first rn-fabricator UI will be a cross-platform desktop application for macOS and Windows built with Avalonia UI.
+
+The desktop app should reuse `Fabricator.Core` services for product behavior and keep CLI-specific parsing and console rendering in `Fabricator.Cli`. Where parity with current CLI behavior matters, desktop workflows may call existing command behavior through a testable application boundary instead of duplicating command orchestration in the UI layer.
+
+The UI command boundary should preserve the same operational facts a CLI user relies on: command name, arguments, working directory, stdout, stderr, exit code, start/running/completed/canceled/failed states, and structured errors.
+
+Reason:
+rn-fabricator is already a .NET 8 codebase with most product behavior in testable C# services. Avalonia keeps the first visual surface in the same language and runtime, supports macOS and Windows from one UI codebase, and avoids introducing a separate JavaScript, Rust, Chromium, or localhost web-host architecture as the primary product surface.
+
+Alternatives considered:
+
+- .NET MAUI supports Windows and macOS, but its product center of gravity is shared mobile and desktop app development. rn-fabricator needs a focused desktop developer tool first.
+- Tauri can produce small cross-platform desktop apps, but it adds a Rust host and web frontend stack that would split product behavior across more runtimes.
+- Electron is mature and cross-platform, but it adds Chromium and Node.js packaging weight that does not match the current .NET tool architecture.
+- A local web companion would be lightweight to start, but it does not meet the product direction of a desktop app for macOS and Windows.
+
+Consequences:
+
+- The first UI milestone should add an Avalonia desktop project skeleton and command boundary contract before implementing full product workflows.
+- The UI remains a companion for `doctor`, `setup`, `create`, and template lifecycle workflows, not a visual React Native app builder.
+- The .NET tool package remains the primary CLI artifact, while desktop app packaging becomes a separate release artifact for macOS and Windows.
+- Release validation must build and smoke test the desktop app on supported platforms once the UI is included in release artifacts.
+- Linux desktop support remains possible through Avalonia, but macOS and Windows are the first supported desktop targets.

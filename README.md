@@ -308,6 +308,7 @@ rn-fabricator templates copy --help
 - [Dogfooding Workflow](docs/dogfooding.md)
 - [Roadmap](ROADMAP.md)
 - [Architecture Decisions](docs/decisions.md)
+- [UI Plan](docs/ui.md)
 - [Guided Setup Design](docs/guided-setup.md)
 - [Setup Apply Safety Policy](docs/setup-apply-safety.md)
 - [Template Catalog](docs/template-catalog.md)
