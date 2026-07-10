@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fabricator.Core", "src\Fabr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fabricator.Cli", "src\Fabricator.Cli\Fabricator.Cli.csproj", "{6F5DE096-68FB-4F8B-93C9-FCC3B3CFF829}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fabricator.Desktop", "src\Fabricator.Desktop\Fabricator.Desktop.csproj", "{BDB7515C-6104-4B10-B77B-560FBB833A1F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{6F5DE096-68FB-4F8B-93C9-FCC3B3CFF829}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F5DE096-68FB-4F8B-93C9-FCC3B3CFF829}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F5DE096-68FB-4F8B-93C9-FCC3B3CFF829}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDB7515C-6104-4B10-B77B-560FBB833A1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDB7515C-6104-4B10-B77B-560FBB833A1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDB7515C-6104-4B10-B77B-560FBB833A1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDB7515C-6104-4B10-B77B-560FBB833A1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{DEA64686-9CD4-41F2-8FC2-D5E94CE5690A} = {9D0DC03D-481E-4612-9510-C1F783E7FA75}
 		{D89F7608-C1E7-41E0-9590-C71CD73CC3F9} = {1FAE427C-BE53-4A6D-878F-E11203DBC6DD}
 		{6F5DE096-68FB-4F8B-93C9-FCC3B3CFF829} = {1FAE427C-BE53-4A6D-878F-E11203DBC6DD}
+		{BDB7515C-6104-4B10-B77B-560FBB833A1F} = {1FAE427C-BE53-4A6D-878F-E11203DBC6DD}
 	EndGlobalSection
 EndGlobal

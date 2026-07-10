@@ -1,0 +1,188 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Fabricator.Desktop.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1120" d:DesignHeight="720"
+        x:Class="Fabricator.Desktop.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="rn-fabricator"
+        MinWidth="960"
+        MinHeight="640"
+        Width="1120"
+        Height="720"
+        Background="#F5F7FA">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="280,*">
+        <Border Grid.Column="0"
+                Background="#101828"
+                Padding="24">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="rn-fabricator"
+                               Foreground="#FFFFFF"
+                               FontSize="24"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding ProductTagline}"
+                               Foreground="#CBD5E1"
+                               FontSize="13"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+
+                <ItemsControl Grid.Row="1"
+                              Margin="0,32,0,0"
+                              ItemsSource="{Binding NavigationItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="12"
+                                    Margin="0,0,0,8"
+                                    CornerRadius="6"
+                                    Background="#1D2939">
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="{Binding Title}"
+                                               Foreground="#FFFFFF"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Description}"
+                                               Foreground="#98A2B3"
+                                               FontSize="12"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Grid.Row="2"
+                        Padding="12"
+                        CornerRadius="6"
+                        Background="#344054">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Desktop foundation"
+                                   Foreground="#FFFFFF"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="Avalonia / .NET 8"
+                                   Foreground="#D0D5DD"
+                                   FontSize="12" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1"
+                Padding="32">
+            <Grid RowDefinitions="Auto,*">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{Binding PageTitle}"
+                                   Foreground="#101828"
+                                   FontSize="28"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding PageSubtitle}"
+                                   Foreground="#475467"
+                                   FontSize="14"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+                            Padding="12,8"
+                            CornerRadius="6"
+                            Background="#E0F2FE"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="{Binding MilestoneLabel}"
+                                   Foreground="#075985"
+                                   FontWeight="SemiBold" />
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="1"
+                      Margin="0,28,0,0"
+                      ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,*"
+                      ColumnSpacing="16"
+                      RowSpacing="16">
+                    <Border Padding="20"
+                            CornerRadius="8"
+                            Background="#FFFFFF"
+                            BorderBrush="#E4E7EC"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Current focus"
+                                       Foreground="#101828"
+                                       FontSize="18"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding CurrentFocus}"
+                                       Foreground="#475467"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="#FFFFFF"
+                            BorderBrush="#E4E7EC"
+                            BorderThickness="1">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Command boundary"
+                                       Foreground="#101828"
+                                       FontSize="18"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding CommandBoundary}"
+                                       Foreground="#475467"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1"
+                            Grid.ColumnSpan="2"
+                            Padding="20"
+                            CornerRadius="8"
+                            Background="#FFFFFF"
+                            BorderBrush="#E4E7EC"
+                            BorderThickness="1">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Planned workflows"
+                                       Foreground="#101828"
+                                       FontSize="18"
+                                       FontWeight="SemiBold" />
+
+                            <ItemsControl ItemsSource="{Binding WorkflowCards}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="14"
+                                                Margin="0,0,12,12"
+                                                CornerRadius="6"
+                                                Background="#F9FAFB"
+                                                BorderBrush="#EAECF0"
+                                                BorderThickness="1">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Title}"
+                                                           Foreground="#101828"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Description}"
+                                                           Foreground="#667085"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>
