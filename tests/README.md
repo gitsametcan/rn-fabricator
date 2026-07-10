@@ -5,6 +5,8 @@ The test suite uses xUnit and is split by behavior:
 - `ProductInfoTests`: stable product metadata.
 - `CliCommandFactoryTests`: command registration and parse shape.
 - `CliInvocationSmokeTests`: end-to-end command invocation smoke tests for current placeholder actions.
+- `CommandBridge/*`: UI command bridge request, streaming update, result, and fake bridge behavior without invoking external tools.
+- `Desktop/*`: Avalonia desktop shell smoke tests that run headlessly without opening a real window.
 - `Doctor/*`: doctor command orchestration, output rendering, and exit code behavior.
 - `Environment/*`: dependency check result models and dependency check services for the future `doctor` command, including core, Apple, and Android tool checks.
 - `Projects/*`: create command validation and orchestration behavior.
