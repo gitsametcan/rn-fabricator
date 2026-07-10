@@ -40,14 +40,25 @@ Options considered:
 
 ## Command Bridge
 
-The UI command bridge should preserve the same operational facts a CLI user relies on:
+The UI command bridge contract lives in `Fabricator.Core.CommandBridge`. The first contract is intentionally about requests, updates, results, and errors rather than a concrete desktop runner implementation.
+
+`FabricatorCommandRequest` should preserve the same command facts a CLI user relies on:
 
 - Command name, arguments, and options.
 - Working directory.
-- stdout and stderr.
+
+`FabricatorCommandUpdate` should let long-running workflows surface incremental state:
+
+- Starting and running states.
+- stdout and stderr output chunks.
+- Stable output sequence numbers.
+
+`FabricatorCommandResult` should preserve terminal facts:
+
 - Exit code.
-- Start, running, completed, canceled, and failed states.
-- Structured errors for invalid input and environment failures.
+- Final stdout and stderr.
+- Completed, canceled, and failed states.
+- Structured `FabricatorCommandError` values for invalid input, environment failures, process failures, cancellation, and unexpected failures.
 
 The bridge should prefer `Fabricator.Core` services for reusable behavior. When current CLI behavior is the product contract, the bridge should call it through a testable abstraction instead of duplicating parsing or rendering logic in the UI layer.
 
