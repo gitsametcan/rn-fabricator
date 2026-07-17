@@ -32,6 +32,7 @@ public sealed class MainViewModel : ViewModelBase
     private string _createOutputDirectory = string.Empty;
     private string _createTemplateName = CreateProjectService.DefaultStarterId;
     private string _createTemplateSource = string.Empty;
+    private bool _createInstallPods;
     private string _createFormStatus = "Load a workspace before creating a project.";
     private bool _isCreateReviewStep;
     private bool _isCreateConfirmed;
@@ -274,6 +275,22 @@ public sealed class MainViewModel : ViewModelBase
         get => _createTemplateSource;
         set => SetProperty(ref _createTemplateSource, value);
     }
+
+    public bool CreateInstallPods
+    {
+        get => _createInstallPods;
+        set
+        {
+            if (SetProperty(ref _createInstallPods, value))
+            {
+                OnPropertyChanged(nameof(CreateInstallPodsLabel));
+            }
+        }
+    }
+
+    public string CreateInstallPodsLabel => CreateInstallPods
+        ? "Install during create"
+        : "Skip during create";
 
     public string CreateFormStatus
     {
@@ -617,7 +634,8 @@ public sealed class MainViewModel : ViewModelBase
             OnCommandPrepared: command => CreatePreparedCommand = FormatCommand(command),
             OnStandardOutput: chunk => CreateStandardOutput += chunk,
             OnStandardError: chunk => CreateStandardError += chunk,
-            TemplateSource: string.IsNullOrWhiteSpace(CreateTemplateSource) ? null : CreateTemplateSource);
+            TemplateSource: string.IsNullOrWhiteSpace(CreateTemplateSource) ? null : CreateTemplateSource,
+            InstallPods: CreateInstallPods);
 
         try
         {
@@ -664,6 +682,7 @@ public sealed class MainViewModel : ViewModelBase
         CreateOutputDirectory = workspaceExists ? resultWorkspacePath : string.Empty;
         CreateTemplateName = CreateProjectService.DefaultStarterId;
         CreateTemplateSource = templateCatalogExists ? templateCatalogPath : string.Empty;
+        CreateInstallPods = false;
         CreateFormStatus = workspaceExists
             ? templateCatalogExists
                 ? "Ready to configure a new project. The workspace template catalog is selected."

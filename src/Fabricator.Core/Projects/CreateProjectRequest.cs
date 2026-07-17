@@ -9,4 +9,5 @@ public sealed record CreateProjectRequest(
     Action<ProcessRunRequest>? OnCommandPrepared = null,
     Action<string>? OnStandardOutput = null,
     Action<string>? OnStandardError = null,
-    string? TemplateSource = null);
+    string? TemplateSource = null,
+    bool InstallPods = false);

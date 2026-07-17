@@ -1302,6 +1302,24 @@ public sealed class CliInvocationSmokeTests
     }
 
     [Fact]
+    public void CreateCommandPassesInstallPodsOptionToCreateService()
+    {
+        var createProjectService = new FakeCreateProjectService();
+        createProjectService.Enqueue(
+            BuildCreateResult("MyApp", "basic-auth", Directory.GetCurrentDirectory()));
+        var rootCommand = CliCommandFactory.CreateRootCommand(
+            () => new DoctorCommandHandler(new FakeDependencyCheckService(), new DoctorSummaryRenderer(Console.Out)),
+            () => new CreateCommandHandler(createProjectService, Console.Out, Console.Error));
+
+        using var output = ConsoleOutputScope.Capture();
+        var exitCode = rootCommand.Parse(["create", "MyApp", "--install-pods"]).Invoke();
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        var request = Assert.Single(createProjectService.Requests);
+        Assert.True(request.InstallPods);
+    }
+
+    [Fact]
     public void CreateCommandReturnsInvalidInputForInvalidProjectName()
     {
         var validation = new CreateProjectValidator().Validate(
@@ -1381,7 +1399,7 @@ public sealed class CliInvocationSmokeTests
             new CreateProjectRequest(projectName, templateName, outputDirectory));
         var command = new ProcessRunRequest(
             "npx",
-            ["@react-native-community/cli@latest", "init", projectName],
+            ["@react-native-community/cli@latest", "init", projectName, "--install-pods", "false"],
             validation.FullOutputDirectory);
 
         return CreateProjectResult.Completed(

@@ -24,6 +24,7 @@ public sealed class CreateCommandHandler
         string template,
         string outputDirectory,
         string? templateSource = null,
+        bool installPods = false,
         CancellationToken cancellationToken = default)
     {
         var commandRendered = false;
@@ -48,7 +49,8 @@ public sealed class CreateCommandHandler
                     streamedProcessOutput = true;
                     _errorWriter.Write(error);
                 },
-                templateSource),
+                templateSource,
+                installPods),
             cancellationToken);
 
         if (!result.Validation.IsValid)
@@ -84,7 +86,7 @@ public sealed class CreateCommandHandler
 
     private void RenderCommand(ProcessRunRequest command)
     {
-        _outputWriter.WriteLine($"Creating React Native project: {command.Arguments.LastOrDefault()}");
+        _outputWriter.WriteLine($"Creating React Native project: {GetProjectName(command)}");
 
         if (!string.IsNullOrWhiteSpace(command.WorkingDirectory))
         {
@@ -92,6 +94,19 @@ public sealed class CreateCommandHandler
         }
 
         _outputWriter.WriteLine($"Command: {command.FileName} {string.Join(' ', command.Arguments)}");
+    }
+
+    private static string? GetProjectName(ProcessRunRequest command)
+    {
+        for (var index = 0; index < command.Arguments.Count - 1; index++)
+        {
+            if (command.Arguments[index] == "init")
+            {
+                return command.Arguments[index + 1];
+            }
+        }
+
+        return command.Arguments.LastOrDefault();
     }
 
     private void RenderSuccess(CreateProjectResult result)

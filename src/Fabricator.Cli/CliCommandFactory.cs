@@ -185,12 +185,17 @@ public static class CliCommandFactory
         {
             Description = "Fabricator template catalog URL or local catalog file path."
         };
+        var installPodsOption = new Option<bool>("--install-pods")
+        {
+            Description = "Install CocoaPods during React Native project initialization."
+        };
 
         var command = new Command("create", "Create a new React Native CLI project.");
         command.Arguments.Add(nameArgument);
         command.Options.Add(templateOption);
         command.Options.Add(outputOption);
         command.Options.Add(templateSourceOption);
+        command.Options.Add(installPodsOption);
 
         command.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -198,9 +203,10 @@ public static class CliCommandFactory
             var template = parseResult.GetValue(templateOption) ?? CreateProjectService.DefaultStarterId;
             var outputDirectory = parseResult.GetValue(outputOption) ?? Directory.GetCurrentDirectory();
             var templateSource = parseResult.GetValue(templateSourceOption);
+            var installPods = parseResult.GetValue(installPodsOption);
 
             var handler = createHandlerFactory();
-            return await handler.RunAsync(name, template, outputDirectory, templateSource, cancellationToken);
+            return await handler.RunAsync(name, template, outputDirectory, templateSource, installPods, cancellationToken);
         });
 
         return command;

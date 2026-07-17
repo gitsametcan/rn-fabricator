@@ -559,7 +559,7 @@
                             </StackPanel>
 
                             <Grid Grid.Row="1"
-                                  RowDefinitions="Auto,Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                                   RowSpacing="12"
                                   IsVisible="{Binding IsCreateEditStep}"
                                   IsEnabled="{Binding IsCreateFormEnabled}">
@@ -601,6 +601,24 @@
                                     <TextBox Text="{Binding CreateTemplateSource}"
                                              Watermark="Optional catalog path or template source" />
                                 </StackPanel>
+
+                                <StackPanel Grid.Row="4"
+                                            Spacing="6">
+                                    <TextBlock Text="Native dependencies"
+                                               Foreground="#475467"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <CheckBox IsChecked="{Binding CreateInstallPods}">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Install CocoaPods during create"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="Runs React Native CLI with pod install enabled instead of skipping it."
+                                                       Foreground="#667085"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </CheckBox>
+                                </StackPanel>
                             </Grid>
 
                             <Grid Grid.Row="1"
@@ -619,7 +637,7 @@
 
                                 <Grid Grid.Row="1"
                                       ColumnDefinitions="*,*"
-                                      RowDefinitions="Auto,Auto,Auto"
+                                      RowDefinitions="Auto,Auto,Auto,Auto"
                                       ColumnSpacing="18"
                                       RowSpacing="10">
                                     <StackPanel Spacing="4">
@@ -667,6 +685,17 @@
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2"
+                                                Spacing="4">
+                                        <TextBlock Text="CocoaPods"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateInstallPodsLabel}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="3"
                                                 Grid.ColumnSpan="2"
                                                 Spacing="4">
                                         <TextBlock Text="Confirmation"

@@ -48,7 +48,7 @@ public sealed class CreateProjectServiceTests
         Assert.Equal(projectPath, result.ProjectPath);
         Assert.NotNull(result.Command);
         Assert.Equal("npx", result.Command.FileName);
-        Assert.Equal(["@react-native-community/cli@latest", "init", "MyApp"], result.Command.Arguments);
+        Assert.Equal(["@react-native-community/cli@latest", "init", "MyApp", "--install-pods", "false"], result.Command.Arguments);
         Assert.Equal(outputDirectory.Path, result.Command.WorkingDirectory);
         Assert.NotNull(result.StarterResult);
         Assert.Equal(CreateProjectService.DefaultStarterId, result.StarterResult.StarterId);
@@ -85,6 +85,30 @@ public sealed class CreateProjectServiceTests
             expectedTemplateSourceValue: CreateProjectService.DefaultStarterId);
         Assert.Collection(runner.Requests, request => Assert.Same(result.Command, request));
         Assert.Collection(preparedCommands, command => Assert.Same(result.Command, command));
+    }
+
+    [Fact]
+    public async Task CreateAsyncCanEnableCocoaPodsInstallationForReactNativeCli()
+    {
+        using var outputDirectory = new TemporaryDirectory();
+        var projectPath = Path.Combine(outputDirectory.Path, "MyApp");
+        var runner = new FakeProcessRunner
+        {
+            OnRun = _ => Directory.CreateDirectory(projectPath)
+        };
+        runner.Enqueue(new ProcessRunResult(ExitCodes.Success, "created", string.Empty));
+        var service = new CreateProjectService(new CreateProjectValidator(), runner);
+
+        var result = await service.CreateAsync(
+            new CreateProjectRequest(
+                "MyApp",
+                CreateProjectService.DefaultStarterId,
+                outputDirectory.Path,
+                InstallPods: true));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Command);
+        Assert.Equal(["@react-native-community/cli@latest", "init", "MyApp", "--install-pods", "true"], result.Command.Arguments);
     }
 
     [Fact]
