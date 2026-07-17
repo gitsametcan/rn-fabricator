@@ -104,6 +104,32 @@ public sealed class DesktopShellSmokeTests
         Assert.Single(viewModel.Projects);
     }
 
+    [Fact]
+    public void MainViewModelLoadsSelectedProjectDetail()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "FabricatorApp");
+        WriteFile(workspace.Path, "FabricatorApp/src/screens/HomeScreen.tsx");
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.True(viewModel.HasSelectedProject);
+        Assert.NotNull(viewModel.SelectedProjectDetail);
+        Assert.Equal("FabricatorApp", viewModel.SelectedProjectDetail.DisplayName);
+        Assert.Equal("Fabricator-compatible", viewModel.SelectedProjectDetail.FabricatorStatus);
+        Assert.Equal("fabricator-app", viewModel.SelectedProjectDetail.PackageName);
+        Assert.Equal("0 applied template(s)", viewModel.SelectedProjectDetail.AppliedTemplateCount);
+        Assert.Equal("1 source file(s)", viewModel.SelectedProjectDetail.SourceFileCount);
+        Assert.Equal("1 screen file(s)", viewModel.SelectedProjectDetail.ScreenFileCount);
+        Assert.Equal("Missing", viewModel.SelectedProjectDetail.AppStoreName);
+        Assert.Equal("Missing", viewModel.SelectedProjectDetail.PlayStoreName);
+    }
+
     private static void CreateTemplateCatalog(string workspacePath)
     {
         var catalogPath = Path.Combine(workspacePath, TemplateSourceResolver.ConventionalCatalogRelativePath);
@@ -116,7 +142,16 @@ public sealed class DesktopShellSmokeTests
         var projectPath = CreateReactNativeProject(workspacePath, name);
         Directory.CreateDirectory(Path.Combine(projectPath, ".fabricator"));
         File.WriteAllText(Path.Combine(projectPath, FabricatorProjectContract.ManifestRelativePath), "{}");
-        File.WriteAllText(Path.Combine(projectPath, FabricatorProjectStateContract.StateRelativePath), "{}");
+        File.WriteAllText(
+            Path.Combine(projectPath, FabricatorProjectStateContract.StateRelativePath),
+            $$"""
+            {
+              "project": {
+                "name": "{{name}}"
+              },
+              "appliedTemplates": []
+            }
+            """);
     }
 
     private static string CreateReactNativeProject(string workspacePath, string name)
@@ -127,6 +162,7 @@ public sealed class DesktopShellSmokeTests
             Path.Combine(projectPath, "package.json"),
             """
             {
+              "name": "fabricator-app",
               "dependencies": {
                 "react-native": "0.76.0"
               }
@@ -134,6 +170,13 @@ public sealed class DesktopShellSmokeTests
             """);
 
         return projectPath;
+    }
+
+    private static void WriteFile(string workspacePath, string relativePath)
+    {
+        var path = Path.Combine(workspacePath, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "export {};\n");
     }
 
     private sealed class MemoryWorkspaceSettingsStore : IWorkspaceSettingsStore

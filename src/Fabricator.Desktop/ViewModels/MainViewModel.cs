@@ -8,6 +8,7 @@ namespace Fabricator.Desktop.ViewModels;
 public sealed class MainViewModel : ViewModelBase
 {
     private readonly IWorkspaceDiscoveryService _workspaceDiscoveryService;
+    private readonly IWorkspaceProjectDetailService _workspaceProjectDetailService;
     private readonly IWorkspaceSettingsStore _workspaceSettingsStore;
     private string _workspaceInputPath = string.Empty;
     private string _selectedWorkspacePath = "No workspace selected";
@@ -17,17 +18,27 @@ public sealed class MainViewModel : ViewModelBase
     private bool _hasTemplateCatalog;
     private IReadOnlyList<WorkspaceProjectItemViewModel> _projects = [];
     private WorkspaceProjectItemViewModel? _selectedProject;
+    private WorkspaceProjectDetailViewModel? _selectedProjectDetail;
 
     public MainViewModel()
-        : this(new WorkspaceDiscoveryService(), new FileWorkspaceSettingsStore())
+        : this(new WorkspaceDiscoveryService(), new WorkspaceProjectDetailService(), new FileWorkspaceSettingsStore())
     {
     }
 
     public MainViewModel(
         IWorkspaceDiscoveryService workspaceDiscoveryService,
         IWorkspaceSettingsStore workspaceSettingsStore)
+        : this(workspaceDiscoveryService, new WorkspaceProjectDetailService(), workspaceSettingsStore)
+    {
+    }
+
+    public MainViewModel(
+        IWorkspaceDiscoveryService workspaceDiscoveryService,
+        IWorkspaceProjectDetailService workspaceProjectDetailService,
+        IWorkspaceSettingsStore workspaceSettingsStore)
     {
         _workspaceDiscoveryService = workspaceDiscoveryService;
+        _workspaceProjectDetailService = workspaceProjectDetailService;
         _workspaceSettingsStore = workspaceSettingsStore;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
@@ -109,13 +120,22 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _selectedProject, value))
             {
                 OnPropertyChanged(nameof(SelectedProjectLabel));
+                OnPropertyChanged(nameof(HasSelectedProject));
             }
         }
+    }
+
+    public WorkspaceProjectDetailViewModel? SelectedProjectDetail
+    {
+        get => _selectedProjectDetail;
+        private set => SetProperty(ref _selectedProjectDetail, value);
     }
 
     public bool HasProjects => Projects.Count > 0;
 
     public bool HasNoProjects => !HasProjects;
+
+    public bool HasSelectedProject => SelectedProject is not null;
 
     public string ProjectCountLabel => $"{Projects.Count} project(s)";
 
@@ -172,6 +192,7 @@ public sealed class MainViewModel : ViewModelBase
             .Select(candidate => new WorkspaceProjectItemViewModel(candidate))
             .ToArray();
         SelectedProject = null;
+        SelectedProjectDetail = null;
         WorkspaceStatus = result.WorkspaceExists
             ? $"Workspace loaded from {result.WorkspacePath}"
             : $"Workspace directory was not found: {result.WorkspacePath}";
@@ -185,5 +206,8 @@ public sealed class MainViewModel : ViewModelBase
     private void SelectProject(WorkspaceProjectItemViewModel? project)
     {
         SelectedProject = project;
+        SelectedProjectDetail = project is null
+            ? null
+            : new WorkspaceProjectDetailViewModel(_workspaceProjectDetailService.GetDetail(project.Path));
     }
 }
