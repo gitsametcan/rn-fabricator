@@ -192,7 +192,8 @@
                             Background="#FFFFFF"
                             BorderBrush="#E4E7EC"
                             BorderThickness="1">
-                        <Grid RowDefinitions="Auto,*">
+                        <Grid RowDefinitions="Auto,*,Auto"
+                              RowSpacing="14">
                             <Grid ColumnDefinitions="*,Auto"
                                   Margin="0,0,0,14">
                                 <StackPanel Spacing="4">
@@ -265,6 +266,85 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                             </Grid>
+
+                            <Border Grid.Row="2"
+                                    Padding="16"
+                                    CornerRadius="6"
+                                    Background="#F9FAFB"
+                                    BorderBrush="#EAECF0"
+                                    BorderThickness="1"
+                                    IsVisible="{Binding HasSelectedProject}">
+                                <Grid RowDefinitions="Auto,Auto"
+                                      RowSpacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding SelectedProjectDetail.DisplayName}"
+                                                   Foreground="#101828"
+                                                   FontSize="18"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding SelectedProjectDetail.ProjectPath}"
+                                                   Foreground="#667085"
+                                                   FontSize="12"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <Grid Grid.Row="1"
+                                          ColumnDefinitions="*,*,*"
+                                          ColumnSpacing="14">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Overview"
+                                                       Foreground="#475467"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.FabricatorStatus}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.PackageName}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.AppliedTemplateCount}"
+                                                       Foreground="#101828" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1"
+                                                    Spacing="6">
+                                            <TextBlock Text="Store Metadata"
+                                                       Foreground="#475467"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.AppStoreName}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.PlayStoreName}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.IosBundleIdentifier}"
+                                                       Foreground="#101828"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.AndroidApplicationId}"
+                                                       Foreground="#101828"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.AppVersion}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.BuildNumber}"
+                                                       Foreground="#101828" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2"
+                                                    Spacing="6">
+                                            <TextBlock Text="Statistics"
+                                                       Foreground="#475467"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.SourceFileCount}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.ScreenFileCount}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.ComponentFileCount}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.ServiceFileCount}"
+                                                       Foreground="#101828" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.UtilityFileCount}"
+                                                       Foreground="#101828" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Border>
                 </Grid>
