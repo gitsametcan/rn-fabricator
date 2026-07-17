@@ -34,28 +34,95 @@
                                TextWrapping="Wrap" />
                 </StackPanel>
 
-                <ItemsControl Grid.Row="1"
-                              Margin="0,32,0,0"
-                              ItemsSource="{Binding NavigationItems}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Padding="12"
-                                    Margin="0,0,0,8"
-                                    CornerRadius="6"
-                                    Background="#1D2939">
-                                <StackPanel Spacing="3">
-                                    <TextBlock Text="{Binding Title}"
-                                               Foreground="#FFFFFF"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Description}"
-                                               Foreground="#98A2B3"
-                                               FontSize="12"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <StackPanel Grid.Row="1"
+                            Margin="0,32,0,0"
+                            Spacing="8">
+                    <Button Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Background="#1D2939"
+                            BorderBrush="#334155"
+                            BorderThickness="1"
+                            Command="{Binding ShowWorkspaceCommand}">
+                        <StackPanel Spacing="3"
+                                    Margin="12">
+                            <TextBlock Text="Workspace"
+                                       Foreground="#FFFFFF"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Local project discovery."
+                                       Foreground="#CBD5E1"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Background="#1D2939"
+                            BorderBrush="#334155"
+                            BorderThickness="1"
+                            IsVisible="{Binding HasTemplateCatalog}"
+                            Command="{Binding ShowTemplatesCommand}">
+                        <StackPanel Spacing="3"
+                                    Margin="12">
+                            <TextBlock Text="Templates"
+                                       Foreground="#FFFFFF"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Grouped reusable template catalog."
+                                       Foreground="#CBD5E1"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Background="#1D2939"
+                            BorderBrush="#334155"
+                            BorderThickness="1"
+                            Command="{Binding ShowCreateCommand}">
+                        <StackPanel Spacing="3"
+                                    Margin="12">
+                            <TextBlock Text="Create Project"
+                                       Foreground="#FFFFFF"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Create a new mobile app."
+                                       Foreground="#CBD5E1"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Button>
+
+                    <Border Padding="12"
+                            CornerRadius="6"
+                            Background="#1D2939">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Doctor"
+                                       Foreground="#FFFFFF"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Environment diagnostics."
+                                       Foreground="#98A2B3"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Padding="12"
+                            CornerRadius="6"
+                            Background="#1D2939">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Setup"
+                                       Foreground="#FFFFFF"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Text="Guided dependency planning."
+                                       Foreground="#98A2B3"
+                                       FontSize="12"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
 
                 <Border Grid.Row="2"
                         Padding="12"
@@ -99,9 +166,12 @@
                     </Border>
                 </Grid>
 
-                <Grid Grid.Row="1"
-                      Margin="0,28,0,0"
-                      RowDefinitions="Auto,Auto,*"
+                <ScrollViewer Grid.Row="1"
+                              Margin="0,28,0,0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <Grid>
+                <Grid RowDefinitions="Auto,Auto,Auto"
                       RowSpacing="16"
                       IsVisible="{Binding IsWorkspaceView}">
                     <Border Padding="20"
@@ -177,11 +247,16 @@
                         <Button Grid.Column="2"
                                 Padding="18,10"
                                 VerticalAlignment="Stretch"
+                                Background="#0EA5E9"
+                                BorderBrush="#0284C7"
+                                BorderThickness="1"
                                 Command="{Binding ShowCreateCommand}">
                             <StackPanel Spacing="2">
                                 <TextBlock Text="Create Project"
+                                           Foreground="#FFFFFF"
                                            FontWeight="SemiBold" />
                                 <TextBlock Text="Configure"
+                                           Foreground="#E0F2FE"
                                            FontSize="12" />
                             </StackPanel>
                         </Button>
@@ -189,12 +264,17 @@
                         <Button Grid.Column="3"
                                 Padding="18,10"
                                 VerticalAlignment="Stretch"
+                                Background="#FFFFFF"
+                                BorderBrush="#0EA5E9"
+                                BorderThickness="1"
                                 IsVisible="{Binding HasTemplateCatalog}"
                                 Command="{Binding ShowTemplatesCommand}">
                             <StackPanel Spacing="2">
                                 <TextBlock Text="Templates"
+                                           Foreground="#075985"
                                            FontWeight="SemiBold" />
                                 <TextBlock Text="Open catalog"
+                                           Foreground="#0369A1"
                                            FontSize="12" />
                             </StackPanel>
                         </Button>
@@ -290,16 +370,30 @@
                                     IsVisible="{Binding HasSelectedProject}">
                                 <Grid RowDefinitions="Auto,Auto,Auto"
                                       RowSpacing="12">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="{Binding SelectedProjectDetail.DisplayName}"
-                                                   Foreground="#101828"
-                                                   FontSize="18"
-                                                   FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding SelectedProjectDetail.ProjectPath}"
-                                                   Foreground="#667085"
-                                                   FontSize="12"
-                                                   TextWrapping="Wrap" />
-                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{Binding SelectedProjectDetail.DisplayName}"
+                                                       Foreground="#101828"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SelectedProjectDetail.ProjectPath}"
+                                                       Foreground="#667085"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+
+                                        <Button Grid.Column="1"
+                                                Padding="12,8"
+                                                VerticalAlignment="Top"
+                                                Background="#FFFFFF"
+                                                BorderBrush="#94A3B8"
+                                                BorderThickness="1"
+                                                Command="{Binding ClearProjectSelectionCommand}">
+                                            <TextBlock Text="Back to project list"
+                                                       Foreground="#101828" />
+                                        </Button>
+                                    </Grid>
 
                                     <Grid Grid.Row="1"
                                           ColumnDefinitions="*,*,*"
@@ -412,9 +506,7 @@
                     </Border>
                 </Grid>
 
-                <Grid Grid.Row="1"
-                      Margin="0,28,0,0"
-                      RowDefinitions="Auto,*"
+                <Grid RowDefinitions="Auto,Auto"
                       RowSpacing="16"
                       IsVisible="{Binding IsCreateView}">
                     <Border Padding="20"
@@ -437,8 +529,12 @@
                             <Button Grid.Column="1"
                                     Padding="14,8"
                                     VerticalAlignment="Top"
+                                    Background="#FFFFFF"
+                                    BorderBrush="#94A3B8"
+                                    BorderThickness="1"
                                     Command="{Binding ShowWorkspaceCommand}">
-                                <TextBlock Text="Back to workspace" />
+                                <TextBlock Text="Back to workspace"
+                                           Foreground="#101828" />
                             </Button>
                         </Grid>
                     </Border>
@@ -650,31 +746,41 @@
                                         Padding="14,8"
                                         IsVisible="{Binding IsCreateEditStep}"
                                         IsEnabled="{Binding IsCreateFormEnabled}"
+                                        Background="#0EA5E9"
+                                        BorderBrush="#0284C7"
+                                        BorderThickness="1"
                                         Command="{Binding ReviewCreateCommand}">
-                                    <TextBlock Text="Review create" />
+                                    <TextBlock Text="Review create"
+                                               Foreground="#FFFFFF" />
                                 </Button>
 
                                 <Button Grid.Column="1"
                                         Padding="14,8"
                                         IsVisible="{Binding IsCreateReviewStep}"
+                                        Background="#FFFFFF"
+                                        BorderBrush="#94A3B8"
+                                        BorderThickness="1"
                                         Command="{Binding EditCreateCommand}">
-                                    <TextBlock Text="Back to edit" />
+                                    <TextBlock Text="Back to edit"
+                                               Foreground="#101828" />
                                 </Button>
 
                                 <Button Grid.Column="2"
                                         Padding="14,8"
                                         IsVisible="{Binding IsCreateReviewStep}"
+                                        Background="#0EA5E9"
+                                        BorderBrush="#0284C7"
+                                        BorderThickness="1"
                                         Command="{Binding ConfirmCreateCommand}">
-                                    <TextBlock Text="Confirm create" />
+                                    <TextBlock Text="Confirm create"
+                                               Foreground="#FFFFFF" />
                                 </Button>
                             </Grid>
                         </Grid>
                     </Border>
                 </Grid>
 
-                <Grid Grid.Row="1"
-                      Margin="0,28,0,0"
-                      RowDefinitions="Auto,*"
+                <Grid RowDefinitions="Auto,Auto"
                       RowSpacing="16"
                       IsVisible="{Binding IsTemplatesView}">
                     <Border Padding="20"
@@ -697,8 +803,12 @@
                             <Button Grid.Column="1"
                                     Padding="14,8"
                                     VerticalAlignment="Top"
+                                    Background="#FFFFFF"
+                                    BorderBrush="#94A3B8"
+                                    BorderThickness="1"
                                     Command="{Binding ShowWorkspaceCommand}">
-                                <TextBlock Text="Back to workspace" />
+                                <TextBlock Text="Back to workspace"
+                                           Foreground="#101828" />
                             </Button>
                         </Grid>
                     </Border>
@@ -793,6 +903,8 @@
                         </Grid>
                     </Border>
                 </Grid>
+                    </Grid>
+                </ScrollViewer>
             </Grid>
         </Border>
     </Grid>
