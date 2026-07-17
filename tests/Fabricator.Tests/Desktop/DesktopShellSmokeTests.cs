@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
@@ -46,6 +47,53 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("No workspace selected", visibleText);
         Assert.Contains("Load workspace", visibleText);
         Assert.Contains("Create Project", visibleText);
+    }
+
+    [AvaloniaFact]
+    public void MainWindowRendersNavigationItemsAsCommandButtons()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var window = new MainWindow
+        {
+            DataContext = new MainViewModel(
+                new WorkspaceDiscoveryService(),
+                new MemoryWorkspaceSettingsStore(workspace.Path))
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var buttons = window
+            .GetVisualDescendants()
+            .OfType<Button>()
+            .ToArray();
+
+        Assert.Contains(buttons, button => ButtonContainsText(button, "Workspace") && button.Command is not null);
+        Assert.Contains(buttons, button => ButtonContainsText(button, "Templates") && button.Command is not null);
+        Assert.Contains(buttons, button => ButtonContainsText(button, "Create Project") && button.Command is not null);
+        Assert.Contains(buttons, button => ButtonContainsText(button, "Doctor") && button.Command is not null);
+        Assert.Contains(buttons, button => ButtonContainsText(button, "Setup") && button.Command is not null);
+    }
+
+    [AvaloniaFact]
+    public void MainWindowKeepsMainContentVerticallyScrollable()
+    {
+        var window = new MainWindow
+        {
+            DataContext = new MainViewModel(
+                new WorkspaceDiscoveryService(),
+                new MemoryWorkspaceSettingsStore())
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        Assert.Contains(
+            window.GetVisualDescendants().OfType<ScrollViewer>(),
+            scrollViewer =>
+                scrollViewer.VerticalScrollBarVisibility == ScrollBarVisibility.Auto &&
+                scrollViewer.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled);
     }
 
     [AvaloniaFact]
@@ -156,6 +204,42 @@ public sealed class DesktopShellSmokeTests
         Assert.False(viewModel.CreateInstallPods);
         Assert.Equal("Skip during create", viewModel.CreateInstallPodsLabel);
         Assert.Equal("Load a workspace before creating a project.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public async Task MainViewModelNavigatesBackToWorkspaceFromSecondaryViews()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var createService = new RecordingCreateProjectService(
+            BuildCreateProjectResult("UnusedApp", workspace.Path, ExitCodes.Success, string.Empty, string.Empty));
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService,
+            CreateDoctorService(),
+            CreateSetupPlanService());
+
+        viewModel.ShowTemplatesCommand.Execute(null);
+        Assert.True(viewModel.IsTemplatesView);
+        viewModel.ShowWorkspaceCommand.Execute(null);
+        Assert.True(viewModel.IsWorkspaceView);
+
+        viewModel.ShowCreateCommand.Execute(null);
+        Assert.True(viewModel.IsCreateView);
+        viewModel.ShowWorkspaceCommand.Execute(null);
+        Assert.True(viewModel.IsWorkspaceView);
+
+        await viewModel.ShowDoctorCommand.ExecuteAsync(null);
+        Assert.True(viewModel.IsDoctorView);
+        viewModel.ShowWorkspaceCommand.Execute(null);
+        Assert.True(viewModel.IsWorkspaceView);
+
+        await viewModel.ShowSetupCommand.ExecuteAsync(null);
+        Assert.True(viewModel.IsSetupView);
+        viewModel.ShowWorkspaceCommand.Execute(null);
+        Assert.True(viewModel.IsWorkspaceView);
     }
 
     [Fact]
@@ -809,6 +893,14 @@ public sealed class DesktopShellSmokeTests
         var path = Path.Combine(workspacePath, relativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, contents);
+    }
+
+    private static bool ButtonContainsText(Button button, string text)
+    {
+        return button
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Any(textBlock => string.Equals(textBlock.Text, text, StringComparison.Ordinal));
     }
 
     private static FakeDependencyCheckService CreateDoctorService()
