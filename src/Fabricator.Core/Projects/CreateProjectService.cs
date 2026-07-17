@@ -430,7 +430,7 @@ public sealed class CreateProjectService : ICreateProjectService
 
         var command = new ProcessRunRequest(
             "npx",
-            [.. ReactNativeCliArguments, validation.Request.ProjectName],
+            [.. ReactNativeCliArguments, validation.Request.ProjectName, "--install-pods", validation.Request.InstallPods ? "true" : "false"],
             validation.FullOutputDirectory,
             validation.Request.OnStandardOutput,
             validation.Request.OnStandardError);

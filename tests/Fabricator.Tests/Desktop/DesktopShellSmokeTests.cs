@@ -76,6 +76,8 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Output directory", visibleText);
         Assert.Contains("Starter template", visibleText);
         Assert.Contains("Template source", visibleText);
+        Assert.Contains("Native dependencies", visibleText);
+        Assert.Contains("Install CocoaPods during create", visibleText);
         Assert.Contains("Back to workspace", visibleText);
         Assert.Contains("Review create", visibleText);
     }
@@ -112,6 +114,8 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("ReviewApp", visibleText);
         Assert.Contains(Path.Combine(Path.GetFullPath(workspace.Path), "ReviewApp"), visibleText);
         Assert.Contains(CreateProjectService.DefaultStarterId, visibleText);
+        Assert.Contains("CocoaPods", visibleText);
+        Assert.Contains("Skip during create", visibleText);
         Assert.Contains("Back to edit", visibleText);
         Assert.Contains("Confirm create", visibleText);
     }
@@ -140,6 +144,8 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
         Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
         Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
+        Assert.False(viewModel.CreateInstallPods);
+        Assert.Equal("Skip during create", viewModel.CreateInstallPodsLabel);
         Assert.Equal("Load a workspace before creating a project.", viewModel.CreateFormStatus);
     }
 
@@ -171,6 +177,7 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal(
             Path.GetFullPath(Path.Combine(workspace.Path, TemplateSourceResolver.ConventionalCatalogRelativePath)),
             viewModel.CreateTemplateSource);
+        Assert.False(viewModel.CreateInstallPods);
     }
 
     [Fact]
@@ -197,6 +204,7 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal(
             Path.GetFullPath(Path.Combine(workspace.Path, TemplateSourceResolver.ConventionalCatalogRelativePath)),
             viewModel.CreateTemplateSource);
+        Assert.False(viewModel.CreateInstallPods);
         Assert.Equal(
             "Ready to configure a new project. The workspace template catalog is selected.",
             viewModel.CreateFormStatus);
@@ -265,7 +273,7 @@ public sealed class DesktopShellSmokeTests
         {
             PreparedCommand = new ProcessRunRequest(
                 "npx",
-                ["@react-native-community/cli@latest", "init", "RunApp"],
+                ["@react-native-community/cli@latest", "init", "RunApp", "--install-pods", "false"],
                 workspace.Path),
             StandardOutputChunk = "scaffolded\n",
             StandardErrorChunk = "warning\n"
@@ -287,6 +295,7 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("RunApp", request.ProjectName);
         Assert.Equal(CreateProjectService.DefaultStarterId, request.TemplateName);
         Assert.Equal(Path.GetFullPath(workspace.Path), request.OutputDirectory);
+        Assert.False(request.InstallPods);
         Assert.True(viewModel.IsCreateReviewStep);
         Assert.True(viewModel.IsCreateConfirmed);
         Assert.False(viewModel.IsCreateRunning);
@@ -294,7 +303,7 @@ public sealed class DesktopShellSmokeTests
         Assert.True(viewModel.IsCreateSucceeded);
         Assert.False(viewModel.IsCreateFailed);
         Assert.Equal("Succeeded", viewModel.CreateExecutionState);
-        Assert.Equal("npx @react-native-community/cli@latest init RunApp --working-directory=" + workspace.Path, viewModel.CreatePreparedCommand);
+        Assert.Equal("npx @react-native-community/cli@latest init RunApp --install-pods false --working-directory=" + workspace.Path, viewModel.CreatePreparedCommand);
         Assert.Equal("scaffolded\n", viewModel.CreateStandardOutput);
         Assert.Equal("warning\n", viewModel.CreateStandardError);
         Assert.Equal(Path.Combine(Path.GetFullPath(workspace.Path), "RunApp"), viewModel.CreateTargetProjectPath);
@@ -398,6 +407,7 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
         Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
         Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
+        Assert.False(viewModel.CreateInstallPods);
         Assert.Equal("Load an existing workspace before creating a project.", viewModel.CreateFormStatus);
     }
 
@@ -423,7 +433,38 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
         Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
         Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
+        Assert.False(viewModel.CreateInstallPods);
         Assert.Equal("Load an existing workspace before creating a project.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public async Task MainViewModelPassesCocoaPodsSelectionToCreateRequest()
+    {
+        using var workspace = new TemporaryDirectory();
+        var result = BuildCreateProjectResult(
+            "PodsApp",
+            workspace.Path,
+            ExitCodes.Success,
+            "completed\n",
+            string.Empty);
+        var createService = new RecordingCreateProjectService(result);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService)
+        {
+            CreateProjectName = "PodsApp",
+            CreateInstallPods = true
+        };
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+        await viewModel.ConfirmCreateCommand.ExecuteAsync(null);
+
+        var request = Assert.Single(createService.Requests);
+        Assert.True(request.InstallPods);
+        Assert.Equal("Install during create", viewModel.CreateInstallPodsLabel);
     }
 
     [Fact]
