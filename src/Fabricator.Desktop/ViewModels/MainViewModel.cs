@@ -89,6 +89,7 @@ public sealed class MainViewModel : ViewModelBase
         _createProjectService = createProjectService;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
+        ClearProjectSelectionCommand = new RelayCommand(() => SelectProject(null));
         ShowWorkspaceCommand = new RelayCommand(ShowWorkspace);
         ShowTemplatesCommand = new RelayCommand(ShowTemplates);
         ShowCreateCommand = new RelayCommand(ShowCreate);
@@ -398,6 +399,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand LoadWorkspaceCommand { get; }
 
     public IRelayCommand<WorkspaceProjectItemViewModel> SelectProjectCommand { get; }
+
+    public IRelayCommand ClearProjectSelectionCommand { get; }
 
     public IRelayCommand ShowWorkspaceCommand { get; }
 
