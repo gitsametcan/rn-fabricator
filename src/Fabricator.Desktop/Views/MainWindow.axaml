@@ -274,7 +274,7 @@
                                     BorderBrush="#EAECF0"
                                     BorderThickness="1"
                                     IsVisible="{Binding HasSelectedProject}">
-                                <Grid RowDefinitions="Auto,Auto"
+                                <Grid RowDefinitions="Auto,Auto,Auto"
                                       RowSpacing="12">
                                     <StackPanel Spacing="4">
                                         <TextBlock Text="{Binding SelectedProjectDetail.DisplayName}"
@@ -343,6 +343,55 @@
                                                        Foreground="#101828" />
                                         </StackPanel>
                                     </Grid>
+
+                                    <Border Grid.Row="2"
+                                            Padding="12"
+                                            CornerRadius="6"
+                                            Background="#FFFFFF"
+                                            BorderBrush="#EAECF0"
+                                            BorderThickness="1">
+                                        <Grid ColumnDefinitions="*,*,*"
+                                              ColumnSpacing="14">
+                                            <StackPanel Spacing="6">
+                                                <TextBlock Text="Agent Memory"
+                                                           Foreground="#475467"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentMemoryStatus}"
+                                                           Foreground="#101828" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentInstructionsStatus}"
+                                                           Foreground="#101828" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentDirectoryStatus}"
+                                                           Foreground="#101828" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1"
+                                                        Spacing="6">
+                                                <TextBlock Text="Agent Files"
+                                                           Foreground="#475467"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentHandoffStatus}"
+                                                           Foreground="#101828"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentCurrentFocusStatus}"
+                                                           Foreground="#101828" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentOpenQuestionCount}"
+                                                           Foreground="#101828" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2"
+                                                        Spacing="6">
+                                                <TextBlock Text="Current Focus"
+                                                           Foreground="#475467"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.AgentCurrentFocusSummary}"
+                                                           Foreground="#101828"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
                             </Border>
                         </Grid>

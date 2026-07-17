@@ -9,4 +9,5 @@ public sealed record WorkspaceProjectDetail(
     bool HasFabricatorState,
     int AppliedTemplateCount,
     WorkspaceProjectStatistics Statistics,
-    WorkspaceStoreMetadata StoreMetadata);
+    WorkspaceStoreMetadata StoreMetadata,
+    WorkspaceAgentMemory AgentMemory);
