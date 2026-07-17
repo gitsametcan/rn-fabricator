@@ -61,6 +61,7 @@ public sealed class WorkspaceProjectDetailViewModel
         NextActionsSummary = detail.CommandCenterMetadata.HasMetadata
             ? $"{detail.CommandCenterMetadata.Metadata.NextActions.Count} next action(s)"
             : "No next actions yet.";
+        NextActionItems = BuildNextActionItems(detail.CommandCenterMetadata.Metadata.NextActions);
     }
 
     public string DisplayName { get; }
@@ -126,6 +127,8 @@ public sealed class WorkspaceProjectDetailViewModel
     public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> ReleaseChecklistItems { get; }
 
     public string NextActionsSummary { get; }
+
+    public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> NextActionItems { get; }
 
     private static string Missing(string? value)
     {
@@ -248,6 +251,38 @@ public sealed class WorkspaceProjectDetailViewModel
                 Missing(item.Status),
                 Missing(item.Notes)))
             .ToArray();
+    }
+
+    private static IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> BuildNextActionItems(
+        IReadOnlyList<ApplicationNextActionMetadata> nextActions)
+    {
+        if (nextActions.Count == 0)
+        {
+            return
+            [
+                new ApplicationCommandCenterPanelItemViewModel(
+                    "Next actions",
+                    "Missing",
+                    "No local next actions.")
+            ];
+        }
+
+        return nextActions
+            .Select(action => new ApplicationCommandCenterPanelItemViewModel(
+                string.IsNullOrWhiteSpace(action.Title) ? action.Id : action.Title,
+                Missing(action.Status),
+                BuildNextActionDetail(action)))
+            .ToArray();
+    }
+
+    private static string BuildNextActionDetail(ApplicationNextActionMetadata action)
+    {
+        var group = Missing(action.Group);
+        var notes = Missing(action.Notes);
+
+        return notes == "Missing"
+            ? $"Group: {group}."
+            : $"Group: {group}. {notes}";
     }
 }
 
