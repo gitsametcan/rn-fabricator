@@ -378,7 +378,7 @@
                                     BorderBrush="#EAECF0"
                                     BorderThickness="1"
                                     IsVisible="{Binding HasSelectedProject}">
-                                <Grid RowDefinitions="Auto,Auto,Auto"
+                                <Grid RowDefinitions="Auto,Auto,Auto,Auto"
                                       RowSpacing="12">
                                     <Grid ColumnDefinitions="*,Auto"
                                           ColumnSpacing="12">
@@ -508,6 +508,77 @@
                                                            Foreground="#101828"
                                                            TextWrapping="Wrap" />
                                             </StackPanel>
+                                        </Grid>
+                                    </Border>
+
+                                    <Border Grid.Row="3"
+                                            Padding="12"
+                                            CornerRadius="6"
+                                            Background="#FFFFFF"
+                                            BorderBrush="#EAECF0"
+                                            BorderThickness="1">
+                                        <Grid RowDefinitions="Auto,Auto"
+                                              RowSpacing="12">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="Application Command Center"
+                                                           Foreground="#101828"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterStatus}"
+                                                           Foreground="#475467"
+                                                           TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterMetadataPath}"
+                                                           Foreground="#667085"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap" />
+                                            </StackPanel>
+
+                                            <Grid Grid.Row="1"
+                                                  ColumnDefinitions="*,*,*,*"
+                                                  ColumnSpacing="12">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Publishing"
+                                                               Foreground="#475467"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding SelectedProjectDetail.PublishingSummary}"
+                                                               Foreground="#101828"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="1"
+                                                            Spacing="6">
+                                                    <TextBlock Text="Research"
+                                                               Foreground="#475467"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding SelectedProjectDetail.ResearchSummary}"
+                                                               Foreground="#101828"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="2"
+                                                            Spacing="6">
+                                                    <TextBlock Text="Release"
+                                                               Foreground="#475467"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding SelectedProjectDetail.ReleaseChecklistSummary}"
+                                                               Foreground="#101828"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="3"
+                                                            Spacing="6">
+                                                    <TextBlock Text="Next Actions"
+                                                               Foreground="#475467"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding SelectedProjectDetail.NextActionsSummary}"
+                                                               Foreground="#101828"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Grid>
                                         </Grid>
                                     </Border>
                                 </Grid>
