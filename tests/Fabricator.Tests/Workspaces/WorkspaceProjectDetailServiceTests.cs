@@ -158,6 +158,47 @@ public sealed class WorkspaceProjectDetailServiceTests
         Assert.Null(detail.StoreMetadata.BuildNumber);
     }
 
+    [Fact]
+    public void GetDetailReadsAgentMemoryState()
+    {
+        using var project = new TemporaryDirectory();
+        WriteFile(project.Path, "AGENTS.md", "# Agent Instructions\n");
+        WriteFile(
+            project.Path,
+            ".agents/current-focus.md",
+            """
+            # Current Focus
+
+            Build the workspace UI.
+
+            ## Open Questions
+
+            - Which view comes next?
+            """);
+        WriteFile(
+            project.Path,
+            ".agents/handoff.md",
+            """
+            # Handoff
+
+            ## Open Questions
+
+            - First question
+            - Second question
+            """);
+        var service = new WorkspaceProjectDetailService();
+
+        var detail = service.GetDetail(project.Path);
+
+        Assert.True(detail.AgentMemory.HasRootInstructions);
+        Assert.True(detail.AgentMemory.HasAgentsDirectory);
+        Assert.True(detail.AgentMemory.HasHandoff);
+        Assert.True(detail.AgentMemory.HasCurrentFocus);
+        Assert.NotNull(detail.AgentMemory.HandoffLastModified);
+        Assert.Equal("Build the workspace UI.", detail.AgentMemory.CurrentFocusSummary);
+        Assert.Equal(3, detail.AgentMemory.OpenQuestionCount);
+    }
+
     private static void WriteFile(string root, string relativePath, string contents = "export {};\n")
     {
         var path = Path.Combine(root, relativePath);

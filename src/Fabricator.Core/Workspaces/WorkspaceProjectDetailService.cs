@@ -32,7 +32,8 @@ public sealed class WorkspaceProjectDetailService : IWorkspaceProjectDetailServi
             hasFabricatorState,
             state.AppliedTemplateCount,
             ReadStatistics(fullProjectPath),
-            storeMetadata);
+            storeMetadata,
+            ReadAgentMemory(fullProjectPath));
     }
 
     private static (string? ProjectName, int AppliedTemplateCount) ReadFabricatorState(string projectPath)
@@ -294,6 +295,98 @@ public sealed class WorkspaceProjectDetailService : IWorkspaceProjectDetailServi
                property.ValueKind == JsonValueKind.String
             ? property.GetString()
             : null;
+    }
+
+    private static WorkspaceAgentMemory ReadAgentMemory(string projectPath)
+    {
+        var rootInstructionsPath = Path.Combine(projectPath, "AGENTS.md");
+        var agentsDirectoryPath = Path.Combine(projectPath, ".agents");
+        var handoffPath = Path.Combine(agentsDirectoryPath, "handoff.md");
+        var currentFocusPath = Path.Combine(agentsDirectoryPath, "current-focus.md");
+
+        return new WorkspaceAgentMemory(
+            File.Exists(rootInstructionsPath),
+            Directory.Exists(agentsDirectoryPath),
+            File.Exists(handoffPath),
+            File.Exists(currentFocusPath),
+            ReadLastModified(handoffPath),
+            ReadCurrentFocusSummary(currentFocusPath),
+            CountOpenQuestions(handoffPath) + CountOpenQuestions(currentFocusPath));
+    }
+
+    private static DateTimeOffset? ReadLastModified(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return File.GetLastWriteTimeUtc(path);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    private static string? ReadCurrentFocusSummary(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return File
+                .ReadLines(path)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Where(line => !line.StartsWith('#'))
+                .FirstOrDefault();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    private static int CountOpenQuestions(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return 0;
+        }
+
+        try
+        {
+            var count = 0;
+            var inOpenQuestions = false;
+
+            foreach (var rawLine in File.ReadLines(path))
+            {
+                var line = rawLine.Trim();
+
+                if (line.StartsWith("## ", StringComparison.Ordinal))
+                {
+                    inOpenQuestions = line.Contains("Open Questions", StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+
+                if (inOpenQuestions && line.StartsWith("- ", StringComparison.Ordinal))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return 0;
+        }
     }
 
     private static Regex GradleStringRegex(string key)

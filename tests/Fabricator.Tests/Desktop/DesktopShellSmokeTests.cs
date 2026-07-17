@@ -110,6 +110,9 @@ public sealed class DesktopShellSmokeTests
         using var workspace = new TemporaryDirectory();
         CreateFabricatorProject(workspace.Path, "FabricatorApp");
         WriteFile(workspace.Path, "FabricatorApp/src/screens/HomeScreen.tsx");
+        WriteFile(workspace.Path, "FabricatorApp/AGENTS.md");
+        WriteFile(workspace.Path, "FabricatorApp/.agents/current-focus.md", "Build the workspace UI.\n");
+        WriteFile(workspace.Path, "FabricatorApp/.agents/handoff.md", "## Open Questions\n\n- Keep going?\n");
         var viewModel = new MainViewModel(
             new WorkspaceDiscoveryService(),
             new WorkspaceProjectDetailService(),
@@ -128,6 +131,13 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("1 screen file(s)", viewModel.SelectedProjectDetail.ScreenFileCount);
         Assert.Equal("Missing", viewModel.SelectedProjectDetail.AppStoreName);
         Assert.Equal("Missing", viewModel.SelectedProjectDetail.PlayStoreName);
+        Assert.Equal("Configured", viewModel.SelectedProjectDetail.AgentMemoryStatus);
+        Assert.Equal("AGENTS.md found", viewModel.SelectedProjectDetail.AgentInstructionsStatus);
+        Assert.Equal(".agents found", viewModel.SelectedProjectDetail.AgentDirectoryStatus);
+        Assert.StartsWith("handoff.md found", viewModel.SelectedProjectDetail.AgentHandoffStatus);
+        Assert.Equal("current-focus.md found", viewModel.SelectedProjectDetail.AgentCurrentFocusStatus);
+        Assert.Equal("Build the workspace UI.", viewModel.SelectedProjectDetail.AgentCurrentFocusSummary);
+        Assert.Equal("1 open question(s)", viewModel.SelectedProjectDetail.AgentOpenQuestionCount);
     }
 
     private static void CreateTemplateCatalog(string workspacePath)
@@ -172,11 +182,11 @@ public sealed class DesktopShellSmokeTests
         return projectPath;
     }
 
-    private static void WriteFile(string workspacePath, string relativePath)
+    private static void WriteFile(string workspacePath, string relativePath, string contents = "export {};\n")
     {
         var path = Path.Combine(workspacePath, relativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, "export {};\n");
+        File.WriteAllText(path, contents);
     }
 
     private sealed class MemoryWorkspaceSettingsStore : IWorkspaceSettingsStore
