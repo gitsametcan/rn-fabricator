@@ -2,6 +2,8 @@
 
 This document defines the initial UI direction for rn-fabricator.
 
+For the next workspace-oriented product expectations after the UI foundation milestone, see [UI Expectations](ui-expectations.md).
+
 ## Product Role
 
 The UI is a companion surface for existing rn-fabricator workflows:

@@ -39,3 +39,7 @@ credentials.*.json
 artifacts/
 dist/
 tmp/
+
+# Local Codex agent memory
+AGENTS.md
+.agents/
