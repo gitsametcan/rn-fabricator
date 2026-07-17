@@ -75,6 +75,43 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Starter template", visibleText);
         Assert.Contains("Template source", visibleText);
         Assert.Contains("Back to workspace", visibleText);
+        Assert.Contains("Review create", visibleText);
+    }
+
+    [AvaloniaFact]
+    public void MainWindowRendersCreateProjectReview()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path))
+        {
+            CreateProjectName = "ReviewApp"
+        };
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var visibleText = window
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(textBlock => textBlock.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+
+        Assert.Contains("Review", visibleText);
+        Assert.Contains("ReviewApp", visibleText);
+        Assert.Contains(Path.Combine(Path.GetFullPath(workspace.Path), "ReviewApp"), visibleText);
+        Assert.Contains(CreateProjectService.DefaultStarterId, visibleText);
+        Assert.Contains("Back to edit", visibleText);
+        Assert.Contains("Confirm create", visibleText);
     }
 
     [Fact]
@@ -95,6 +132,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.NavigationItems, item => item.Title == "Doctor");
         Assert.Contains(viewModel.NavigationItems, item => item.Title == "Templates");
         Assert.False(viewModel.IsCreateFormEnabled);
+        Assert.True(viewModel.IsCreateEditStep);
+        Assert.False(viewModel.IsCreateReviewStep);
+        Assert.False(viewModel.IsCreateConfirmed);
         Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
         Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
         Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
@@ -146,6 +186,8 @@ public sealed class DesktopShellSmokeTests
         Assert.True(viewModel.IsCreateView);
         Assert.False(viewModel.IsWorkspaceView);
         Assert.False(viewModel.IsTemplatesView);
+        Assert.True(viewModel.IsCreateEditStep);
+        Assert.False(viewModel.IsCreateReviewStep);
         Assert.True(viewModel.IsCreateFormEnabled);
         Assert.Equal(string.Empty, viewModel.CreateProjectName);
         Assert.Equal(Path.GetFullPath(workspace.Path), viewModel.CreateOutputDirectory);
@@ -155,6 +197,78 @@ public sealed class DesktopShellSmokeTests
             viewModel.CreateTemplateSource);
         Assert.Equal(
             "Ready to configure a new project. The workspace template catalog is selected.",
+            viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public void MainViewModelMovesCreateProjectFormToReviewAndBack()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path))
+        {
+            CreateProjectName = "ReviewApp"
+        };
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreateReviewStep);
+        Assert.False(viewModel.IsCreateEditStep);
+        Assert.False(viewModel.IsCreateConfirmed);
+        Assert.Equal(Path.Combine(Path.GetFullPath(workspace.Path), "ReviewApp"), viewModel.CreateTargetProjectPath);
+        Assert.Equal(
+            "Review the target path and create inputs before confirmation.",
+            viewModel.CreateFormStatus);
+
+        viewModel.EditCreateCommand.Execute(null);
+
+        Assert.False(viewModel.IsCreateReviewStep);
+        Assert.True(viewModel.IsCreateEditStep);
+        Assert.False(viewModel.IsCreateConfirmed);
+        Assert.Equal("Ready to edit create inputs.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public void MainViewModelRequiresCreateProjectNameBeforeReview()
+    {
+        using var workspace = new TemporaryDirectory();
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+
+        Assert.False(viewModel.IsCreateReviewStep);
+        Assert.True(viewModel.IsCreateEditStep);
+        Assert.Equal("Project name is required before review.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public void MainViewModelCapturesCreateConfirmationAfterReview()
+    {
+        using var workspace = new TemporaryDirectory();
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path))
+        {
+            CreateProjectName = "ConfirmApp"
+        };
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+        viewModel.ConfirmCreateCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreateReviewStep);
+        Assert.True(viewModel.IsCreateConfirmed);
+        Assert.Equal(
+            "Create inputs confirmed. Execution will run after the next implementation step.",
             viewModel.CreateFormStatus);
     }
 

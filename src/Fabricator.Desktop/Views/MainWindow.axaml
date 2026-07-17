@@ -449,7 +449,7 @@
                             Background="#FFFFFF"
                             BorderBrush="#E4E7EC"
                             BorderThickness="1">
-                        <Grid RowDefinitions="Auto,Auto"
+                        <Grid RowDefinitions="Auto,Auto,Auto"
                               RowSpacing="16">
                             <StackPanel Spacing="4">
                                 <TextBlock Text="Project details"
@@ -465,6 +465,7 @@
                             <Grid Grid.Row="1"
                                   RowDefinitions="Auto,Auto,Auto,Auto"
                                   RowSpacing="12"
+                                  IsVisible="{Binding IsCreateEditStep}"
                                   IsEnabled="{Binding IsCreateFormEnabled}">
                                 <StackPanel Spacing="6">
                                     <TextBlock Text="Project name"
@@ -504,6 +505,109 @@
                                     <TextBox Text="{Binding CreateTemplateSource}"
                                              Watermark="Optional catalog path or template source" />
                                 </StackPanel>
+                            </Grid>
+
+                            <Grid Grid.Row="1"
+                                  RowDefinitions="Auto,Auto"
+                                  RowSpacing="14"
+                                  IsVisible="{Binding IsCreateReviewStep}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Review"
+                                               Foreground="#101828"
+                                               FontSize="16"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding CreateTargetProjectPath}"
+                                               Foreground="#475467"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <Grid Grid.Row="1"
+                                      ColumnDefinitions="*,*"
+                                      RowDefinitions="Auto,Auto,Auto"
+                                      ColumnSpacing="18"
+                                      RowSpacing="10">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Project name"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateProjectName}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="4">
+                                        <TextBlock Text="Output directory"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateOutputDirectory}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                                Spacing="4">
+                                        <TextBlock Text="Starter template"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateTemplateName}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                                Grid.Column="1"
+                                                Spacing="4">
+                                        <TextBlock Text="Template source"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateTemplateSource}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2"
+                                                Grid.ColumnSpan="2"
+                                                Spacing="4">
+                                        <TextBlock Text="Confirmation"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateFormStatus}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+
+                            <Grid Grid.Row="2"
+                                  ColumnDefinitions="*,Auto,Auto"
+                                  ColumnSpacing="10">
+                                <Button Grid.Column="1"
+                                        Padding="14,8"
+                                        IsVisible="{Binding IsCreateEditStep}"
+                                        IsEnabled="{Binding IsCreateFormEnabled}"
+                                        Command="{Binding ReviewCreateCommand}">
+                                    <TextBlock Text="Review create" />
+                                </Button>
+
+                                <Button Grid.Column="1"
+                                        Padding="14,8"
+                                        IsVisible="{Binding IsCreateReviewStep}"
+                                        Command="{Binding EditCreateCommand}">
+                                    <TextBlock Text="Back to edit" />
+                                </Button>
+
+                                <Button Grid.Column="2"
+                                        Padding="14,8"
+                                        IsVisible="{Binding IsCreateReviewStep}"
+                                        Command="{Binding ConfirmCreateCommand}">
+                                    <TextBlock Text="Confirm create" />
+                                </Button>
                             </Grid>
                         </Grid>
                     </Border>
