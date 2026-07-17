@@ -820,6 +820,12 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("No market research notes yet.", viewModel.SelectedProjectDetail.ResearchSummary);
         Assert.Equal("No release checklist yet.", viewModel.SelectedProjectDetail.ReleaseChecklistSummary);
         Assert.Equal("No next actions yet.", viewModel.SelectedProjectDetail.NextActionsSummary);
+        Assert.Contains(viewModel.SelectedProjectDetail.PublishingReadinessItems, item =>
+            item.Label == "iOS bundle id" &&
+            item.Status == "Missing");
+        Assert.Contains(viewModel.SelectedProjectDetail.PublishingReadinessItems, item =>
+            item.Label == "Release metadata" &&
+            item.Status == "Missing");
     }
 
     [AvaloniaFact]
@@ -836,11 +842,20 @@ public sealed class DesktopShellSmokeTests
               "kind": "fabricator-app-command-center",
               "publishing": {
                 "ios": {
+                  "displayName": "Command Center iOS",
+                  "identifier": "com.example.commandcenter.ios",
+                  "version": "1.0.0",
+                  "buildNumber": "10",
                   "status": "ready"
                 },
                 "android": {
+                  "displayName": "Command Center Android",
+                  "identifier": "com.example.commandcenter.android",
+                  "version": "1.0.0",
+                  "buildNumber": "11",
                   "status": "missing"
-                }
+                },
+                "releaseOwner": "Mobile Team"
               },
               "marketResearch": {
                 "keywords": ["fitness", "habit"],
@@ -891,6 +906,12 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Command center metadata loaded", visibleText);
         Assert.Contains("Publishing", visibleText);
         Assert.Contains("iOS: ready; Android: missing", visibleText);
+        Assert.Contains("iOS bundle id", visibleText);
+        Assert.Contains("com.example.commandcenter.ios", visibleText);
+        Assert.Contains("Android application id", visibleText);
+        Assert.Contains("com.example.commandcenter.android", visibleText);
+        Assert.Contains("Release owner", visibleText);
+        Assert.Contains("Mobile Team", visibleText);
         Assert.Contains("Research", visibleText);
         Assert.Contains("2 keyword(s), 1 competitor(s), 1 open question(s)", visibleText);
         Assert.Contains("Release", visibleText);

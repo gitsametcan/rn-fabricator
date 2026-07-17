@@ -46,6 +46,10 @@ public sealed class WorkspaceProjectDetailViewModel
         PublishingSummary = detail.CommandCenterMetadata.HasMetadata
             ? BuildPublishingSummary(detail.CommandCenterMetadata.Metadata.Publishing)
             : "No publishing metadata yet.";
+        PublishingReadinessItems = BuildPublishingReadinessItems(
+            detail.StoreMetadata,
+            detail.CommandCenterMetadata.Metadata.Publishing,
+            detail.CommandCenterMetadata.HasMetadata);
         ResearchSummary = detail.CommandCenterMetadata.HasMetadata
             ? BuildResearchSummary(detail.CommandCenterMetadata.Metadata.MarketResearch)
             : "No market research notes yet.";
@@ -109,6 +113,8 @@ public sealed class WorkspaceProjectDetailViewModel
 
     public string PublishingSummary { get; }
 
+    public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> PublishingReadinessItems { get; }
+
     public string ResearchSummary { get; }
 
     public string ReleaseChecklistSummary { get; }
@@ -152,6 +158,38 @@ public sealed class WorkspaceProjectDetailViewModel
         return $"iOS: {iosStatus}; Android: {androidStatus}";
     }
 
+    private static IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> BuildPublishingReadinessItems(
+        WorkspaceStoreMetadata storeMetadata,
+        ApplicationPublishingMetadata publishing,
+        bool hasCommandCenterMetadata)
+    {
+        var items = new List<ApplicationCommandCenterPanelItemViewModel>
+        {
+            BuildItem("iOS display name", publishing.Ios.DisplayName ?? storeMetadata.AppStoreName),
+            BuildItem("iOS bundle id", publishing.Ios.Identifier ?? storeMetadata.IosBundleIdentifier),
+            BuildItem("Android display name", publishing.Android.DisplayName ?? storeMetadata.PlayStoreName),
+            BuildItem("Android application id", publishing.Android.Identifier ?? storeMetadata.AndroidApplicationId),
+            BuildItem("App version", publishing.Ios.Version ?? publishing.Android.Version ?? storeMetadata.AppVersion),
+            BuildItem("Build number", publishing.Ios.BuildNumber ?? publishing.Android.BuildNumber ?? storeMetadata.BuildNumber),
+            BuildItem("Release owner", publishing.ReleaseOwner),
+            new(
+                "Release metadata",
+                hasCommandCenterMetadata ? "Configured" : "Missing",
+                hasCommandCenterMetadata
+                    ? "Command center metadata found."
+                    : "Add .fabricator/app-command-center.json to track release metadata.")
+        };
+
+        return items;
+    }
+
+    private static ApplicationCommandCenterPanelItemViewModel BuildItem(string label, string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? new ApplicationCommandCenterPanelItemViewModel(label, "Missing", "Not detected.")
+            : new ApplicationCommandCenterPanelItemViewModel(label, "Ready", value);
+    }
+
     private static string BuildResearchSummary(ApplicationMarketResearchMetadata research)
     {
         var keywordCount = research.Keywords.Count;
@@ -161,3 +199,8 @@ public sealed class WorkspaceProjectDetailViewModel
         return $"{keywordCount} keyword(s), {competitorCount} competitor(s), {questionCount} open question(s)";
     }
 }
+
+public sealed record ApplicationCommandCenterPanelItemViewModel(
+    string Label,
+    string Status,
+    string Detail);
