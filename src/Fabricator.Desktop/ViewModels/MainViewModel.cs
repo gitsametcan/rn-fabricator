@@ -2,7 +2,9 @@ using Fabricator.Core;
 using Fabricator.Core.Environment;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
+using Fabricator.Core.Setup;
 using Fabricator.Core.Templates;
+using Fabricator.Core.Toolchains;
 using Fabricator.Core.Workspaces;
 using Fabricator.Desktop.WorkspaceSettings;
 using CommunityToolkit.Mvvm.Input;
@@ -18,6 +20,7 @@ public sealed class MainViewModel : ViewModelBase
     private readonly IWorkspaceSettingsStore _workspaceSettingsStore;
     private readonly ICreateProjectService _createProjectService;
     private readonly IDependencyCheckService _dependencyCheckService;
+    private readonly ISetupPlanService _setupPlanService;
     private string _workspaceInputPath = string.Empty;
     private string _selectedWorkspacePath = "No workspace selected";
     private string _workspaceStatus = "Select a workspace directory to begin.";
@@ -31,6 +34,7 @@ public sealed class MainViewModel : ViewModelBase
     private bool _isTemplatesView;
     private bool _isCreateView;
     private bool _isDoctorView;
+    private bool _isSetupView;
     private string _createProjectName = string.Empty;
     private string _createOutputDirectory = string.Empty;
     private string _createTemplateName = CreateProjectService.DefaultStarterId;
@@ -53,6 +57,14 @@ public sealed class MainViewModel : ViewModelBase
     private bool _hasDoctorRun;
     private string _doctorStatus = "Run Doctor to check the local React Native toolchain.";
     private string _doctorSummaryLabel = "No checks have run.";
+    private IReadOnlyList<SetupPlanItemViewModel> _setupPlanItems = [];
+    private bool _isSetupPlanRunning;
+    private bool _hasSetupPlanRun;
+    private string _setupPlanStatus = "Build a read-only setup plan for missing React Native dependencies.";
+    private string _setupPlanSummaryLabel = "No setup plan has run.";
+    private string _setupPlanPlatformLabel = "Platform not checked.";
+    private string _setupPlanPackageManagerLabel = "Package manager not checked.";
+    private string _setupPlanToolchainLabel = "Toolchain profile not checked.";
 
     public MainViewModel()
         : this(
@@ -60,7 +72,8 @@ public sealed class MainViewModel : ViewModelBase
             new WorkspaceProjectDetailService(),
             new FileWorkspaceSettingsStore(),
             CreateDefaultCreateProjectService(),
-            CreateDefaultDependencyCheckService())
+            CreateDefaultDependencyCheckService(),
+            CreateDefaultSetupPlanService())
     {
     }
 
@@ -72,7 +85,8 @@ public sealed class MainViewModel : ViewModelBase
             new WorkspaceProjectDetailService(),
             workspaceSettingsStore,
             CreateDefaultCreateProjectService(),
-            CreateDefaultDependencyCheckService())
+            CreateDefaultDependencyCheckService(),
+            CreateDefaultSetupPlanService())
     {
     }
 
@@ -85,7 +99,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceProjectDetailService,
             workspaceSettingsStore,
             CreateDefaultCreateProjectService(),
-            CreateDefaultDependencyCheckService())
+            CreateDefaultDependencyCheckService(),
+            CreateDefaultSetupPlanService())
     {
     }
 
@@ -99,7 +114,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceProjectDetailService,
             workspaceSettingsStore,
             createProjectService,
-            CreateDefaultDependencyCheckService())
+            CreateDefaultDependencyCheckService(),
+            CreateDefaultSetupPlanService())
     {
     }
 
@@ -109,12 +125,30 @@ public sealed class MainViewModel : ViewModelBase
         IWorkspaceSettingsStore workspaceSettingsStore,
         ICreateProjectService createProjectService,
         IDependencyCheckService dependencyCheckService)
+        : this(
+            workspaceDiscoveryService,
+            workspaceProjectDetailService,
+            workspaceSettingsStore,
+            createProjectService,
+            dependencyCheckService,
+            CreateDefaultSetupPlanService())
+    {
+    }
+
+    public MainViewModel(
+        IWorkspaceDiscoveryService workspaceDiscoveryService,
+        IWorkspaceProjectDetailService workspaceProjectDetailService,
+        IWorkspaceSettingsStore workspaceSettingsStore,
+        ICreateProjectService createProjectService,
+        IDependencyCheckService dependencyCheckService,
+        ISetupPlanService setupPlanService)
     {
         _workspaceDiscoveryService = workspaceDiscoveryService;
         _workspaceProjectDetailService = workspaceProjectDetailService;
         _workspaceSettingsStore = workspaceSettingsStore;
         _createProjectService = createProjectService;
         _dependencyCheckService = dependencyCheckService;
+        _setupPlanService = setupPlanService;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
         ClearProjectSelectionCommand = new RelayCommand(() => SelectProject(null));
@@ -123,6 +157,8 @@ public sealed class MainViewModel : ViewModelBase
         ShowCreateCommand = new RelayCommand(ShowCreate);
         ShowDoctorCommand = new AsyncRelayCommand(ShowDoctorAsync);
         RunDoctorCommand = new AsyncRelayCommand(RunDoctorAsync);
+        ShowSetupCommand = new AsyncRelayCommand(ShowSetupAsync);
+        RunSetupPlanCommand = new AsyncRelayCommand(RunSetupPlanAsync);
         ReviewCreateCommand = new RelayCommand(ReviewCreate);
         EditCreateCommand = new RelayCommand(EditCreate);
         ConfirmCreateCommand = new AsyncRelayCommand(ConfirmCreateAsync);
@@ -251,6 +287,7 @@ public sealed class MainViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsWorkspaceView));
                 OnPropertyChanged(nameof(IsCreateView));
                 OnPropertyChanged(nameof(IsDoctorView));
+                OnPropertyChanged(nameof(IsSetupView));
             }
         }
     }
@@ -265,6 +302,7 @@ public sealed class MainViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsWorkspaceView));
                 OnPropertyChanged(nameof(IsTemplatesView));
                 OnPropertyChanged(nameof(IsDoctorView));
+                OnPropertyChanged(nameof(IsSetupView));
             }
         }
     }
@@ -279,11 +317,27 @@ public sealed class MainViewModel : ViewModelBase
                 OnPropertyChanged(nameof(IsWorkspaceView));
                 OnPropertyChanged(nameof(IsTemplatesView));
                 OnPropertyChanged(nameof(IsCreateView));
+                OnPropertyChanged(nameof(IsSetupView));
             }
         }
     }
 
-    public bool IsWorkspaceView => !IsTemplatesView && !IsCreateView && !IsDoctorView;
+    public bool IsSetupView
+    {
+        get => _isSetupView;
+        private set
+        {
+            if (SetProperty(ref _isSetupView, value))
+            {
+                OnPropertyChanged(nameof(IsWorkspaceView));
+                OnPropertyChanged(nameof(IsTemplatesView));
+                OnPropertyChanged(nameof(IsCreateView));
+                OnPropertyChanged(nameof(IsDoctorView));
+            }
+        }
+    }
+
+    public bool IsWorkspaceView => !IsTemplatesView && !IsCreateView && !IsDoctorView && !IsSetupView;
 
     public string CreateProjectName
     {
@@ -460,6 +514,65 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _doctorSummaryLabel, value);
     }
 
+    public IReadOnlyList<SetupPlanItemViewModel> SetupPlanItems
+    {
+        get => _setupPlanItems;
+        private set
+        {
+            if (SetProperty(ref _setupPlanItems, value))
+            {
+                OnPropertyChanged(nameof(HasSetupPlanItems));
+                OnPropertyChanged(nameof(HasNoSetupPlanItems));
+            }
+        }
+    }
+
+    public bool HasSetupPlanItems => SetupPlanItems.Count > 0;
+
+    public bool HasNoSetupPlanItems => !HasSetupPlanItems;
+
+    public bool IsSetupPlanRunning
+    {
+        get => _isSetupPlanRunning;
+        private set => SetProperty(ref _isSetupPlanRunning, value);
+    }
+
+    public bool HasSetupPlanRun
+    {
+        get => _hasSetupPlanRun;
+        private set => SetProperty(ref _hasSetupPlanRun, value);
+    }
+
+    public string SetupPlanStatus
+    {
+        get => _setupPlanStatus;
+        private set => SetProperty(ref _setupPlanStatus, value);
+    }
+
+    public string SetupPlanSummaryLabel
+    {
+        get => _setupPlanSummaryLabel;
+        private set => SetProperty(ref _setupPlanSummaryLabel, value);
+    }
+
+    public string SetupPlanPlatformLabel
+    {
+        get => _setupPlanPlatformLabel;
+        private set => SetProperty(ref _setupPlanPlatformLabel, value);
+    }
+
+    public string SetupPlanPackageManagerLabel
+    {
+        get => _setupPlanPackageManagerLabel;
+        private set => SetProperty(ref _setupPlanPackageManagerLabel, value);
+    }
+
+    public string SetupPlanToolchainLabel
+    {
+        get => _setupPlanToolchainLabel;
+        private set => SetProperty(ref _setupPlanToolchainLabel, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -514,6 +627,10 @@ public sealed class MainViewModel : ViewModelBase
     public IAsyncRelayCommand ShowDoctorCommand { get; }
 
     public IAsyncRelayCommand RunDoctorCommand { get; }
+
+    public IAsyncRelayCommand ShowSetupCommand { get; }
+
+    public IAsyncRelayCommand RunSetupPlanCommand { get; }
 
     public IRelayCommand ReviewCreateCommand { get; }
 
@@ -581,6 +698,7 @@ public sealed class MainViewModel : ViewModelBase
             IsTemplatesView = false;
             IsCreateView = false;
             IsDoctorView = false;
+            IsSetupView = false;
         }
 
         WorkspaceStatus = result.WorkspaceExists
@@ -642,12 +760,14 @@ public sealed class MainViewModel : ViewModelBase
         IsTemplatesView = false;
         IsCreateView = false;
         IsDoctorView = false;
+        IsSetupView = false;
     }
 
     private void ShowTemplates()
     {
         IsCreateView = false;
         IsDoctorView = false;
+        IsSetupView = false;
         IsTemplatesView = true;
     }
 
@@ -655,6 +775,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         IsTemplatesView = false;
         IsDoctorView = false;
+        IsSetupView = false;
         IsCreateView = true;
 
         if (!HasWorkspace)
@@ -667,11 +788,72 @@ public sealed class MainViewModel : ViewModelBase
     {
         IsTemplatesView = false;
         IsCreateView = false;
+        IsSetupView = false;
         IsDoctorView = true;
 
         if (!HasDoctorRun)
         {
             await RunDoctorAsync();
+        }
+    }
+
+    private async Task ShowSetupAsync()
+    {
+        IsTemplatesView = false;
+        IsCreateView = false;
+        IsDoctorView = false;
+        IsSetupView = true;
+
+        if (!HasSetupPlanRun)
+        {
+            await RunSetupPlanAsync();
+        }
+    }
+
+    private async Task RunSetupPlanAsync()
+    {
+        if (IsSetupPlanRunning)
+        {
+            return;
+        }
+
+        IsSetupPlanRunning = true;
+        HasSetupPlanRun = true;
+        SetupPlanStatus = "Building setup plan from local environment checks.";
+        SetupPlanSummaryLabel = "Setup plan is running.";
+        SetupPlanItems = [];
+
+        try
+        {
+            var plan = await _setupPlanService.BuildPlanAsync(SetupPlanRequest.Default);
+            SetupPlanPlatformLabel = $"Platform: {plan.PlatformName}";
+            SetupPlanPackageManagerLabel = $"Package manager: {FormatPackageManager(plan.PackageManager)}";
+            SetupPlanToolchainLabel = plan.ToolchainProfile is null
+                ? "Toolchain profile: default"
+                : $"Toolchain profile: {plan.ToolchainProfile.DisplayName} ({plan.ToolchainProfile.ReactNativeVersion})";
+            SetupPlanSummaryLabel = $"Commands {plan.CommandCount}, manual {plan.ManualCount}, environment {plan.EnvironmentCount}.";
+            SetupPlanStatus = plan.HasItems
+                ? "Review the setup plan before running any install commands."
+                : "No setup actions needed. Environment checks passed.";
+            SetupPlanItems = plan.Items
+                .Select(item => new SetupPlanItemViewModel(item))
+                .ToArray();
+        }
+        catch (SetupPlanException exception)
+        {
+            SetupPlanStatus = $"Setup plan input failed: {string.Join(" ", exception.Errors)}";
+            SetupPlanSummaryLabel = "Setup plan failed.";
+            SetupPlanItems = [];
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            SetupPlanStatus = $"Setup plan failed unexpectedly: {exception.Message}";
+            SetupPlanSummaryLabel = "Setup plan failed.";
+            SetupPlanItems = [];
+        }
+        finally
+        {
+            IsSetupPlanRunning = false;
         }
     }
 
@@ -862,6 +1044,25 @@ public sealed class MainViewModel : ViewModelBase
         return new DependencyCheckService(new ProcessRunner());
     }
 
+    private static ISetupPlanService CreateDefaultSetupPlanService()
+    {
+        var processRunner = new ProcessRunner();
+        var systemPlatform = new SystemPlatform();
+
+        return new SetupPlanService(
+            new DependencyCheckService(processRunner, systemPlatform),
+            systemPlatform,
+            new PackageManagerDetector(processRunner, systemPlatform),
+            new LocalToolchainProfileProvider());
+    }
+
+    private static string FormatPackageManager(PackageManagerInfo packageManager)
+    {
+        return packageManager.IsAvailable && !string.IsNullOrWhiteSpace(packageManager.CommandName)
+            ? $"{packageManager.Name} ({packageManager.CommandName})"
+            : "not detected; manual guidance will be used";
+    }
+
     private static string FormatCommand(ProcessRunRequest command)
     {
         var parts = new List<string> { command.FileName };
@@ -999,4 +1200,31 @@ public sealed class DoctorCheckItemViewModel
     public string RemediationHint => Result.RemediationHint ?? string.Empty;
 
     public bool HasRemediationHint => !string.IsNullOrWhiteSpace(Result.RemediationHint);
+}
+
+public sealed class SetupPlanItemViewModel
+{
+    public SetupPlanItemViewModel(SetupPlanItem item)
+    {
+        DependencyName = item.DependencyName;
+        KindLabel = item.Kind switch
+        {
+            SetupPlanItemKind.Command => "COMMAND",
+            SetupPlanItemKind.Environment => "ENV",
+            SetupPlanItemKind.Manual => "MANUAL",
+            _ => "UNKNOWN"
+        };
+        Title = item.RequiresAdmin
+            ? $"{item.Title} (may require admin privileges)"
+            : item.Title;
+        Steps = item.Steps;
+    }
+
+    public string DependencyName { get; }
+
+    public string KindLabel { get; }
+
+    public string Title { get; }
+
+    public IReadOnlyList<string> Steps { get; }
 }

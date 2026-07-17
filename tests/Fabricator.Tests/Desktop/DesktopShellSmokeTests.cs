@@ -6,6 +6,7 @@ using Fabricator.Core;
 using Fabricator.Core.Environment;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
+using Fabricator.Core.Setup;
 using Fabricator.Core.Templates;
 using Fabricator.Core.Workspaces;
 using Fabricator.Desktop.ViewModels;
@@ -142,7 +143,9 @@ public sealed class DesktopShellSmokeTests
         Assert.True(viewModel.IsCreateEditStep);
         Assert.False(viewModel.IsCreateReviewStep);
         Assert.False(viewModel.IsDoctorView);
+        Assert.False(viewModel.IsSetupView);
         Assert.False(viewModel.HasDoctorResults);
+        Assert.False(viewModel.HasSetupPlanItems);
         Assert.False(viewModel.IsCreateConfirmed);
         Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
         Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
@@ -544,6 +547,82 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Android tools");
     }
 
+    [AvaloniaFact]
+    public async Task MainWindowRendersSetupPlanView()
+    {
+        using var workspace = new TemporaryDirectory();
+        var setupPlanService = CreateSetupPlanService();
+        var createService = new RecordingCreateProjectService(
+            BuildCreateProjectResult("UnusedApp", workspace.Path, ExitCodes.Success, string.Empty, string.Empty));
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService,
+            CreateDoctorService(),
+            setupPlanService);
+
+        await viewModel.ShowSetupCommand.ExecuteAsync(null);
+
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var visibleText = window
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(textBlock => textBlock.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+
+        Assert.Contains("Setup", visibleText);
+        Assert.Contains("Setup plan", visibleText);
+        Assert.Contains("Build Plan", visibleText);
+        Assert.Contains("Platform: macOS", visibleText);
+        Assert.Contains("Package manager: Homebrew (brew)", visibleText);
+        Assert.Contains("Toolchain profile: React Native Stable (0.76.x)", visibleText);
+        Assert.Contains("Node.js", visibleText);
+        Assert.Contains("Watchman", visibleText);
+        Assert.Contains("ANDROID_HOME", visibleText);
+        Assert.Contains("brew install node", visibleText);
+    }
+
+    [Fact]
+    public async Task MainViewModelBuildsSetupPlanPreview()
+    {
+        using var workspace = new TemporaryDirectory();
+        var setupPlanService = CreateSetupPlanService();
+        var createService = new RecordingCreateProjectService(
+            BuildCreateProjectResult("UnusedApp", workspace.Path, ExitCodes.Success, string.Empty, string.Empty));
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService,
+            CreateDoctorService(),
+            setupPlanService);
+
+        await viewModel.ShowSetupCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.IsSetupView);
+        Assert.False(viewModel.IsWorkspaceView);
+        Assert.True(viewModel.HasSetupPlanRun);
+        Assert.False(viewModel.IsSetupPlanRunning);
+        Assert.True(viewModel.HasSetupPlanItems);
+        Assert.Equal(3, viewModel.SetupPlanItems.Count);
+        Assert.Equal("Commands 1, manual 1, environment 1.", viewModel.SetupPlanSummaryLabel);
+        Assert.Equal("Review the setup plan before running any install commands.", viewModel.SetupPlanStatus);
+        Assert.Equal("Platform: macOS", viewModel.SetupPlanPlatformLabel);
+        Assert.Equal("Package manager: Homebrew (brew)", viewModel.SetupPlanPackageManagerLabel);
+        Assert.Equal("Toolchain profile: React Native Stable (0.76.x)", viewModel.SetupPlanToolchainLabel);
+        Assert.Equal(1, setupPlanService.CallCount);
+        Assert.Equal(SetupPlanRequest.Default, setupPlanService.LastRequest);
+    }
+
     [Fact]
     public void MainViewModelShowsGroupedTemplateCatalogView()
     {
@@ -712,6 +791,38 @@ public sealed class DesktopShellSmokeTests
             AndroidToolsSummary = new DependencyCheckSummary([
                 DependencyCheckResult.Failed("Android SDK", null, "Android SDK was not found.", "Install Android Studio.")
             ])
+        };
+    }
+
+    private static FakeSetupPlanService CreateSetupPlanService()
+    {
+        return new FakeSetupPlanService
+        {
+            Plan = new SetupPlan(
+                "macOS",
+                new PackageManagerInfo("Homebrew", true, "brew"),
+                [
+                    new SetupPlanItem(
+                        "Node.js",
+                        SetupPlanItemKind.Command,
+                        "Install Node.js",
+                        ["brew install node"]),
+                    new SetupPlanItem(
+                        "Watchman",
+                        SetupPlanItemKind.Manual,
+                        "Install Watchman manually",
+                        ["Open the Watchman install guide."]),
+                    new SetupPlanItem(
+                        "ANDROID_HOME",
+                        SetupPlanItemKind.Environment,
+                        "Set Android SDK environment variables",
+                        ["Export ANDROID_HOME in your shell profile."])
+                ],
+                new SetupPlanToolchainProfile(
+                    "react-native-stable",
+                    "React Native Stable",
+                    "0.76.x",
+                    true))
         };
     }
 
