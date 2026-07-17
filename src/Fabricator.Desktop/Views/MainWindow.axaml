@@ -652,6 +652,31 @@
                                                     <TextBlock Text="{Binding SelectedProjectDetail.NextActionsSummary}"
                                                                Foreground="#101828"
                                                                TextWrapping="Wrap" />
+                                                    <ItemsControl ItemsSource="{Binding SelectedProjectDetail.NextActionItems}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid ColumnDefinitions="*,Auto"
+                                                                      RowDefinitions="Auto,Auto"
+                                                                      RowSpacing="2"
+                                                                      Margin="0,0,0,6">
+                                                                    <TextBlock Text="{Binding Label}"
+                                                                               Foreground="#475467"
+                                                                               FontSize="12" />
+                                                                    <TextBlock Grid.Column="1"
+                                                                               Text="{Binding Status}"
+                                                                               Foreground="#101828"
+                                                                               FontSize="12"
+                                                                               FontWeight="SemiBold" />
+                                                                    <TextBlock Grid.Row="1"
+                                                                               Grid.ColumnSpan="2"
+                                                                               Text="{Binding Detail}"
+                                                                               Foreground="#667085"
+                                                                               FontSize="12"
+                                                                               TextWrapping="Wrap" />
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
                                                 </StackPanel>
                                             </Grid>
                                         </Grid>

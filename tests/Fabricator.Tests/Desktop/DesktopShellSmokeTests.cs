@@ -835,6 +835,10 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.SelectedProjectDetail.ReleaseChecklistItems, item =>
             item.Label == "Release checklist" &&
             item.Status == "Missing");
+        Assert.Contains(viewModel.SelectedProjectDetail.NextActionItems, item =>
+            item.Label == "Next actions" &&
+            item.Status == "Missing" &&
+            item.Detail == "No local next actions.");
     }
 
     [AvaloniaFact]
@@ -895,7 +899,8 @@ public sealed class DesktopShellSmokeTests
                   "id": "screenshots",
                   "title": "Prepare screenshots",
                   "group": "publishing",
-                  "status": "open"
+                  "status": "open",
+                  "notes": "Capture localized store screenshots."
                 }
               ]
             }
@@ -951,6 +956,8 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Need localized screenshots.", visibleText);
         Assert.Contains("Next Actions", visibleText);
         Assert.Contains("1 next action(s)", visibleText);
+        Assert.Contains("Prepare screenshots", visibleText);
+        Assert.Contains("Group: publishing. Capture localized store screenshots.", visibleText);
     }
 
     private static void CreateTemplateCatalog(string workspacePath)
