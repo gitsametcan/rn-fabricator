@@ -3,6 +3,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using Fabricator.Core;
+using Fabricator.Core.Environment;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
@@ -140,6 +141,8 @@ public sealed class DesktopShellSmokeTests
         Assert.False(viewModel.IsCreateFormEnabled);
         Assert.True(viewModel.IsCreateEditStep);
         Assert.False(viewModel.IsCreateReviewStep);
+        Assert.False(viewModel.IsDoctorView);
+        Assert.False(viewModel.HasDoctorResults);
         Assert.False(viewModel.IsCreateConfirmed);
         Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
         Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
@@ -467,6 +470,80 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("Install during create", viewModel.CreateInstallPodsLabel);
     }
 
+    [AvaloniaFact]
+    public async Task MainWindowRendersDoctorView()
+    {
+        using var workspace = new TemporaryDirectory();
+        var dependencyCheckService = CreateDoctorService();
+        var createService = new RecordingCreateProjectService(
+            BuildCreateProjectResult("UnusedApp", workspace.Path, ExitCodes.Success, string.Empty, string.Empty));
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService,
+            dependencyCheckService);
+
+        await viewModel.ShowDoctorCommand.ExecuteAsync(null);
+
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var visibleText = window
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(textBlock => textBlock.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+
+        Assert.Contains("Doctor", visibleText);
+        Assert.Contains("Environment checks", visibleText);
+        Assert.Contains("Core tools", visibleText);
+        Assert.Contains("Apple tools", visibleText);
+        Assert.Contains("Android tools", visibleText);
+        Assert.Contains("Node.js", visibleText);
+        Assert.Contains("Watchman", visibleText);
+        Assert.Contains("Android SDK", visibleText);
+        Assert.Contains("Install Watchman.", visibleText);
+        Assert.Contains("Install Android Studio.", visibleText);
+        Assert.Contains("Run Doctor", visibleText);
+        Assert.Contains("Back to workspace", visibleText);
+    }
+
+    [Fact]
+    public async Task MainViewModelRunsDoctorChecks()
+    {
+        using var workspace = new TemporaryDirectory();
+        var dependencyCheckService = CreateDoctorService();
+        var createService = new RecordingCreateProjectService(
+            BuildCreateProjectResult("UnusedApp", workspace.Path, ExitCodes.Success, string.Empty, string.Empty));
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService,
+            dependencyCheckService);
+
+        await viewModel.ShowDoctorCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.IsDoctorView);
+        Assert.False(viewModel.IsWorkspaceView);
+        Assert.True(viewModel.HasDoctorRun);
+        Assert.False(viewModel.IsDoctorRunning);
+        Assert.True(viewModel.HasDoctorResults);
+        Assert.Equal(3, viewModel.DoctorGroups.Count);
+        Assert.Equal("Passed 1, warnings 1, failed 1.", viewModel.DoctorSummaryLabel);
+        Assert.Equal("Doctor found required tools that need attention.", viewModel.DoctorStatus);
+        Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Core tools");
+        Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Apple tools");
+        Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Android tools");
+    }
+
     [Fact]
     public void MainViewModelShowsGroupedTemplateCatalogView()
     {
@@ -620,6 +697,22 @@ public sealed class DesktopShellSmokeTests
         var path = Path.Combine(workspacePath, relativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, contents);
+    }
+
+    private static FakeDependencyCheckService CreateDoctorService()
+    {
+        return new FakeDependencyCheckService
+        {
+            CoreToolsSummary = new DependencyCheckSummary([
+                DependencyCheckResult.Passed("Node.js", "v20.11.1", "Node.js is installed.")
+            ]),
+            AppleToolsSummary = new DependencyCheckSummary([
+                DependencyCheckResult.Warning("Watchman", null, "Watchman was not found.", "Install Watchman.")
+            ]),
+            AndroidToolsSummary = new DependencyCheckSummary([
+                DependencyCheckResult.Failed("Android SDK", null, "Android SDK was not found.", "Install Android Studio.")
+            ])
+        };
     }
 
     private static CreateProjectResult BuildCreateProjectResult(
