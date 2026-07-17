@@ -1,4 +1,5 @@
 using Fabricator.Core;
+using Fabricator.Core.Environment;
 using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
@@ -16,6 +17,7 @@ public sealed class MainViewModel : ViewModelBase
     private readonly IWorkspaceProjectDetailService _workspaceProjectDetailService;
     private readonly IWorkspaceSettingsStore _workspaceSettingsStore;
     private readonly ICreateProjectService _createProjectService;
+    private readonly IDependencyCheckService _dependencyCheckService;
     private string _workspaceInputPath = string.Empty;
     private string _selectedWorkspacePath = "No workspace selected";
     private string _workspaceStatus = "Select a workspace directory to begin.";
@@ -28,6 +30,7 @@ public sealed class MainViewModel : ViewModelBase
     private WorkspaceProjectDetailViewModel? _selectedProjectDetail;
     private bool _isTemplatesView;
     private bool _isCreateView;
+    private bool _isDoctorView;
     private string _createProjectName = string.Empty;
     private string _createOutputDirectory = string.Empty;
     private string _createTemplateName = CreateProjectService.DefaultStarterId;
@@ -45,13 +48,19 @@ public sealed class MainViewModel : ViewModelBase
     private string _createStandardOutput = string.Empty;
     private string _createStandardError = string.Empty;
     private string _createResultSummary = "Create has not run.";
+    private IReadOnlyList<DoctorCheckGroupViewModel> _doctorGroups = [];
+    private bool _isDoctorRunning;
+    private bool _hasDoctorRun;
+    private string _doctorStatus = "Run Doctor to check the local React Native toolchain.";
+    private string _doctorSummaryLabel = "No checks have run.";
 
     public MainViewModel()
         : this(
             new WorkspaceDiscoveryService(),
             new WorkspaceProjectDetailService(),
             new FileWorkspaceSettingsStore(),
-            CreateDefaultCreateProjectService())
+            CreateDefaultCreateProjectService(),
+            CreateDefaultDependencyCheckService())
     {
     }
 
@@ -62,7 +71,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceDiscoveryService,
             new WorkspaceProjectDetailService(),
             workspaceSettingsStore,
-            CreateDefaultCreateProjectService())
+            CreateDefaultCreateProjectService(),
+            CreateDefaultDependencyCheckService())
     {
     }
 
@@ -74,7 +84,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceDiscoveryService,
             workspaceProjectDetailService,
             workspaceSettingsStore,
-            CreateDefaultCreateProjectService())
+            CreateDefaultCreateProjectService(),
+            CreateDefaultDependencyCheckService())
     {
     }
 
@@ -83,17 +94,35 @@ public sealed class MainViewModel : ViewModelBase
         IWorkspaceProjectDetailService workspaceProjectDetailService,
         IWorkspaceSettingsStore workspaceSettingsStore,
         ICreateProjectService createProjectService)
+        : this(
+            workspaceDiscoveryService,
+            workspaceProjectDetailService,
+            workspaceSettingsStore,
+            createProjectService,
+            CreateDefaultDependencyCheckService())
+    {
+    }
+
+    public MainViewModel(
+        IWorkspaceDiscoveryService workspaceDiscoveryService,
+        IWorkspaceProjectDetailService workspaceProjectDetailService,
+        IWorkspaceSettingsStore workspaceSettingsStore,
+        ICreateProjectService createProjectService,
+        IDependencyCheckService dependencyCheckService)
     {
         _workspaceDiscoveryService = workspaceDiscoveryService;
         _workspaceProjectDetailService = workspaceProjectDetailService;
         _workspaceSettingsStore = workspaceSettingsStore;
         _createProjectService = createProjectService;
+        _dependencyCheckService = dependencyCheckService;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
         ClearProjectSelectionCommand = new RelayCommand(() => SelectProject(null));
         ShowWorkspaceCommand = new RelayCommand(ShowWorkspace);
         ShowTemplatesCommand = new RelayCommand(ShowTemplates);
         ShowCreateCommand = new RelayCommand(ShowCreate);
+        ShowDoctorCommand = new AsyncRelayCommand(ShowDoctorAsync);
+        RunDoctorCommand = new AsyncRelayCommand(RunDoctorAsync);
         ReviewCreateCommand = new RelayCommand(ReviewCreate);
         EditCreateCommand = new RelayCommand(EditCreate);
         ConfirmCreateCommand = new AsyncRelayCommand(ConfirmCreateAsync);
@@ -221,6 +250,7 @@ public sealed class MainViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(IsWorkspaceView));
                 OnPropertyChanged(nameof(IsCreateView));
+                OnPropertyChanged(nameof(IsDoctorView));
             }
         }
     }
@@ -234,11 +264,26 @@ public sealed class MainViewModel : ViewModelBase
             {
                 OnPropertyChanged(nameof(IsWorkspaceView));
                 OnPropertyChanged(nameof(IsTemplatesView));
+                OnPropertyChanged(nameof(IsDoctorView));
             }
         }
     }
 
-    public bool IsWorkspaceView => !IsTemplatesView && !IsCreateView;
+    public bool IsDoctorView
+    {
+        get => _isDoctorView;
+        private set
+        {
+            if (SetProperty(ref _isDoctorView, value))
+            {
+                OnPropertyChanged(nameof(IsWorkspaceView));
+                OnPropertyChanged(nameof(IsTemplatesView));
+                OnPropertyChanged(nameof(IsCreateView));
+            }
+        }
+    }
+
+    public bool IsWorkspaceView => !IsTemplatesView && !IsCreateView && !IsDoctorView;
 
     public string CreateProjectName
     {
@@ -374,6 +419,47 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _createResultSummary, value);
     }
 
+    public IReadOnlyList<DoctorCheckGroupViewModel> DoctorGroups
+    {
+        get => _doctorGroups;
+        private set
+        {
+            if (SetProperty(ref _doctorGroups, value))
+            {
+                OnPropertyChanged(nameof(HasDoctorResults));
+                OnPropertyChanged(nameof(HasNoDoctorResults));
+            }
+        }
+    }
+
+    public bool HasDoctorResults => DoctorGroups.Count > 0;
+
+    public bool HasNoDoctorResults => !HasDoctorResults;
+
+    public bool IsDoctorRunning
+    {
+        get => _isDoctorRunning;
+        private set => SetProperty(ref _isDoctorRunning, value);
+    }
+
+    public bool HasDoctorRun
+    {
+        get => _hasDoctorRun;
+        private set => SetProperty(ref _hasDoctorRun, value);
+    }
+
+    public string DoctorStatus
+    {
+        get => _doctorStatus;
+        private set => SetProperty(ref _doctorStatus, value);
+    }
+
+    public string DoctorSummaryLabel
+    {
+        get => _doctorSummaryLabel;
+        private set => SetProperty(ref _doctorSummaryLabel, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -424,6 +510,10 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand ShowTemplatesCommand { get; }
 
     public IRelayCommand ShowCreateCommand { get; }
+
+    public IAsyncRelayCommand ShowDoctorCommand { get; }
+
+    public IAsyncRelayCommand RunDoctorCommand { get; }
 
     public IRelayCommand ReviewCreateCommand { get; }
 
@@ -490,6 +580,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             IsTemplatesView = false;
             IsCreateView = false;
+            IsDoctorView = false;
         }
 
         WorkspaceStatus = result.WorkspaceExists
@@ -550,22 +641,80 @@ public sealed class MainViewModel : ViewModelBase
     {
         IsTemplatesView = false;
         IsCreateView = false;
+        IsDoctorView = false;
     }
 
     private void ShowTemplates()
     {
         IsCreateView = false;
+        IsDoctorView = false;
         IsTemplatesView = true;
     }
 
     private void ShowCreate()
     {
         IsTemplatesView = false;
+        IsDoctorView = false;
         IsCreateView = true;
 
         if (!HasWorkspace)
         {
             CreateFormStatus = "Load an existing workspace before creating a project.";
+        }
+    }
+
+    private async Task ShowDoctorAsync()
+    {
+        IsTemplatesView = false;
+        IsCreateView = false;
+        IsDoctorView = true;
+
+        if (!HasDoctorRun)
+        {
+            await RunDoctorAsync();
+        }
+    }
+
+    private async Task RunDoctorAsync()
+    {
+        if (IsDoctorRunning)
+        {
+            return;
+        }
+
+        IsDoctorRunning = true;
+        HasDoctorRun = true;
+        DoctorStatus = "Checking local React Native development tools.";
+        DoctorSummaryLabel = "Checks are running.";
+        DoctorGroups = [];
+
+        try
+        {
+            var coreSummary = await _dependencyCheckService.CheckCoreToolsAsync();
+            var appleSummary = await _dependencyCheckService.CheckAppleToolsAsync();
+            var androidSummary = await _dependencyCheckService.CheckAndroidToolsAsync();
+            DoctorGroups =
+            [
+                new DoctorCheckGroupViewModel("Core tools", coreSummary),
+                new DoctorCheckGroupViewModel("Apple tools", appleSummary),
+                new DoctorCheckGroupViewModel("Android tools", androidSummary)
+            ];
+
+            var combined = new DependencyCheckSummary(DoctorGroups.SelectMany(group => group.Results).Select(item => item.Result).ToArray());
+            DoctorSummaryLabel = $"Passed {combined.PassedCount}, warnings {combined.WarningCount}, failed {combined.FailedCount}.";
+            DoctorStatus = combined.HasRequiredFailures
+                ? "Doctor found required tools that need attention."
+                : "Doctor checks completed.";
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            DoctorStatus = $"Doctor failed unexpectedly: {exception.Message}";
+            DoctorSummaryLabel = "Checks failed.";
+            DoctorGroups = [];
+        }
+        finally
+        {
+            IsDoctorRunning = false;
         }
     }
 
@@ -708,6 +857,11 @@ public sealed class MainViewModel : ViewModelBase
         return new CreateProjectService(new CreateProjectValidator(), new ProcessRunner());
     }
 
+    private static IDependencyCheckService CreateDefaultDependencyCheckService()
+    {
+        return new DependencyCheckService(new ProcessRunner());
+    }
+
     private static string FormatCommand(ProcessRunRequest command)
     {
         var parts = new List<string> { command.FileName };
@@ -797,4 +951,52 @@ public sealed class MainViewModel : ViewModelBase
             return [];
         }
     }
+}
+
+public sealed class DoctorCheckGroupViewModel
+{
+    public DoctorCheckGroupViewModel(string title, DependencyCheckSummary summary)
+    {
+        Title = title;
+        Results = summary.Results
+            .Select(result => new DoctorCheckItemViewModel(result))
+            .ToArray();
+        Summary = $"Passed {summary.PassedCount}, warnings {summary.WarningCount}, failed {summary.FailedCount}.";
+    }
+
+    public string Title { get; }
+
+    public string Summary { get; }
+
+    public IReadOnlyList<DoctorCheckItemViewModel> Results { get; }
+}
+
+public sealed class DoctorCheckItemViewModel
+{
+    public DoctorCheckItemViewModel(DependencyCheckResult result)
+    {
+        Result = result;
+    }
+
+    public DependencyCheckResult Result { get; }
+
+    public string Name => Result.Name;
+
+    public string StatusLabel => Result.Status switch
+    {
+        DependencyCheckStatus.Passed => "PASS",
+        DependencyCheckStatus.Warning => "WARN",
+        DependencyCheckStatus.Failed => "FAIL",
+        _ => "UNKNOWN"
+    };
+
+    public string VersionLabel => string.IsNullOrWhiteSpace(Result.DetectedVersion)
+        ? "Version not detected"
+        : Result.DetectedVersion;
+
+    public string Message => Result.Message;
+
+    public string RemediationHint => Result.RemediationHint ?? string.Empty;
+
+    public bool HasRemediationHint => !string.IsNullOrWhiteSpace(Result.RemediationHint);
 }
