@@ -815,6 +815,88 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("current-focus.md found", viewModel.SelectedProjectDetail.AgentCurrentFocusStatus);
         Assert.Equal("Build the workspace UI.", viewModel.SelectedProjectDetail.AgentCurrentFocusSummary);
         Assert.Equal("1 open question(s)", viewModel.SelectedProjectDetail.AgentOpenQuestionCount);
+        Assert.Equal("Command center metadata missing", viewModel.SelectedProjectDetail.CommandCenterStatus);
+        Assert.Equal("No publishing metadata yet.", viewModel.SelectedProjectDetail.PublishingSummary);
+        Assert.Equal("No market research notes yet.", viewModel.SelectedProjectDetail.ResearchSummary);
+        Assert.Equal("No release checklist yet.", viewModel.SelectedProjectDetail.ReleaseChecklistSummary);
+        Assert.Equal("No next actions yet.", viewModel.SelectedProjectDetail.NextActionsSummary);
+    }
+
+    [AvaloniaFact]
+    public void MainWindowRendersApplicationCommandCenterShell()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "CommandCenterApp");
+        WriteFile(
+            workspace.Path,
+            "CommandCenterApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "publishing": {
+                "ios": {
+                  "status": "ready"
+                },
+                "android": {
+                  "status": "missing"
+                }
+              },
+              "marketResearch": {
+                "keywords": ["fitness", "habit"],
+                "competitors": ["Competitor A"],
+                "openQuestions": ["Which geography first?"]
+              },
+              "releaseChecklist": {
+                "items": [
+                  {
+                    "id": "privacy-policy",
+                    "title": "Privacy policy",
+                    "status": "ready"
+                  }
+                ]
+              },
+              "nextActions": [
+                {
+                  "id": "screenshots",
+                  "title": "Prepare screenshots",
+                  "group": "publishing",
+                  "status": "open"
+                }
+              ]
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var visibleText = window
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(textBlock => textBlock.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+
+        Assert.Contains("Application Command Center", visibleText);
+        Assert.Contains("Command center metadata loaded", visibleText);
+        Assert.Contains("Publishing", visibleText);
+        Assert.Contains("iOS: ready; Android: missing", visibleText);
+        Assert.Contains("Research", visibleText);
+        Assert.Contains("2 keyword(s), 1 competitor(s), 1 open question(s)", visibleText);
+        Assert.Contains("Release", visibleText);
+        Assert.Contains("1 release checklist item(s)", visibleText);
+        Assert.Contains("Next Actions", visibleText);
+        Assert.Contains("1 next action(s)", visibleText);
     }
 
     private static void CreateTemplateCatalog(string workspacePath)

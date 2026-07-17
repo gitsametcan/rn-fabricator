@@ -41,6 +41,20 @@ public sealed class WorkspaceProjectDetailViewModel
             : "current-focus.md missing";
         AgentCurrentFocusSummary = Missing(detail.AgentMemory.CurrentFocusSummary);
         AgentOpenQuestionCount = $"{detail.AgentMemory.OpenQuestionCount} open question(s)";
+        CommandCenterStatus = BuildCommandCenterStatus(detail.CommandCenterMetadata);
+        CommandCenterMetadataPath = detail.CommandCenterMetadata.MetadataPath;
+        PublishingSummary = detail.CommandCenterMetadata.HasMetadata
+            ? BuildPublishingSummary(detail.CommandCenterMetadata.Metadata.Publishing)
+            : "No publishing metadata yet.";
+        ResearchSummary = detail.CommandCenterMetadata.HasMetadata
+            ? BuildResearchSummary(detail.CommandCenterMetadata.Metadata.MarketResearch)
+            : "No market research notes yet.";
+        ReleaseChecklistSummary = detail.CommandCenterMetadata.HasMetadata
+            ? $"{detail.CommandCenterMetadata.Metadata.ReleaseChecklist.Items.Count} release checklist item(s)"
+            : "No release checklist yet.";
+        NextActionsSummary = detail.CommandCenterMetadata.HasMetadata
+            ? $"{detail.CommandCenterMetadata.Metadata.NextActions.Count} next action(s)"
+            : "No next actions yet.";
     }
 
     public string DisplayName { get; }
@@ -89,6 +103,18 @@ public sealed class WorkspaceProjectDetailViewModel
 
     public string AgentOpenQuestionCount { get; }
 
+    public string CommandCenterStatus { get; }
+
+    public string CommandCenterMetadataPath { get; }
+
+    public string PublishingSummary { get; }
+
+    public string ResearchSummary { get; }
+
+    public string ReleaseChecklistSummary { get; }
+
+    public string NextActionsSummary { get; }
+
     private static string Missing(string? value)
     {
         return string.IsNullOrWhiteSpace(value)
@@ -101,5 +127,37 @@ public sealed class WorkspaceProjectDetailViewModel
         return lastModified is null
             ? string.Empty
             : $" ({lastModified.Value.UtcDateTime:yyyy-MM-dd HH:mm} UTC)";
+    }
+
+    private static string BuildCommandCenterStatus(ApplicationCommandCenterMetadataReadResult result)
+    {
+        if (!result.Exists)
+        {
+            return "Command center metadata missing";
+        }
+
+        if (!result.IsValid)
+        {
+            return $"Command center metadata invalid: {string.Join(" ", result.Errors)}";
+        }
+
+        return "Command center metadata loaded";
+    }
+
+    private static string BuildPublishingSummary(ApplicationPublishingMetadata publishing)
+    {
+        var iosStatus = Missing(publishing.Ios.Status);
+        var androidStatus = Missing(publishing.Android.Status);
+
+        return $"iOS: {iosStatus}; Android: {androidStatus}";
+    }
+
+    private static string BuildResearchSummary(ApplicationMarketResearchMetadata research)
+    {
+        var keywordCount = research.Keywords.Count;
+        var competitorCount = research.Competitors.Count;
+        var questionCount = research.OpenQuestions.Count;
+
+        return $"{keywordCount} keyword(s), {competitorCount} competitor(s), {questionCount} open question(s)";
     }
 }
