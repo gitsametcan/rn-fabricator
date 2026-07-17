@@ -842,6 +842,44 @@ public sealed class DesktopShellSmokeTests
     }
 
     [AvaloniaFact]
+    public void MainWindowRendersApplicationCommandCenterEmptyStates()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "EmptyCommandCenterApp");
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var visibleText = window
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(textBlock => textBlock.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+
+        Assert.Contains("Application Command Center", visibleText);
+        Assert.Contains("Command center metadata missing", visibleText);
+        Assert.Contains("No publishing metadata yet.", visibleText);
+        Assert.Contains("Release metadata", visibleText);
+        Assert.Contains("Add .fabricator/app-command-center.json to track release metadata.", visibleText);
+        Assert.Contains("No market research notes yet.", visibleText);
+        Assert.Contains("No release checklist yet.", visibleText);
+        Assert.Contains("No local checklist items.", visibleText);
+        Assert.Contains("No next actions yet.", visibleText);
+        Assert.Contains("No local next actions.", visibleText);
+    }
+
+    [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
         using var workspace = new TemporaryDirectory();
