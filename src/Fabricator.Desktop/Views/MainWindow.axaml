@@ -62,10 +62,10 @@
                         CornerRadius="6"
                         Background="#344054">
                     <StackPanel Spacing="2">
-                        <TextBlock Text="Desktop foundation"
+                        <TextBlock Text="Workspace discovery"
                                    Foreground="#FFFFFF"
                                    FontWeight="SemiBold" />
-                        <TextBlock Text="Avalonia / .NET 8"
+                        <TextBlock Text="{Binding ProjectCountLabel}"
                                    Foreground="#D0D5DD"
                                    FontSize="12" />
                     </StackPanel>
@@ -101,84 +101,171 @@
 
                 <Grid Grid.Row="1"
                       Margin="0,28,0,0"
-                      ColumnDefinitions="*,*"
-                      RowDefinitions="Auto,*"
-                      ColumnSpacing="16"
+                      RowDefinitions="Auto,Auto,*"
                       RowSpacing="16">
                     <Border Padding="20"
                             CornerRadius="8"
                             Background="#FFFFFF"
                             BorderBrush="#E4E7EC"
                             BorderThickness="1">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Current focus"
-                                       Foreground="#101828"
-                                       FontSize="18"
-                                       FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding CurrentFocus}"
-                                       Foreground="#475467"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
+                        <Grid RowDefinitions="Auto,Auto"
+                              RowSpacing="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Workspace root"
+                                           Foreground="#101828"
+                                           FontSize="18"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding WorkspaceStatus}"
+                                           Foreground="#475467"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="10">
+                                <TextBox Text="{Binding WorkspaceInputPath}"
+                                         Watermark="Path to a folder containing mobile projects and templates" />
+                                <Button Grid.Column="1"
+                                        Padding="16,8"
+                                        Command="{Binding LoadWorkspaceCommand}">
+                                    <TextBlock Text="Load workspace" />
+                                </Button>
+                            </Grid>
+                        </Grid>
                     </Border>
 
-                    <Border Grid.Column="1"
+                    <Grid Grid.Row="1"
+                          ColumnDefinitions="*,*,Auto"
+                          ColumnSpacing="16">
+                        <Border Padding="16"
+                                CornerRadius="8"
+                                Background="#FFFFFF"
+                                BorderBrush="#E4E7EC"
+                                BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Selected workspace"
+                                           Foreground="#475467"
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SelectedWorkspacePath}"
+                                           Foreground="#101828"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1"
+                                Padding="16"
+                                CornerRadius="8"
+                                Background="#FFFFFF"
+                                BorderBrush="#E4E7EC"
+                                BorderThickness="1">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Projects"
+                                           Foreground="#475467"
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding ProjectCountLabel}"
+                                           Foreground="#101828"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding MissingFabricatorStateLabel}"
+                                           Foreground="#667085"
+                                           FontSize="12" />
+                            </StackPanel>
+                        </Border>
+
+                        <Button Grid.Column="2"
+                                Padding="18,10"
+                                VerticalAlignment="Stretch"
+                                IsVisible="{Binding HasTemplateCatalog}">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Templates"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="Open catalog"
+                                           FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <Border Grid.Row="2"
                             Padding="20"
                             CornerRadius="8"
                             Background="#FFFFFF"
                             BorderBrush="#E4E7EC"
                             BorderThickness="1">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Command boundary"
-                                       Foreground="#101828"
-                                       FontSize="18"
-                                       FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding CommandBoundary}"
-                                       Foreground="#475467"
-                                       TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
+                        <Grid RowDefinitions="Auto,*">
+                            <Grid ColumnDefinitions="*,Auto"
+                                  Margin="0,0,0,14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Mobile projects"
+                                               Foreground="#101828"
+                                               FontSize="18"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding TemplateCatalogStatus}"
+                                               Foreground="#667085"
+                                               FontSize="12"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
 
-                    <Border Grid.Row="1"
-                            Grid.ColumnSpan="2"
-                            Padding="20"
-                            CornerRadius="8"
-                            Background="#FFFFFF"
-                            BorderBrush="#E4E7EC"
-                            BorderThickness="1">
-                        <StackPanel Spacing="14">
-                            <TextBlock Text="Planned workflows"
-                                       Foreground="#101828"
-                                       FontSize="18"
-                                       FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SelectedProjectLabel}"
+                                           Foreground="#475467"
+                                           VerticalAlignment="Top" />
+                            </Grid>
 
-                            <ItemsControl ItemsSource="{Binding WorkflowCards}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Columns="2" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Padding="14"
-                                                Margin="0,0,12,12"
-                                                CornerRadius="6"
-                                                Background="#F9FAFB"
-                                                BorderBrush="#EAECF0"
-                                                BorderThickness="1">
-                                            <StackPanel Spacing="4">
-                                                <TextBlock Text="{Binding Title}"
-                                                           Foreground="#101828"
-                                                           FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding Description}"
-                                                           Foreground="#667085"
-                                                           FontSize="12"
-                                                           TextWrapping="Wrap" />
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
+                            <Grid Grid.Row="1">
+                                <TextBlock Text="{Binding EmptyProjectListMessage}"
+                                           Foreground="#667085"
+                                           IsVisible="{Binding HasNoProjects}" />
+
+                                <ScrollViewer IsVisible="{Binding HasProjects}">
+                                    <ItemsControl ItemsSource="{Binding Projects}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Margin="0,0,0,8"
+                                                        Padding="0"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Stretch"
+                                                        Command="{Binding DataContext.SelectProjectCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Border Padding="14"
+                                                            CornerRadius="6"
+                                                            Background="#F9FAFB"
+                                                            BorderBrush="#EAECF0"
+                                                            BorderThickness="1">
+                                                        <Grid ColumnDefinitions="*,Auto"
+                                                              RowDefinitions="Auto,Auto,Auto"
+                                                              RowSpacing="3">
+                                                            <TextBlock Text="{Binding Name}"
+                                                                       Foreground="#101828"
+                                                                       FontWeight="SemiBold" />
+                                                            <Border Grid.Column="1"
+                                                                    Padding="8,4"
+                                                                    CornerRadius="4"
+                                                                    Background="#EEF2FF">
+                                                                <TextBlock Text="{Binding Status}"
+                                                                           Foreground="#3730A3"
+                                                                           FontSize="12"
+                                                                           FontWeight="SemiBold" />
+                                                            </Border>
+                                                            <TextBlock Grid.Row="1"
+                                                                       Text="{Binding Details}"
+                                                                       Foreground="#475467"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBlock Grid.Row="2"
+                                                                       Grid.ColumnSpan="2"
+                                                                       Text="{Binding SignalSummary}"
+                                                                       Foreground="#667085"
+                                                                       FontSize="12"
+                                                                       TextWrapping="Wrap" />
+                                                        </Grid>
+                                                    </Border>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>
