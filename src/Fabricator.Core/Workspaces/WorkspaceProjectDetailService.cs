@@ -7,6 +7,18 @@ namespace Fabricator.Core.Workspaces;
 
 public sealed class WorkspaceProjectDetailService : IWorkspaceProjectDetailService
 {
+    private readonly IApplicationCommandCenterMetadataService _commandCenterMetadataService;
+
+    public WorkspaceProjectDetailService()
+        : this(new ApplicationCommandCenterMetadataService())
+    {
+    }
+
+    public WorkspaceProjectDetailService(IApplicationCommandCenterMetadataService commandCenterMetadataService)
+    {
+        _commandCenterMetadataService = commandCenterMetadataService;
+    }
+
     public WorkspaceProjectDetail GetDetail(string projectPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(projectPath);
@@ -33,7 +45,8 @@ public sealed class WorkspaceProjectDetailService : IWorkspaceProjectDetailServi
             state.AppliedTemplateCount,
             ReadStatistics(fullProjectPath),
             storeMetadata,
-            ReadAgentMemory(fullProjectPath));
+            ReadAgentMemory(fullProjectPath),
+            _commandCenterMetadataService.Read(fullProjectPath));
     }
 
     private static (string? ProjectName, int AppliedTemplateCount) ReadFabricatorState(string projectPath)

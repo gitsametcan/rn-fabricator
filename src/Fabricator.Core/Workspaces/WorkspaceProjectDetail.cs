@@ -10,4 +10,5 @@ public sealed record WorkspaceProjectDetail(
     int AppliedTemplateCount,
     WorkspaceProjectStatistics Statistics,
     WorkspaceStoreMetadata StoreMetadata,
-    WorkspaceAgentMemory AgentMemory);
+    WorkspaceAgentMemory AgentMemory,
+    ApplicationCommandCenterMetadataReadResult CommandCenterMetadata);
