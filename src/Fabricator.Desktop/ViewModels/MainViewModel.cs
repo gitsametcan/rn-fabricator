@@ -1,4 +1,5 @@
 using Fabricator.Core;
+using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
 using Fabricator.Core.Workspaces;
 using Fabricator.Desktop.WorkspaceSettings;
@@ -23,6 +24,12 @@ public sealed class MainViewModel : ViewModelBase
     private WorkspaceProjectItemViewModel? _selectedProject;
     private WorkspaceProjectDetailViewModel? _selectedProjectDetail;
     private bool _isTemplatesView;
+    private bool _isCreateView;
+    private string _createProjectName = string.Empty;
+    private string _createOutputDirectory = string.Empty;
+    private string _createTemplateName = CreateProjectService.DefaultStarterId;
+    private string _createTemplateSource = string.Empty;
+    private string _createFormStatus = "Load a workspace before creating a project.";
 
     public MainViewModel()
         : this(new WorkspaceDiscoveryService(), new WorkspaceProjectDetailService(), new FileWorkspaceSettingsStore())
@@ -46,8 +53,9 @@ public sealed class MainViewModel : ViewModelBase
         _workspaceSettingsStore = workspaceSettingsStore;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
-        ShowWorkspaceCommand = new RelayCommand(() => IsTemplatesView = false);
-        ShowTemplatesCommand = new RelayCommand(() => IsTemplatesView = true);
+        ShowWorkspaceCommand = new RelayCommand(ShowWorkspace);
+        ShowTemplatesCommand = new RelayCommand(ShowTemplates);
+        ShowCreateCommand = new RelayCommand(ShowCreate);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -93,7 +101,13 @@ public sealed class MainViewModel : ViewModelBase
     public bool HasWorkspace
     {
         get => _hasWorkspace;
-        private set => SetProperty(ref _hasWorkspace, value);
+        private set
+        {
+            if (SetProperty(ref _hasWorkspace, value))
+            {
+                OnPropertyChanged(nameof(IsCreateFormEnabled));
+            }
+        }
     }
 
     public bool HasTemplateCatalog
@@ -165,11 +179,57 @@ public sealed class MainViewModel : ViewModelBase
             if (SetProperty(ref _isTemplatesView, value))
             {
                 OnPropertyChanged(nameof(IsWorkspaceView));
+                OnPropertyChanged(nameof(IsCreateView));
             }
         }
     }
 
-    public bool IsWorkspaceView => !IsTemplatesView;
+    public bool IsCreateView
+    {
+        get => _isCreateView;
+        private set
+        {
+            if (SetProperty(ref _isCreateView, value))
+            {
+                OnPropertyChanged(nameof(IsWorkspaceView));
+                OnPropertyChanged(nameof(IsTemplatesView));
+            }
+        }
+    }
+
+    public bool IsWorkspaceView => !IsTemplatesView && !IsCreateView;
+
+    public string CreateProjectName
+    {
+        get => _createProjectName;
+        set => SetProperty(ref _createProjectName, value);
+    }
+
+    public string CreateOutputDirectory
+    {
+        get => _createOutputDirectory;
+        set => SetProperty(ref _createOutputDirectory, value);
+    }
+
+    public string CreateTemplateName
+    {
+        get => _createTemplateName;
+        set => SetProperty(ref _createTemplateName, value);
+    }
+
+    public string CreateTemplateSource
+    {
+        get => _createTemplateSource;
+        set => SetProperty(ref _createTemplateSource, value);
+    }
+
+    public string CreateFormStatus
+    {
+        get => _createFormStatus;
+        private set => SetProperty(ref _createFormStatus, value);
+    }
+
+    public bool IsCreateFormEnabled => HasWorkspace;
 
     public bool HasTemplateGroups => TemplateGroups.Count > 0;
 
@@ -198,6 +258,8 @@ public sealed class MainViewModel : ViewModelBase
 
     public IRelayCommand ShowTemplatesCommand { get; }
 
+    public IRelayCommand ShowCreateCommand { get; }
+
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
         new("Workspace", "Local project discovery."),
@@ -222,6 +284,8 @@ public sealed class MainViewModel : ViewModelBase
             TemplateCatalogStatus = "No workspace loaded.";
             Projects = [];
             SelectedProject = null;
+            SelectedProjectDetail = null;
+            ResetCreateFormDefaults(resultWorkspacePath: string.Empty, templateCatalogPath: string.Empty, workspaceExists: false, templateCatalogExists: false);
             return;
         }
 
@@ -241,9 +305,15 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProject = null;
         SelectedProjectDetail = null;
         IsTemplatesView = false;
+        IsCreateView = false;
         WorkspaceStatus = result.WorkspaceExists
             ? $"Workspace loaded from {result.WorkspacePath}"
             : $"Workspace directory was not found: {result.WorkspacePath}";
+        ResetCreateFormDefaults(
+            result.WorkspacePath,
+            result.TemplateCatalog.Path,
+            result.WorkspaceExists,
+            result.TemplateCatalog.Exists);
 
         if (save && result.WorkspaceExists)
         {
@@ -257,6 +327,46 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = project is null
             ? null
             : new WorkspaceProjectDetailViewModel(_workspaceProjectDetailService.GetDetail(project.Path));
+    }
+
+    private void ShowWorkspace()
+    {
+        IsTemplatesView = false;
+        IsCreateView = false;
+    }
+
+    private void ShowTemplates()
+    {
+        IsCreateView = false;
+        IsTemplatesView = true;
+    }
+
+    private void ShowCreate()
+    {
+        IsTemplatesView = false;
+        IsCreateView = true;
+
+        if (!HasWorkspace)
+        {
+            CreateFormStatus = "Load an existing workspace before creating a project.";
+        }
+    }
+
+    private void ResetCreateFormDefaults(
+        string resultWorkspacePath,
+        string templateCatalogPath,
+        bool workspaceExists,
+        bool templateCatalogExists)
+    {
+        CreateProjectName = string.Empty;
+        CreateOutputDirectory = workspaceExists ? resultWorkspacePath : string.Empty;
+        CreateTemplateName = CreateProjectService.DefaultStarterId;
+        CreateTemplateSource = templateCatalogExists ? templateCatalogPath : string.Empty;
+        CreateFormStatus = workspaceExists
+            ? templateCatalogExists
+                ? "Ready to configure a new project. The workspace template catalog is selected."
+                : "Ready to configure a new project. Add a template source or use the embedded starter."
+            : "Load an existing workspace before creating a project.";
     }
 
     private static IReadOnlyList<TemplateCategoryGroupViewModel> LoadTemplateGroups(string catalogPath)
