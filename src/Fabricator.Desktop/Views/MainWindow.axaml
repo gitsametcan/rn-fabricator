@@ -508,7 +508,7 @@
                             </Grid>
 
                             <Grid Grid.Row="1"
-                                  RowDefinitions="Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto"
                                   RowSpacing="14"
                                   IsVisible="{Binding IsCreateReviewStep}">
                                 <StackPanel Spacing="4">
@@ -578,6 +578,65 @@
                                                    FontSize="12"
                                                    FontWeight="SemiBold" />
                                         <TextBlock Text="{Binding CreateFormStatus}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Grid.Row="2"
+                                      RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                      RowSpacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Execution"
+                                                   Foreground="#101828"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding CreateExecutionState}"
+                                                   Foreground="#475467"
+                                                   FontWeight="SemiBold" />
+                                    </Grid>
+
+                                    <StackPanel Grid.Row="1"
+                                                Spacing="4">
+                                        <TextBlock Text="Prepared command"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreatePreparedCommand}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2"
+                                                Spacing="4">
+                                        <TextBlock Text="Standard output"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateStandardOutput}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="3"
+                                                Spacing="4">
+                                        <TextBlock Text="Standard error"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateStandardError}"
+                                                   Foreground="#101828"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="4"
+                                                Spacing="4">
+                                        <TextBlock Text="Result"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding CreateResultSummary}"
                                                    Foreground="#101828"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>

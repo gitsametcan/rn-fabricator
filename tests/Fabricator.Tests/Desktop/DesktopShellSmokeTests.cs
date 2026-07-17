@@ -2,6 +2,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
+using Fabricator.Core;
+using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
 using Fabricator.Core.Workspaces;
@@ -250,26 +252,92 @@ public sealed class DesktopShellSmokeTests
     }
 
     [Fact]
-    public void MainViewModelCapturesCreateConfirmationAfterReview()
+    public async Task MainViewModelRunsCreateThroughFakeServiceAndCapturesOutput()
     {
         using var workspace = new TemporaryDirectory();
+        var result = BuildCreateProjectResult(
+            "RunApp",
+            workspace.Path,
+            ExitCodes.Success,
+            "completed\n",
+            string.Empty);
+        var createService = new RecordingCreateProjectService(result)
+        {
+            PreparedCommand = new ProcessRunRequest(
+                "npx",
+                ["@react-native-community/cli@latest", "init", "RunApp"],
+                workspace.Path),
+            StandardOutputChunk = "scaffolded\n",
+            StandardErrorChunk = "warning\n"
+        };
         var viewModel = new MainViewModel(
             new WorkspaceDiscoveryService(),
             new WorkspaceProjectDetailService(),
-            new MemoryWorkspaceSettingsStore(workspace.Path))
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService)
         {
-            CreateProjectName = "ConfirmApp"
+            CreateProjectName = "RunApp"
         };
 
         viewModel.ShowCreateCommand.Execute(null);
         viewModel.ReviewCreateCommand.Execute(null);
-        viewModel.ConfirmCreateCommand.Execute(null);
+        await viewModel.ConfirmCreateCommand.ExecuteAsync(null);
 
+        var request = Assert.Single(createService.Requests);
+        Assert.Equal("RunApp", request.ProjectName);
+        Assert.Equal(CreateProjectService.DefaultStarterId, request.TemplateName);
+        Assert.Equal(Path.GetFullPath(workspace.Path), request.OutputDirectory);
         Assert.True(viewModel.IsCreateReviewStep);
         Assert.True(viewModel.IsCreateConfirmed);
-        Assert.Equal(
-            "Create inputs confirmed. Execution will run after the next implementation step.",
-            viewModel.CreateFormStatus);
+        Assert.False(viewModel.IsCreateRunning);
+        Assert.True(viewModel.HasCreateRun);
+        Assert.True(viewModel.IsCreateSucceeded);
+        Assert.False(viewModel.IsCreateFailed);
+        Assert.Equal("Succeeded", viewModel.CreateExecutionState);
+        Assert.Equal("npx @react-native-community/cli@latest init RunApp --working-directory=" + workspace.Path, viewModel.CreatePreparedCommand);
+        Assert.Equal("scaffolded\n", viewModel.CreateStandardOutput);
+        Assert.Equal("warning\n", viewModel.CreateStandardError);
+        Assert.Equal(Path.Combine(Path.GetFullPath(workspace.Path), "RunApp"), viewModel.CreateTargetProjectPath);
+        Assert.Equal($"Created project at {Path.Combine(Path.GetFullPath(workspace.Path), "RunApp")}", viewModel.CreateResultSummary);
+        Assert.Equal("Create completed successfully.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public async Task MainViewModelRepresentsCreateFailureFromFakeService()
+    {
+        using var workspace = new TemporaryDirectory();
+        var result = BuildCreateProjectResult(
+            "FailApp",
+            workspace.Path,
+            ExitCodes.GeneralFailure,
+            string.Empty,
+            "create failed");
+        var createService = new RecordingCreateProjectService(result)
+        {
+            PreparedCommand = new ProcessRunRequest("npx", ["init", "FailApp"], workspace.Path),
+            StandardErrorChunk = "create failed"
+        };
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService)
+        {
+            CreateProjectName = "FailApp"
+        };
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+        await viewModel.ConfirmCreateCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.HasCreateRun);
+        Assert.False(viewModel.IsCreateSucceeded);
+        Assert.True(viewModel.IsCreateFailed);
+        Assert.Equal("Failed", viewModel.CreateExecutionState);
+        Assert.Equal("create failed", viewModel.CreateStandardError);
+        Assert.Contains("Process failed with exit code", viewModel.CreateResultSummary);
+        Assert.Contains("create failed", viewModel.CreateResultSummary);
+        Assert.Equal("Create failed. Review the result and logs.", viewModel.CreateFormStatus);
     }
 
     [Fact]
@@ -471,6 +539,71 @@ public sealed class DesktopShellSmokeTests
         var path = Path.Combine(workspacePath, relativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, contents);
+    }
+
+    private static CreateProjectResult BuildCreateProjectResult(
+        string projectName,
+        string outputDirectory,
+        int exitCode,
+        string standardOutput,
+        string standardError)
+    {
+        var request = new CreateProjectRequest(
+            projectName,
+            CreateProjectService.DefaultStarterId,
+            outputDirectory);
+        var validation = new CreateProjectValidator().Validate(request);
+        var command = new ProcessRunRequest("npx", ["init", projectName], outputDirectory);
+        var processResult = new ProcessRunResult(exitCode, standardOutput, standardError);
+        var starterResult = exitCode == ExitCodes.Success
+            ? CreateProjectStarterResult.Applied(CreateProjectService.DefaultStarterId, ["App.tsx"])
+            : null;
+
+        return CreateProjectResult.Completed(
+            validation,
+            command,
+            processResult,
+            CreateProjectRollbackResult.NotRequired("Rollback was not required."),
+            starterResult);
+    }
+
+    private sealed class RecordingCreateProjectService : ICreateProjectService
+    {
+        private readonly CreateProjectResult _result;
+
+        public RecordingCreateProjectService(CreateProjectResult result)
+        {
+            _result = result;
+        }
+
+        public List<CreateProjectRequest> Requests { get; } = [];
+
+        public ProcessRunRequest? PreparedCommand { get; init; }
+
+        public string StandardOutputChunk { get; init; } = string.Empty;
+
+        public string StandardErrorChunk { get; init; } = string.Empty;
+
+        public Task<CreateProjectResult> CreateAsync(
+            CreateProjectRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Requests.Add(request);
+            request.OnCommandPrepared?.Invoke(
+                PreparedCommand ?? new ProcessRunRequest("npx", ["init", request.ProjectName], request.OutputDirectory));
+
+            if (!string.IsNullOrEmpty(StandardOutputChunk))
+            {
+                request.OnStandardOutput?.Invoke(StandardOutputChunk);
+            }
+
+            if (!string.IsNullOrEmpty(StandardErrorChunk))
+            {
+                request.OnStandardError?.Invoke(StandardErrorChunk);
+            }
+
+            return Task.FromResult(_result);
+        }
     }
 
     private sealed class MemoryWorkspaceSettingsStore : IWorkspaceSettingsStore

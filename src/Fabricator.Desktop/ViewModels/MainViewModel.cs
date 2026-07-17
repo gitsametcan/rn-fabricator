@@ -1,9 +1,11 @@
 using Fabricator.Core;
+using Fabricator.Core.Processes;
 using Fabricator.Core.Projects;
 using Fabricator.Core.Templates;
 using Fabricator.Core.Workspaces;
 using Fabricator.Desktop.WorkspaceSettings;
 using CommunityToolkit.Mvvm.Input;
+using System.Text;
 using System.Text.Json;
 
 namespace Fabricator.Desktop.ViewModels;
@@ -13,6 +15,7 @@ public sealed class MainViewModel : ViewModelBase
     private readonly IWorkspaceDiscoveryService _workspaceDiscoveryService;
     private readonly IWorkspaceProjectDetailService _workspaceProjectDetailService;
     private readonly IWorkspaceSettingsStore _workspaceSettingsStore;
+    private readonly ICreateProjectService _createProjectService;
     private string _workspaceInputPath = string.Empty;
     private string _selectedWorkspacePath = "No workspace selected";
     private string _workspaceStatus = "Select a workspace directory to begin.";
@@ -32,16 +35,33 @@ public sealed class MainViewModel : ViewModelBase
     private string _createFormStatus = "Load a workspace before creating a project.";
     private bool _isCreateReviewStep;
     private bool _isCreateConfirmed;
+    private bool _isCreateRunning;
+    private bool _hasCreateRun;
+    private bool _isCreateSucceeded;
+    private bool _isCreateFailed;
+    private string _createExecutionState = "Idle";
+    private string _createPreparedCommand = "No command prepared.";
+    private string _createStandardOutput = string.Empty;
+    private string _createStandardError = string.Empty;
+    private string _createResultSummary = "Create has not run.";
 
     public MainViewModel()
-        : this(new WorkspaceDiscoveryService(), new WorkspaceProjectDetailService(), new FileWorkspaceSettingsStore())
+        : this(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new FileWorkspaceSettingsStore(),
+            CreateDefaultCreateProjectService())
     {
     }
 
     public MainViewModel(
         IWorkspaceDiscoveryService workspaceDiscoveryService,
         IWorkspaceSettingsStore workspaceSettingsStore)
-        : this(workspaceDiscoveryService, new WorkspaceProjectDetailService(), workspaceSettingsStore)
+        : this(
+            workspaceDiscoveryService,
+            new WorkspaceProjectDetailService(),
+            workspaceSettingsStore,
+            CreateDefaultCreateProjectService())
     {
     }
 
@@ -49,10 +69,24 @@ public sealed class MainViewModel : ViewModelBase
         IWorkspaceDiscoveryService workspaceDiscoveryService,
         IWorkspaceProjectDetailService workspaceProjectDetailService,
         IWorkspaceSettingsStore workspaceSettingsStore)
+        : this(
+            workspaceDiscoveryService,
+            workspaceProjectDetailService,
+            workspaceSettingsStore,
+            CreateDefaultCreateProjectService())
+    {
+    }
+
+    public MainViewModel(
+        IWorkspaceDiscoveryService workspaceDiscoveryService,
+        IWorkspaceProjectDetailService workspaceProjectDetailService,
+        IWorkspaceSettingsStore workspaceSettingsStore,
+        ICreateProjectService createProjectService)
     {
         _workspaceDiscoveryService = workspaceDiscoveryService;
         _workspaceProjectDetailService = workspaceProjectDetailService;
         _workspaceSettingsStore = workspaceSettingsStore;
+        _createProjectService = createProjectService;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
         ShowWorkspaceCommand = new RelayCommand(ShowWorkspace);
@@ -60,7 +94,7 @@ public sealed class MainViewModel : ViewModelBase
         ShowCreateCommand = new RelayCommand(ShowCreate);
         ReviewCreateCommand = new RelayCommand(ReviewCreate);
         EditCreateCommand = new RelayCommand(EditCreate);
-        ConfirmCreateCommand = new RelayCommand(ConfirmCreate);
+        ConfirmCreateCommand = new AsyncRelayCommand(ConfirmCreateAsync);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -268,6 +302,60 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _isCreateConfirmed, value);
     }
 
+    public bool IsCreateRunning
+    {
+        get => _isCreateRunning;
+        private set => SetProperty(ref _isCreateRunning, value);
+    }
+
+    public bool HasCreateRun
+    {
+        get => _hasCreateRun;
+        private set => SetProperty(ref _hasCreateRun, value);
+    }
+
+    public bool IsCreateSucceeded
+    {
+        get => _isCreateSucceeded;
+        private set => SetProperty(ref _isCreateSucceeded, value);
+    }
+
+    public bool IsCreateFailed
+    {
+        get => _isCreateFailed;
+        private set => SetProperty(ref _isCreateFailed, value);
+    }
+
+    public string CreateExecutionState
+    {
+        get => _createExecutionState;
+        private set => SetProperty(ref _createExecutionState, value);
+    }
+
+    public string CreatePreparedCommand
+    {
+        get => _createPreparedCommand;
+        private set => SetProperty(ref _createPreparedCommand, value);
+    }
+
+    public string CreateStandardOutput
+    {
+        get => _createStandardOutput;
+        private set => SetProperty(ref _createStandardOutput, value);
+    }
+
+    public string CreateStandardError
+    {
+        get => _createStandardError;
+        private set => SetProperty(ref _createStandardError, value);
+    }
+
+    public string CreateResultSummary
+    {
+        get => _createResultSummary;
+        private set => SetProperty(ref _createResultSummary, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -321,7 +409,7 @@ public sealed class MainViewModel : ViewModelBase
 
     public IRelayCommand EditCreateCommand { get; }
 
-    public IRelayCommand ConfirmCreateCommand { get; }
+    public IAsyncRelayCommand ConfirmCreateCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -455,15 +543,58 @@ public sealed class MainViewModel : ViewModelBase
             : "Load an existing workspace before creating a project.";
     }
 
-    private void ConfirmCreate()
+    private async Task ConfirmCreateAsync()
     {
-        if (!IsCreateReviewStep)
+        if (!IsCreateReviewStep || IsCreateRunning)
         {
             return;
         }
 
         IsCreateConfirmed = true;
-        CreateFormStatus = "Create inputs confirmed. Execution will run after the next implementation step.";
+        await RunCreateAsync();
+    }
+
+    private async Task RunCreateAsync()
+    {
+        ResetCreateExecutionState();
+        IsCreateRunning = true;
+        CreateExecutionState = "Running";
+        CreateFormStatus = "Create is running.";
+
+        var request = new CreateProjectRequest(
+            CreateProjectName,
+            CreateTemplateName,
+            CreateOutputDirectory,
+            OnCommandPrepared: command => CreatePreparedCommand = FormatCommand(command),
+            OnStandardOutput: chunk => CreateStandardOutput += chunk,
+            OnStandardError: chunk => CreateStandardError += chunk,
+            TemplateSource: string.IsNullOrWhiteSpace(CreateTemplateSource) ? null : CreateTemplateSource);
+
+        try
+        {
+            var result = await _createProjectService.CreateAsync(request);
+            HasCreateRun = true;
+            IsCreateSucceeded = result.Succeeded;
+            IsCreateFailed = !result.Succeeded;
+            CreateExecutionState = result.Succeeded ? "Succeeded" : "Failed";
+            CreateResultSummary = BuildCreateResultSummary(result);
+            CreateFormStatus = result.Succeeded
+                ? "Create completed successfully."
+                : "Create failed. Review the result and logs.";
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            HasCreateRun = true;
+            IsCreateSucceeded = false;
+            IsCreateFailed = true;
+            CreateExecutionState = "Failed";
+            CreateResultSummary = $"Create failed unexpectedly: {exception.Message}";
+            CreateFormStatus = "Create failed. Review the result and logs.";
+        }
+        finally
+        {
+            IsCreateRunning = false;
+        }
     }
 
     private void ResetCreateFormDefaults(
@@ -474,6 +605,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         IsCreateConfirmed = false;
         IsCreateReviewStep = false;
+        ResetCreateExecutionState();
         CreateProjectName = string.Empty;
         CreateOutputDirectory = workspaceExists ? resultWorkspacePath : string.Empty;
         CreateTemplateName = CreateProjectService.DefaultStarterId;
@@ -483,6 +615,65 @@ public sealed class MainViewModel : ViewModelBase
                 ? "Ready to configure a new project. The workspace template catalog is selected."
                 : "Ready to configure a new project. Add a template source or use the embedded starter."
             : "Load an existing workspace before creating a project.";
+    }
+
+    private void ResetCreateExecutionState()
+    {
+        IsCreateRunning = false;
+        HasCreateRun = false;
+        IsCreateSucceeded = false;
+        IsCreateFailed = false;
+        CreateExecutionState = "Idle";
+        CreatePreparedCommand = "No command prepared.";
+        CreateStandardOutput = string.Empty;
+        CreateStandardError = string.Empty;
+        CreateResultSummary = "Create has not run.";
+    }
+
+    private static ICreateProjectService CreateDefaultCreateProjectService()
+    {
+        return new CreateProjectService(new CreateProjectValidator(), new ProcessRunner());
+    }
+
+    private static string FormatCommand(ProcessRunRequest command)
+    {
+        var parts = new List<string> { command.FileName };
+        parts.AddRange(command.Arguments);
+
+        if (!string.IsNullOrWhiteSpace(command.WorkingDirectory))
+        {
+            parts.Add($"--working-directory={command.WorkingDirectory}");
+        }
+
+        return string.Join(" ", parts);
+    }
+
+    private static string BuildCreateResultSummary(CreateProjectResult result)
+    {
+        if (!result.Validation.IsValid)
+        {
+            return $"Validation failed: {string.Join(" ", result.Validation.Errors)}";
+        }
+
+        if (result.ProcessResult?.Succeeded != true)
+        {
+            var details = new StringBuilder($"Process failed with exit code {result.ExitCode}.");
+
+            if (!string.IsNullOrWhiteSpace(result.ProcessResult?.StandardError))
+            {
+                details.Append(' ');
+                details.Append(result.ProcessResult.StandardError.Trim());
+            }
+
+            return details.ToString();
+        }
+
+        if (result.StarterResult?.Succeeded == false)
+        {
+            return $"Starter failed: {string.Join(" ", result.StarterResult.Errors)}";
+        }
+
+        return $"Created project at {result.ProjectPath}";
     }
 
     private static IReadOnlyList<TemplateCategoryGroupViewModel> LoadTemplateGroups(string catalogPath)
