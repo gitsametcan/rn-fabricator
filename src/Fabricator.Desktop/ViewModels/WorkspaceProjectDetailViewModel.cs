@@ -53,6 +53,7 @@ public sealed class WorkspaceProjectDetailViewModel
         ResearchSummary = detail.CommandCenterMetadata.HasMetadata
             ? BuildResearchSummary(detail.CommandCenterMetadata.Metadata.MarketResearch)
             : "No market research notes yet.";
+        ResearchItems = BuildResearchItems(detail.CommandCenterMetadata.Metadata.MarketResearch);
         ReleaseChecklistSummary = detail.CommandCenterMetadata.HasMetadata
             ? $"{detail.CommandCenterMetadata.Metadata.ReleaseChecklist.Items.Count} release checklist item(s)"
             : "No release checklist yet.";
@@ -116,6 +117,8 @@ public sealed class WorkspaceProjectDetailViewModel
     public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> PublishingReadinessItems { get; }
 
     public string ResearchSummary { get; }
+
+    public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> ResearchItems { get; }
 
     public string ReleaseChecklistSummary { get; }
 
@@ -197,6 +200,29 @@ public sealed class WorkspaceProjectDetailViewModel
         var questionCount = research.OpenQuestions.Count;
 
         return $"{keywordCount} keyword(s), {competitorCount} competitor(s), {questionCount} open question(s)";
+    }
+
+    private static IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> BuildResearchItems(
+        ApplicationMarketResearchMetadata research)
+    {
+        return
+        [
+            BuildItem("Target audience", research.TargetAudience),
+            BuildItem("Positioning", research.Positioning),
+            BuildCollectionItem("Keywords", research.Keywords),
+            BuildCollectionItem("Competitors", research.Competitors),
+            BuildCollectionItem("Open questions", research.OpenQuestions),
+            BuildItem("Research notes", research.Notes)
+        ];
+    }
+
+    private static ApplicationCommandCenterPanelItemViewModel BuildCollectionItem(
+        string label,
+        IReadOnlyList<string> values)
+    {
+        return values.Count == 0
+            ? new ApplicationCommandCenterPanelItemViewModel(label, "Missing", "No local entries.")
+            : new ApplicationCommandCenterPanelItemViewModel(label, "Ready", string.Join(", ", values));
     }
 }
 
