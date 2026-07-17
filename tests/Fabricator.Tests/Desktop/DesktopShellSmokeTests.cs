@@ -118,6 +118,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(CreateProjectService.DefaultStarterId, visibleText);
         Assert.Contains("CocoaPods", visibleText);
         Assert.Contains("Skip during create", visibleText);
+        Assert.Contains("Readiness", visibleText);
+        Assert.Contains("Doctor has not run for this session. Run Doctor before creating when you need environment confidence.", visibleText);
+        Assert.Contains("Run Doctor", visibleText);
         Assert.Contains("Back to edit", visibleText);
         Assert.Contains("Confirm create", visibleText);
     }
@@ -545,6 +548,36 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Core tools");
         Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Apple tools");
         Assert.Contains(viewModel.DoctorGroups, group => group.Title == "Android tools");
+    }
+
+    [Fact]
+    public async Task MainViewModelShowsDoctorReadinessOnCreateReview()
+    {
+        using var workspace = new TemporaryDirectory();
+        var createService = new RecordingCreateProjectService(
+            BuildCreateProjectResult("ReviewApp", workspace.Path, ExitCodes.Success, string.Empty, string.Empty));
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService,
+            CreateDoctorService(),
+            CreateSetupPlanService())
+        {
+            CreateProjectName = "ReviewApp"
+        };
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+
+        Assert.Contains("Doctor has not run", viewModel.CreateReadinessStatus);
+        Assert.Equal("Run Doctor", viewModel.CreateReadinessActionLabel);
+
+        await viewModel.RunDoctorCommand.ExecuteAsync(null);
+
+        Assert.Equal("Run Doctor again", viewModel.CreateReadinessActionLabel);
+        Assert.Contains("Doctor found required tools that need attention.", viewModel.CreateReadinessStatus);
+        Assert.Contains("Passed 1, warnings 1, failed 1.", viewModel.CreateReadinessStatus);
     }
 
     [AvaloniaFact]

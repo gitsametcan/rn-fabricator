@@ -493,26 +493,76 @@ public sealed class MainViewModel : ViewModelBase
     public bool IsDoctorRunning
     {
         get => _isDoctorRunning;
-        private set => SetProperty(ref _isDoctorRunning, value);
+        private set
+        {
+            if (SetProperty(ref _isDoctorRunning, value))
+            {
+                OnPropertyChanged(nameof(CreateReadinessStatus));
+                OnPropertyChanged(nameof(CreateReadinessActionLabel));
+            }
+        }
     }
 
     public bool HasDoctorRun
     {
         get => _hasDoctorRun;
-        private set => SetProperty(ref _hasDoctorRun, value);
+        private set
+        {
+            if (SetProperty(ref _hasDoctorRun, value))
+            {
+                OnPropertyChanged(nameof(CreateReadinessStatus));
+                OnPropertyChanged(nameof(CreateReadinessActionLabel));
+            }
+        }
     }
 
     public string DoctorStatus
     {
         get => _doctorStatus;
-        private set => SetProperty(ref _doctorStatus, value);
+        private set
+        {
+            if (SetProperty(ref _doctorStatus, value))
+            {
+                OnPropertyChanged(nameof(CreateReadinessStatus));
+            }
+        }
     }
 
     public string DoctorSummaryLabel
     {
         get => _doctorSummaryLabel;
-        private set => SetProperty(ref _doctorSummaryLabel, value);
+        private set
+        {
+            if (SetProperty(ref _doctorSummaryLabel, value))
+            {
+                OnPropertyChanged(nameof(CreateReadinessStatus));
+            }
+        }
     }
+
+    public string CreateReadinessStatus
+    {
+        get
+        {
+            if (IsDoctorRunning)
+            {
+                return "Doctor is checking the local React Native toolchain.";
+            }
+
+            if (!HasDoctorRun)
+            {
+                return "Doctor has not run for this session. Run Doctor before creating when you need environment confidence.";
+            }
+
+            return $"{DoctorStatus} {DoctorSummaryLabel}";
+        }
+    }
+
+    public string CreateReadinessActionLabel => IsDoctorRunning
+        ? "Doctor running"
+        : HasDoctorRun
+            ? "Run Doctor again"
+            : "Run Doctor";
 
     public IReadOnlyList<SetupPlanItemViewModel> SetupPlanItems
     {
