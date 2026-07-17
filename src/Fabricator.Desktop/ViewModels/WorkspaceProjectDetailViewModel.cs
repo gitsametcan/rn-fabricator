@@ -57,6 +57,7 @@ public sealed class WorkspaceProjectDetailViewModel
         ReleaseChecklistSummary = detail.CommandCenterMetadata.HasMetadata
             ? $"{detail.CommandCenterMetadata.Metadata.ReleaseChecklist.Items.Count} release checklist item(s)"
             : "No release checklist yet.";
+        ReleaseChecklistItems = BuildReleaseChecklistItems(detail.CommandCenterMetadata.Metadata.ReleaseChecklist);
         NextActionsSummary = detail.CommandCenterMetadata.HasMetadata
             ? $"{detail.CommandCenterMetadata.Metadata.NextActions.Count} next action(s)"
             : "No next actions yet.";
@@ -121,6 +122,8 @@ public sealed class WorkspaceProjectDetailViewModel
     public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> ResearchItems { get; }
 
     public string ReleaseChecklistSummary { get; }
+
+    public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> ReleaseChecklistItems { get; }
 
     public string NextActionsSummary { get; }
 
@@ -223,6 +226,28 @@ public sealed class WorkspaceProjectDetailViewModel
         return values.Count == 0
             ? new ApplicationCommandCenterPanelItemViewModel(label, "Missing", "No local entries.")
             : new ApplicationCommandCenterPanelItemViewModel(label, "Ready", string.Join(", ", values));
+    }
+
+    private static IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> BuildReleaseChecklistItems(
+        ApplicationReleaseChecklistMetadata releaseChecklist)
+    {
+        if (releaseChecklist.Items.Count == 0)
+        {
+            return
+            [
+                new ApplicationCommandCenterPanelItemViewModel(
+                    "Release checklist",
+                    "Missing",
+                    "No local checklist items.")
+            ];
+        }
+
+        return releaseChecklist.Items
+            .Select(item => new ApplicationCommandCenterPanelItemViewModel(
+                string.IsNullOrWhiteSpace(item.Title) ? item.Id : item.Title,
+                Missing(item.Status),
+                Missing(item.Notes)))
+            .ToArray();
     }
 }
 

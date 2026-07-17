@@ -832,6 +832,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.SelectedProjectDetail.ResearchItems, item =>
             item.Label == "Keywords" &&
             item.Detail == "No local entries.");
+        Assert.Contains(viewModel.SelectedProjectDetail.ReleaseChecklistItems, item =>
+            item.Label == "Release checklist" &&
+            item.Status == "Missing");
     }
 
     [AvaloniaFact]
@@ -876,7 +879,14 @@ public sealed class DesktopShellSmokeTests
                   {
                     "id": "privacy-policy",
                     "title": "Privacy policy",
-                    "status": "ready"
+                    "status": "ready",
+                    "notes": "Published and linked."
+                  },
+                  {
+                    "id": "screenshots",
+                    "title": "Store screenshots",
+                    "status": "missing",
+                    "notes": "Need localized screenshots."
                   }
                 ]
               },
@@ -934,7 +944,11 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Research notes", visibleText);
         Assert.Contains("Validate paid acquisition before launch.", visibleText);
         Assert.Contains("Release", visibleText);
-        Assert.Contains("1 release checklist item(s)", visibleText);
+        Assert.Contains("2 release checklist item(s)", visibleText);
+        Assert.Contains("Privacy policy", visibleText);
+        Assert.Contains("Published and linked.", visibleText);
+        Assert.Contains("Store screenshots", visibleText);
+        Assert.Contains("Need localized screenshots.", visibleText);
         Assert.Contains("Next Actions", visibleText);
         Assert.Contains("1 next action(s)", visibleText);
     }
