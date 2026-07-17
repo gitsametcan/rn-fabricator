@@ -1,7 +1,9 @@
 using Fabricator.Core;
+using Fabricator.Core.Templates;
 using Fabricator.Core.Workspaces;
 using Fabricator.Desktop.WorkspaceSettings;
 using CommunityToolkit.Mvvm.Input;
+using System.Text.Json;
 
 namespace Fabricator.Desktop.ViewModels;
 
@@ -17,8 +19,10 @@ public sealed class MainViewModel : ViewModelBase
     private bool _hasWorkspace;
     private bool _hasTemplateCatalog;
     private IReadOnlyList<WorkspaceProjectItemViewModel> _projects = [];
+    private IReadOnlyList<TemplateCategoryGroupViewModel> _templateGroups = [];
     private WorkspaceProjectItemViewModel? _selectedProject;
     private WorkspaceProjectDetailViewModel? _selectedProjectDetail;
+    private bool _isTemplatesView;
 
     public MainViewModel()
         : this(new WorkspaceDiscoveryService(), new WorkspaceProjectDetailService(), new FileWorkspaceSettingsStore())
@@ -42,6 +46,8 @@ public sealed class MainViewModel : ViewModelBase
         _workspaceSettingsStore = workspaceSettingsStore;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
+        ShowWorkspaceCommand = new RelayCommand(() => IsTemplatesView = false);
+        ShowTemplatesCommand = new RelayCommand(() => IsTemplatesView = true);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -112,6 +118,20 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
+    public IReadOnlyList<TemplateCategoryGroupViewModel> TemplateGroups
+    {
+        get => _templateGroups;
+        private set
+        {
+            if (SetProperty(ref _templateGroups, value))
+            {
+                OnPropertyChanged(nameof(HasTemplateGroups));
+                OnPropertyChanged(nameof(HasNoTemplateGroups));
+                OnPropertyChanged(nameof(TemplateGroupCountLabel));
+            }
+        }
+    }
+
     public WorkspaceProjectItemViewModel? SelectedProject
     {
         get => _selectedProject;
@@ -137,6 +157,26 @@ public sealed class MainViewModel : ViewModelBase
 
     public bool HasSelectedProject => SelectedProject is not null;
 
+    public bool IsTemplatesView
+    {
+        get => _isTemplatesView;
+        private set
+        {
+            if (SetProperty(ref _isTemplatesView, value))
+            {
+                OnPropertyChanged(nameof(IsWorkspaceView));
+            }
+        }
+    }
+
+    public bool IsWorkspaceView => !IsTemplatesView;
+
+    public bool HasTemplateGroups => TemplateGroups.Count > 0;
+
+    public bool HasNoTemplateGroups => !HasTemplateGroups;
+
+    public string TemplateGroupCountLabel => $"{TemplateGroups.Count} categor(ies)";
+
     public string ProjectCountLabel => $"{Projects.Count} project(s)";
 
     public string MissingFabricatorStateLabel =>
@@ -153,6 +193,10 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand LoadWorkspaceCommand { get; }
 
     public IRelayCommand<WorkspaceProjectItemViewModel> SelectProjectCommand { get; }
+
+    public IRelayCommand ShowWorkspaceCommand { get; }
+
+    public IRelayCommand ShowTemplatesCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -185,6 +229,9 @@ public sealed class MainViewModel : ViewModelBase
         SelectedWorkspacePath = result.WorkspacePath;
         HasWorkspace = result.WorkspaceExists;
         HasTemplateCatalog = result.TemplateCatalog.Exists;
+        TemplateGroups = result.TemplateCatalog.Exists
+            ? LoadTemplateGroups(result.TemplateCatalog.Path)
+            : [];
         TemplateCatalogStatus = result.TemplateCatalog.Exists
             ? $"Templates catalog found: {result.TemplateCatalog.Path}"
             : $"Templates catalog missing: {result.TemplateCatalog.Path}";
@@ -193,6 +240,7 @@ public sealed class MainViewModel : ViewModelBase
             .ToArray();
         SelectedProject = null;
         SelectedProjectDetail = null;
+        IsTemplatesView = false;
         WorkspaceStatus = result.WorkspaceExists
             ? $"Workspace loaded from {result.WorkspacePath}"
             : $"Workspace directory was not found: {result.WorkspacePath}";
@@ -209,5 +257,39 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = project is null
             ? null
             : new WorkspaceProjectDetailViewModel(_workspaceProjectDetailService.GetDetail(project.Path));
+    }
+
+    private static IReadOnlyList<TemplateCategoryGroupViewModel> LoadTemplateGroups(string catalogPath)
+    {
+        try
+        {
+            var catalog = JsonSerializer.Deserialize<FabricatorTemplateCatalog>(
+                File.ReadAllText(catalogPath),
+                new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+            if (catalog is null)
+            {
+                return [];
+            }
+
+            return catalog.Templates
+                .GroupBy(
+                    template => string.IsNullOrWhiteSpace(template.Category)
+                        ? "uncategorized"
+                        : template.Category,
+                    StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new TemplateCategoryGroupViewModel(
+                    group.Key,
+                    group
+                        .OrderBy(template => template.DisplayName, StringComparer.OrdinalIgnoreCase)
+                        .Select(template => new TemplateCatalogItemViewModel(template))
+                        .ToArray()))
+                .ToArray();
+        }
+        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return [];
+        }
     }
 }
