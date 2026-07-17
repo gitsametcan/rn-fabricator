@@ -440,7 +440,17 @@ public sealed class MainViewModel : ViewModelBase
             return;
         }
 
-        var result = _workspaceDiscoveryService.Discover(workspacePath);
+        ApplyWorkspaceDiscoveryResult(
+            _workspaceDiscoveryService.Discover(workspacePath),
+            save,
+            resetCreateForm: true);
+    }
+
+    private void ApplyWorkspaceDiscoveryResult(
+        WorkspaceDiscoveryResult result,
+        bool save,
+        bool resetCreateForm)
+    {
         SelectedWorkspacePath = result.WorkspacePath;
         HasWorkspace = result.WorkspaceExists;
         HasTemplateCatalog = result.TemplateCatalog.Exists;
@@ -455,16 +465,25 @@ public sealed class MainViewModel : ViewModelBase
             .ToArray();
         SelectedProject = null;
         SelectedProjectDetail = null;
-        IsTemplatesView = false;
-        IsCreateView = false;
+
+        if (resetCreateForm)
+        {
+            IsTemplatesView = false;
+            IsCreateView = false;
+        }
+
         WorkspaceStatus = result.WorkspaceExists
             ? $"Workspace loaded from {result.WorkspacePath}"
             : $"Workspace directory was not found: {result.WorkspacePath}";
-        ResetCreateFormDefaults(
-            result.WorkspacePath,
-            result.TemplateCatalog.Path,
-            result.WorkspaceExists,
-            result.TemplateCatalog.Exists);
+
+        if (resetCreateForm)
+        {
+            ResetCreateFormDefaults(
+                result.WorkspacePath,
+                result.TemplateCatalog.Path,
+                result.WorkspaceExists,
+                result.TemplateCatalog.Exists);
+        }
 
         if (save && result.WorkspaceExists)
         {
@@ -478,6 +497,33 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = project is null
             ? null
             : new WorkspaceProjectDetailViewModel(_workspaceProjectDetailService.GetDetail(project.Path));
+    }
+
+    private void RefreshWorkspaceAfterCreate(CreateProjectResult result)
+    {
+        if (!HasWorkspace || !Directory.Exists(SelectedWorkspacePath))
+        {
+            return;
+        }
+
+        ApplyWorkspaceDiscoveryResult(
+            _workspaceDiscoveryService.Discover(SelectedWorkspacePath),
+            save: false,
+            resetCreateForm: false);
+        SelectCreatedProject(result.ProjectPath);
+        WorkspaceStatus = $"Workspace refreshed after creating {Path.GetFileName(result.ProjectPath)}.";
+    }
+
+    private void SelectCreatedProject(string projectPath)
+    {
+        var fullProjectPath = Path.GetFullPath(projectPath);
+        var project = Projects.FirstOrDefault(candidate =>
+            string.Equals(Path.GetFullPath(candidate.Path), fullProjectPath, StringComparison.OrdinalIgnoreCase));
+
+        if (project is not null)
+        {
+            SelectProject(project);
+        }
     }
 
     private void ShowWorkspace()
@@ -581,6 +627,11 @@ public sealed class MainViewModel : ViewModelBase
             CreateFormStatus = result.Succeeded
                 ? "Create completed successfully."
                 : "Create failed. Review the result and logs.";
+
+            if (result.Succeeded)
+            {
+                RefreshWorkspaceAfterCreate(result);
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -652,7 +703,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         if (!result.Validation.IsValid)
         {
-            return $"Validation failed: {string.Join(" ", result.Validation.Errors)}";
+            return $"Validation failed: {string.Join(" ", result.Validation.Errors)} {BuildRollbackSummary(result.Rollback)}";
         }
 
         if (result.ProcessResult?.Succeeded != true)
@@ -665,15 +716,30 @@ public sealed class MainViewModel : ViewModelBase
                 details.Append(result.ProcessResult.StandardError.Trim());
             }
 
+            details.Append(' ');
+            details.Append(BuildRollbackSummary(result.Rollback));
+
             return details.ToString();
         }
 
         if (result.StarterResult?.Succeeded == false)
         {
-            return $"Starter failed: {string.Join(" ", result.StarterResult.Errors)}";
+            return $"Starter failed: {string.Join(" ", result.StarterResult.Errors)} {BuildRollbackSummary(result.Rollback)}";
         }
 
-        return $"Created project at {result.ProjectPath}";
+        return result.StarterResult is null
+            ? $"Created project at {result.ProjectPath}. Starter: not applied."
+            : $"Created project at {result.ProjectPath}. Starter: {result.StarterResult.StarterId} ({result.StarterResult.GeneratedFiles.Count} file(s)).";
+    }
+
+    private static string BuildRollbackSummary(CreateProjectRollbackResult rollback)
+    {
+        if (string.IsNullOrWhiteSpace(rollback.ErrorMessage))
+        {
+            return $"Rollback: {rollback.Message}";
+        }
+
+        return $"Rollback: {rollback.Message} {rollback.ErrorMessage}";
     }
 
     private static IReadOnlyList<TemplateCategoryGroupViewModel> LoadTemplateGroups(string catalogPath)

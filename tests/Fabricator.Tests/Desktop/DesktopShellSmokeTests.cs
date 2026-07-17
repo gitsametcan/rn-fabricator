@@ -298,8 +298,47 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("scaffolded\n", viewModel.CreateStandardOutput);
         Assert.Equal("warning\n", viewModel.CreateStandardError);
         Assert.Equal(Path.Combine(Path.GetFullPath(workspace.Path), "RunApp"), viewModel.CreateTargetProjectPath);
-        Assert.Equal($"Created project at {Path.Combine(Path.GetFullPath(workspace.Path), "RunApp")}", viewModel.CreateResultSummary);
+        Assert.Equal(
+            $"Created project at {Path.Combine(Path.GetFullPath(workspace.Path), "RunApp")}. Starter: {CreateProjectService.DefaultStarterId} (1 file(s)).",
+            viewModel.CreateResultSummary);
         Assert.Equal("Create completed successfully.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public async Task MainViewModelRefreshesWorkspaceAfterSuccessfulCreate()
+    {
+        using var workspace = new TemporaryDirectory();
+        var result = BuildCreateProjectResult(
+            "RefreshApp",
+            workspace.Path,
+            ExitCodes.Success,
+            "completed\n",
+            string.Empty);
+        var createService = new RecordingCreateProjectService(result)
+        {
+            BeforeReturn = _ => CreateFabricatorProject(workspace.Path, "RefreshApp")
+        };
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path),
+            createService)
+        {
+            CreateProjectName = "RefreshApp"
+        };
+
+        Assert.Empty(viewModel.Projects);
+
+        viewModel.ShowCreateCommand.Execute(null);
+        viewModel.ReviewCreateCommand.Execute(null);
+        await viewModel.ConfirmCreateCommand.ExecuteAsync(null);
+
+        var project = Assert.Single(viewModel.Projects);
+        Assert.Equal("RefreshApp", project.Name);
+        Assert.True(viewModel.HasSelectedProject);
+        Assert.NotNull(viewModel.SelectedProjectDetail);
+        Assert.Equal("RefreshApp", viewModel.SelectedProjectDetail.DisplayName);
+        Assert.Equal("Workspace refreshed after creating RefreshApp.", viewModel.WorkspaceStatus);
     }
 
     [Fact]
@@ -337,6 +376,7 @@ public sealed class DesktopShellSmokeTests
         Assert.Equal("create failed", viewModel.CreateStandardError);
         Assert.Contains("Process failed with exit code", viewModel.CreateResultSummary);
         Assert.Contains("create failed", viewModel.CreateResultSummary);
+        Assert.Contains("Rollback:", viewModel.CreateResultSummary);
         Assert.Equal("Create failed. Review the result and logs.", viewModel.CreateFormStatus);
     }
 
@@ -584,6 +624,8 @@ public sealed class DesktopShellSmokeTests
 
         public string StandardErrorChunk { get; init; } = string.Empty;
 
+        public Action<CreateProjectRequest>? BeforeReturn { get; init; }
+
         public Task<CreateProjectResult> CreateAsync(
             CreateProjectRequest request,
             CancellationToken cancellationToken = default)
@@ -601,6 +643,8 @@ public sealed class DesktopShellSmokeTests
             {
                 request.OnStandardError?.Invoke(StandardErrorChunk);
             }
+
+            BeforeReturn?.Invoke(request);
 
             return Task.FromResult(_result);
         }
