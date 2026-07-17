@@ -2,7 +2,7 @@
 
 This document defines the initial UI direction for rn-fabricator.
 
-For the next workspace-oriented product expectations after the UI foundation milestone, see [UI Expectations](ui-expectations.md).
+For the next workspace-oriented product expectations after the UI foundation milestone, see [UI Expectations](ui-expectations.md). For the next operational desktop direction after create UI, see [Desktop Command Center UI](ui-command-center.md).
 
 ## Product Role
 
