@@ -154,15 +154,33 @@ Scope:
 
 Suggested issues:
 
-#### Define application command center data model
+#### #219 Define application command center UI expectations
 
 Acceptance criteria:
 
-- Local metadata file contract is proposed.
+- This document captures the first command center scope and non-goals.
+- Local-first metadata decisions are documented.
+- The milestone issue set is created and linked.
+
+#### #220 Define application command center data model
+
+Acceptance criteria:
+
+- Local metadata file contract is proposed for `.fabricator/app-command-center.json`.
 - Publishing, research, release, and task sections are modeled.
 - Existing `fabricator.json` compatibility is preserved.
+- Missing metadata is represented explicitly and does not break existing projects.
 
-#### Add publishing readiness panel
+#### #221 Add application command center overview shell
+
+Acceptance criteria:
+
+- App detail shows a command center section below existing overview data.
+- Publishing, research, release, and next action panels have stable placeholders.
+- Projects without command center metadata show empty states.
+- The existing workspace and template detail behavior is preserved.
+
+#### #222 Add publishing readiness panel
 
 Acceptance criteria:
 
@@ -170,7 +188,7 @@ Acceptance criteria:
 - Missing bundle id, application id, version, display name, icons, and release metadata are surfaced where detectable.
 - Missing states are explicit and non-blocking.
 
-#### Add local market and research notes panel
+#### #223 Add local market and research notes panel
 
 Acceptance criteria:
 
@@ -178,7 +196,7 @@ Acceptance criteria:
 - Competitors, keywords, target audience, positioning, and open research questions are represented.
 - No remote research or scraping is required in the first implementation.
 
-#### Add release checklist panel
+#### #224 Add release checklist panel
 
 Acceptance criteria:
 
@@ -186,13 +204,21 @@ Acceptance criteria:
 - Checklist items can be marked missing, ready, or unknown from best-effort detection.
 - Manual notes are preserved in local metadata.
 
-#### Add next actions panel
+#### #225 Add next actions panel
 
 Acceptance criteria:
 
 - App detail shows recommended next actions from detected gaps.
 - Doctor/setup/create/template/release gaps are grouped.
 - The panel is deterministic and testable without network calls.
+
+#### #226 Add application command center smoke tests
+
+Acceptance criteria:
+
+- Headless Desktop tests cover command center metadata present and missing states.
+- Publishing, research, release checklist, and next action panels are asserted.
+- Existing workspace, template, create, Doctor, and Setup navigation tests still pass.
 
 ## Technical Decisions
 
@@ -201,6 +227,8 @@ Acceptance criteria:
 - Keep Doctor read-only.
 - Keep setup execution out of the UI until setup plan preview and safety UX are stable.
 - Treat market/research data as local manual metadata first.
+- Store first-pass command center metadata in `.fabricator/app-command-center.json`.
+- Keep `fabricator.json` focused on project identity and applied template state for now.
 - Add remote integrations only after local contracts are stable.
 
 ## Open Questions
