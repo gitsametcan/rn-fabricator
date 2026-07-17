@@ -30,6 +30,8 @@ public sealed class MainViewModel : ViewModelBase
     private string _createTemplateName = CreateProjectService.DefaultStarterId;
     private string _createTemplateSource = string.Empty;
     private string _createFormStatus = "Load a workspace before creating a project.";
+    private bool _isCreateReviewStep;
+    private bool _isCreateConfirmed;
 
     public MainViewModel()
         : this(new WorkspaceDiscoveryService(), new WorkspaceProjectDetailService(), new FileWorkspaceSettingsStore())
@@ -56,6 +58,9 @@ public sealed class MainViewModel : ViewModelBase
         ShowWorkspaceCommand = new RelayCommand(ShowWorkspace);
         ShowTemplatesCommand = new RelayCommand(ShowTemplates);
         ShowCreateCommand = new RelayCommand(ShowCreate);
+        ReviewCreateCommand = new RelayCommand(ReviewCreate);
+        EditCreateCommand = new RelayCommand(EditCreate);
+        ConfirmCreateCommand = new RelayCommand(ConfirmCreate);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -202,13 +207,25 @@ public sealed class MainViewModel : ViewModelBase
     public string CreateProjectName
     {
         get => _createProjectName;
-        set => SetProperty(ref _createProjectName, value);
+        set
+        {
+            if (SetProperty(ref _createProjectName, value))
+            {
+                OnPropertyChanged(nameof(CreateTargetProjectPath));
+            }
+        }
     }
 
     public string CreateOutputDirectory
     {
         get => _createOutputDirectory;
-        set => SetProperty(ref _createOutputDirectory, value);
+        set
+        {
+            if (SetProperty(ref _createOutputDirectory, value))
+            {
+                OnPropertyChanged(nameof(CreateTargetProjectPath));
+            }
+        }
     }
 
     public string CreateTemplateName
@@ -230,6 +247,46 @@ public sealed class MainViewModel : ViewModelBase
     }
 
     public bool IsCreateFormEnabled => HasWorkspace;
+
+    public bool IsCreateReviewStep
+    {
+        get => _isCreateReviewStep;
+        private set
+        {
+            if (SetProperty(ref _isCreateReviewStep, value))
+            {
+                OnPropertyChanged(nameof(IsCreateEditStep));
+            }
+        }
+    }
+
+    public bool IsCreateEditStep => !IsCreateReviewStep;
+
+    public bool IsCreateConfirmed
+    {
+        get => _isCreateConfirmed;
+        private set => SetProperty(ref _isCreateConfirmed, value);
+    }
+
+    public string CreateTargetProjectPath
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(CreateOutputDirectory) || string.IsNullOrWhiteSpace(CreateProjectName))
+            {
+                return "Project target is not ready.";
+            }
+
+            try
+            {
+                return Path.GetFullPath(Path.Combine(CreateOutputDirectory, CreateProjectName));
+            }
+            catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return "Project target path is invalid.";
+            }
+        }
+    }
 
     public bool HasTemplateGroups => TemplateGroups.Count > 0;
 
@@ -259,6 +316,12 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand ShowTemplatesCommand { get; }
 
     public IRelayCommand ShowCreateCommand { get; }
+
+    public IRelayCommand ReviewCreateCommand { get; }
+
+    public IRelayCommand EditCreateCommand { get; }
+
+    public IRelayCommand ConfirmCreateCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -352,12 +415,65 @@ public sealed class MainViewModel : ViewModelBase
         }
     }
 
+    private void ReviewCreate()
+    {
+        if (!HasWorkspace)
+        {
+            CreateFormStatus = "Load an existing workspace before reviewing create inputs.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CreateProjectName))
+        {
+            CreateFormStatus = "Project name is required before review.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CreateOutputDirectory))
+        {
+            CreateFormStatus = "Output directory is required before review.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CreateTemplateName))
+        {
+            CreateFormStatus = "Starter template is required before review.";
+            return;
+        }
+
+        IsCreateConfirmed = false;
+        IsCreateReviewStep = true;
+        CreateFormStatus = "Review the target path and create inputs before confirmation.";
+    }
+
+    private void EditCreate()
+    {
+        IsCreateConfirmed = false;
+        IsCreateReviewStep = false;
+        CreateFormStatus = HasWorkspace
+            ? "Ready to edit create inputs."
+            : "Load an existing workspace before creating a project.";
+    }
+
+    private void ConfirmCreate()
+    {
+        if (!IsCreateReviewStep)
+        {
+            return;
+        }
+
+        IsCreateConfirmed = true;
+        CreateFormStatus = "Create inputs confirmed. Execution will run after the next implementation step.";
+    }
+
     private void ResetCreateFormDefaults(
         string resultWorkspacePath,
         string templateCatalogPath,
         bool workspaceExists,
         bool templateCatalogExists)
     {
+        IsCreateConfirmed = false;
+        IsCreateReviewStep = false;
         CreateProjectName = string.Empty;
         CreateOutputDirectory = workspaceExists ? resultWorkspacePath : string.Empty;
         CreateTemplateName = CreateProjectService.DefaultStarterId;
