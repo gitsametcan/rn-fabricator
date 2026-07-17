@@ -75,6 +75,8 @@ public sealed class DesktopShellSmokeTests
 
         Assert.True(viewModel.HasWorkspace);
         Assert.True(viewModel.HasTemplateCatalog);
+        Assert.True(viewModel.HasTemplateGroups);
+        Assert.Equal(2, viewModel.TemplateGroups.Count);
         Assert.Equal(Path.GetFullPath(workspace.Path), viewModel.SelectedWorkspacePath);
         Assert.Equal(2, viewModel.Projects.Count);
         Assert.Contains(viewModel.Projects, project =>
@@ -83,6 +85,28 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.Projects, project =>
             project.Name == "ExistingMobileApp" &&
             project.Status == "Missing Fabricator state");
+    }
+
+    [Fact]
+    public void MainViewModelShowsGroupedTemplateCatalogView()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+
+        viewModel.ShowTemplatesCommand.Execute(null);
+
+        Assert.True(viewModel.IsTemplatesView);
+        Assert.False(viewModel.IsWorkspaceView);
+        Assert.Equal("2 categor(ies)", viewModel.TemplateGroupCountLabel);
+        var componentGroup = Assert.Single(viewModel.TemplateGroups, group => group.Category == "component");
+        var screenGroup = Assert.Single(viewModel.TemplateGroups, group => group.Category == "screen");
+        Assert.Equal("1 template(s)", componentGroup.CountLabel);
+        Assert.Equal("Primary Button", Assert.Single(componentGroup.Templates).DisplayName);
+        Assert.Equal("Settings Screen", Assert.Single(screenGroup.Templates).DisplayName);
     }
 
     [Fact]
@@ -144,7 +168,36 @@ public sealed class DesktopShellSmokeTests
     {
         var catalogPath = Path.Combine(workspacePath, TemplateSourceResolver.ConventionalCatalogRelativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(catalogPath)!);
-        File.WriteAllText(catalogPath, "{}");
+        File.WriteAllText(
+            catalogPath,
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-template-catalog",
+              "displayName": "Test catalog",
+              "description": "Catalog for desktop tests.",
+              "templates": [
+                {
+                  "id": "component/primary-button",
+                  "displayName": "Primary Button",
+                  "description": "Reusable button.",
+                  "version": "0.1.0",
+                  "category": "component",
+                  "manifest": "component/primary-button/fabricator-template.json",
+                  "tags": ["component", "button"]
+                },
+                {
+                  "id": "screen/settings-screen",
+                  "displayName": "Settings Screen",
+                  "description": "Reusable settings screen.",
+                  "version": "0.1.0",
+                  "category": "screen",
+                  "manifest": "screen/settings-screen/fabricator-template.json",
+                  "tags": ["screen", "settings"]
+                }
+              ]
+            }
+            """);
     }
 
     private static void CreateFabricatorProject(string workspacePath, string name)
