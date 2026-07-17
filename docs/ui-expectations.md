@@ -1,8 +1,8 @@
 # UI Expectations
 
-This document captures the product expectations for the next rn-fabricator desktop UI milestone after `v1.1.0 - UI Foundation`.
+This document captures the product expectations for the first workspace-oriented rn-fabricator desktop UI milestone after `v1.1.0 - UI Foundation`.
 
-`v1.1.0 - UI Foundation` is complete on `develop` and will not be released as a standalone version. The next UI planning target is `v1.2.0 - Workspace Discovery UI`.
+`v1.1.0 - UI Foundation` is complete on `develop` and will not be released as a standalone version. `v1.2.0 - Workspace Discovery UI` is complete. For the next create workflow milestone, see [Create Project UI](ui-create-project.md).
 
 ## Product Direction
 
