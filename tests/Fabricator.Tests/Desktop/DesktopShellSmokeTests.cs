@@ -41,6 +41,40 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Mobile projects", visibleText);
         Assert.Contains("No workspace selected", visibleText);
         Assert.Contains("Load workspace", visibleText);
+        Assert.Contains("Create Project", visibleText);
+    }
+
+    [AvaloniaFact]
+    public void MainWindowRendersCreateProjectForm()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        viewModel.ShowCreateCommand.Execute(null);
+        var window = new MainWindow
+        {
+            DataContext = viewModel
+        };
+
+        window.Show();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+
+        var visibleText = window
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(textBlock => textBlock.Text)
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .ToArray();
+
+        Assert.Contains("Create Project", visibleText);
+        Assert.Contains("Project details", visibleText);
+        Assert.Contains("Project name", visibleText);
+        Assert.Contains("Output directory", visibleText);
+        Assert.Contains("Starter template", visibleText);
+        Assert.Contains("Template source", visibleText);
+        Assert.Contains("Back to workspace", visibleText);
     }
 
     [Fact]
@@ -60,6 +94,11 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.NavigationItems, item => item.Title == "Workspace");
         Assert.Contains(viewModel.NavigationItems, item => item.Title == "Doctor");
         Assert.Contains(viewModel.NavigationItems, item => item.Title == "Templates");
+        Assert.False(viewModel.IsCreateFormEnabled);
+        Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
+        Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
+        Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
+        Assert.Equal("Load a workspace before creating a project.", viewModel.CreateFormStatus);
     }
 
     [Fact]
@@ -85,6 +124,84 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.Projects, project =>
             project.Name == "ExistingMobileApp" &&
             project.Status == "Missing Fabricator state");
+        Assert.True(viewModel.IsCreateFormEnabled);
+        Assert.Equal(Path.GetFullPath(workspace.Path), viewModel.CreateOutputDirectory);
+        Assert.Equal(
+            Path.GetFullPath(Path.Combine(workspace.Path, TemplateSourceResolver.ConventionalCatalogRelativePath)),
+            viewModel.CreateTemplateSource);
+    }
+
+    [Fact]
+    public void MainViewModelShowsCreateProjectFormDefaultsFromWorkspace()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateTemplateCatalog(workspace.Path);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+
+        viewModel.ShowCreateCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreateView);
+        Assert.False(viewModel.IsWorkspaceView);
+        Assert.False(viewModel.IsTemplatesView);
+        Assert.True(viewModel.IsCreateFormEnabled);
+        Assert.Equal(string.Empty, viewModel.CreateProjectName);
+        Assert.Equal(Path.GetFullPath(workspace.Path), viewModel.CreateOutputDirectory);
+        Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
+        Assert.Equal(
+            Path.GetFullPath(Path.Combine(workspace.Path, TemplateSourceResolver.ConventionalCatalogRelativePath)),
+            viewModel.CreateTemplateSource);
+        Assert.Equal(
+            "Ready to configure a new project. The workspace template catalog is selected.",
+            viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public void MainViewModelHandlesCreateProjectFormWithoutWorkspace()
+    {
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore());
+
+        viewModel.ShowCreateCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreateView);
+        Assert.False(viewModel.IsWorkspaceView);
+        Assert.False(viewModel.IsTemplatesView);
+        Assert.False(viewModel.IsCreateFormEnabled);
+        Assert.Equal(string.Empty, viewModel.CreateProjectName);
+        Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
+        Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
+        Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
+        Assert.Equal("Load an existing workspace before creating a project.", viewModel.CreateFormStatus);
+    }
+
+    [Fact]
+    public void MainViewModelHandlesCreateProjectFormWithMissingWorkspace()
+    {
+        using var workspace = new TemporaryDirectory();
+        var missingWorkspace = Path.Combine(workspace.Path, "missing");
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore())
+        {
+            WorkspaceInputPath = missingWorkspace
+        };
+
+        viewModel.LoadWorkspaceCommand.Execute(null);
+        viewModel.ShowCreateCommand.Execute(null);
+
+        Assert.False(viewModel.HasWorkspace);
+        Assert.True(viewModel.IsCreateView);
+        Assert.False(viewModel.IsCreateFormEnabled);
+        Assert.Equal(string.Empty, viewModel.CreateOutputDirectory);
+        Assert.Equal(CreateProjectService.DefaultStarterId, viewModel.CreateTemplateName);
+        Assert.Equal(string.Empty, viewModel.CreateTemplateSource);
+        Assert.Equal("Load an existing workspace before creating a project.", viewModel.CreateFormStatus);
     }
 
     [Fact]
