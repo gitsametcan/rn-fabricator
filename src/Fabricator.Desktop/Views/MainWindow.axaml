@@ -647,7 +647,7 @@
 
                                 <Grid Grid.Row="1"
                                       ColumnDefinitions="*,*"
-                                      RowDefinitions="Auto,Auto,Auto,Auto"
+                                      RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                                       ColumnSpacing="18"
                                       RowSpacing="10">
                                     <StackPanel Spacing="4">
@@ -706,6 +706,30 @@
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="3"
+                                                Grid.ColumnSpan="2"
+                                                Spacing="6">
+                                        <TextBlock Text="Readiness"
+                                                   Foreground="#475467"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <Grid ColumnDefinitions="*,Auto"
+                                              ColumnSpacing="10">
+                                            <TextBlock Text="{Binding CreateReadinessStatus}"
+                                                       Foreground="#101828"
+                                                       TextWrapping="Wrap" />
+                                            <Button Grid.Column="1"
+                                                    Padding="12,8"
+                                                    Background="#FFFFFF"
+                                                    BorderBrush="#94A3B8"
+                                                    BorderThickness="1"
+                                                    Command="{Binding RunDoctorCommand}">
+                                                <TextBlock Text="{Binding CreateReadinessActionLabel}"
+                                                           Foreground="#101828" />
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="4"
                                                 Grid.ColumnSpan="2"
                                                 Spacing="4">
                                         <TextBlock Text="Confirmation"
