@@ -826,6 +826,12 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains(viewModel.SelectedProjectDetail.PublishingReadinessItems, item =>
             item.Label == "Release metadata" &&
             item.Status == "Missing");
+        Assert.Contains(viewModel.SelectedProjectDetail.ResearchItems, item =>
+            item.Label == "Target audience" &&
+            item.Status == "Missing");
+        Assert.Contains(viewModel.SelectedProjectDetail.ResearchItems, item =>
+            item.Label == "Keywords" &&
+            item.Detail == "No local entries.");
     }
 
     [AvaloniaFact]
@@ -858,9 +864,12 @@ public sealed class DesktopShellSmokeTests
                 "releaseOwner": "Mobile Team"
               },
               "marketResearch": {
+                "targetAudience": "Busy professionals",
+                "positioning": "Habit tracking for mobile-first users",
                 "keywords": ["fitness", "habit"],
                 "competitors": ["Competitor A"],
-                "openQuestions": ["Which geography first?"]
+                "openQuestions": ["Which geography first?"],
+                "notes": "Validate paid acquisition before launch."
               },
               "releaseChecklist": {
                 "items": [
@@ -914,6 +923,16 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Mobile Team", visibleText);
         Assert.Contains("Research", visibleText);
         Assert.Contains("2 keyword(s), 1 competitor(s), 1 open question(s)", visibleText);
+        Assert.Contains("Target audience", visibleText);
+        Assert.Contains("Busy professionals", visibleText);
+        Assert.Contains("Positioning", visibleText);
+        Assert.Contains("Habit tracking for mobile-first users", visibleText);
+        Assert.Contains("Keywords", visibleText);
+        Assert.Contains("fitness, habit", visibleText);
+        Assert.Contains("Open questions", visibleText);
+        Assert.Contains("Which geography first?", visibleText);
+        Assert.Contains("Research notes", visibleText);
+        Assert.Contains("Validate paid acquisition before launch.", visibleText);
         Assert.Contains("Release", visibleText);
         Assert.Contains("1 release checklist item(s)", visibleText);
         Assert.Contains("Next Actions", visibleText);
