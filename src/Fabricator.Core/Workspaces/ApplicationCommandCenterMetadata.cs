@@ -14,6 +14,8 @@ public sealed record ApplicationCommandCenterMetadata
 
     public ApplicationMarketResearchMetadata MarketResearch { get; init; } = new();
 
+    public ApplicationProjectIntelligenceMetadata ProjectIntelligence { get; init; } = new();
+
     public ApplicationReleaseChecklistMetadata ReleaseChecklist { get; init; } = new();
 
     public IReadOnlyList<ApplicationNextActionMetadata> NextActions { get; init; } = [];
@@ -60,6 +62,49 @@ public sealed record ApplicationMarketResearchMetadata
     public IReadOnlyList<string> Competitors { get; init; } = [];
 
     public IReadOnlyList<string> OpenQuestions { get; init; } = [];
+
+    public string? Notes { get; init; }
+}
+
+public sealed record ApplicationProjectIntelligenceMetadata
+{
+    public int? TargetUsers { get; init; }
+
+    public DateOnly? TargetDate { get; init; }
+
+    public string? ReportingCadence { get; init; }
+
+    public IReadOnlyList<ApplicationProjectMetricSnapshotMetadata> MetricSnapshots { get; init; } = [];
+
+    public IReadOnlyList<ApplicationProductMilestoneMetadata> MilestoneProgress { get; init; } = [];
+
+    public IReadOnlyList<string> Assumptions { get; init; } = [];
+
+    public string? Notes { get; init; }
+}
+
+public sealed record ApplicationProjectMetricSnapshotMetadata
+{
+    public DateOnly Date { get; init; }
+
+    public int AcquiredUsers { get; init; }
+
+    public int ActiveUsers { get; init; }
+
+    public decimal? RetentionProxy { get; init; }
+
+    public string? Notes { get; init; }
+}
+
+public sealed record ApplicationProductMilestoneMetadata
+{
+    public string Id { get; init; } = string.Empty;
+
+    public string Title { get; init; } = string.Empty;
+
+    public string Status { get; init; } = "unknown";
+
+    public int? ProgressPercent { get; init; }
 
     public string? Notes { get; init; }
 }
