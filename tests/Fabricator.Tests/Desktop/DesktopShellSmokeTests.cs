@@ -1211,6 +1211,64 @@ public sealed class DesktopShellSmokeTests
             item.Status == "ready");
     }
 
+    [Fact]
+    public void MainViewModelSavesNextActionsForSelectedProject()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "NextActionsEditApp");
+        WriteFile(
+            workspace.Path,
+            "NextActionsEditApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "nextActions": [
+                {
+                  "id": "screenshots",
+                  "title": "Prepare screenshots",
+                  "group": "publishing",
+                  "status": "open"
+                }
+              ]
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.Contains("screenshots|Prepare screenshots|publishing|open", viewModel.NextActionsText, StringComparison.Ordinal);
+
+        viewModel.NextActionsText =
+            "research|Validate channel|research|open|Talk to five users" +
+            System.Environment.NewLine +
+            "screenshots|Prepare screenshots|publishing|done|Captured";
+
+        viewModel.SaveNextActionsCommand.Execute(null);
+
+        var service = new ApplicationCommandCenterMetadataService();
+        var readResult = service.Read(Path.Combine(workspace.Path, "NextActionsEditApp"));
+        Assert.Equal(2, readResult.Metadata.NextActions.Count);
+        Assert.Equal("research", readResult.Metadata.NextActions[0].Id);
+        Assert.Equal("publishing", readResult.Metadata.NextActions[1].Group);
+        Assert.StartsWith("Next actions saved:", viewModel.NextActionsEditStatus);
+
+        viewModel.NextActionsText = "research|Validate channel|research|done|Complete";
+
+        viewModel.SaveNextActionsCommand.Execute(null);
+
+        readResult = service.Read(Path.Combine(workspace.Path, "NextActionsEditApp"));
+        var action = Assert.Single(readResult.Metadata.NextActions);
+        Assert.Equal("research", action.Id);
+        Assert.Equal("done", action.Status);
+        Assert.Contains(viewModel.SelectedProjectDetail!.NextActionItems, item =>
+            item.Label == "Validate channel" &&
+            item.Status == "done");
+    }
+
     [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
@@ -1378,6 +1436,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Store screenshots", visibleText);
         Assert.Contains("Need localized screenshots.", visibleText);
         Assert.Contains("Next Actions", visibleText);
+        Assert.Contains("Next actions edit", visibleText);
+        Assert.Contains("Next actions loaded for local editing.", visibleText);
+        Assert.Contains("Save next actions", visibleText);
         Assert.Contains("1 next action(s)", visibleText);
         Assert.Contains("Prepare screenshots", visibleText);
         Assert.Contains("Group: publishing. Capture localized store screenshots.", visibleText);

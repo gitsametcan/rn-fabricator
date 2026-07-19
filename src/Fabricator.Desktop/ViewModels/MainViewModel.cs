@@ -102,6 +102,8 @@ public sealed class MainViewModel : ViewModelBase
     private string _releaseChecklistEditStatus = "Select a project with command center metadata to edit release checklist.";
     private string _releaseChecklistItemsText = string.Empty;
     private string _releaseChecklistNotes = string.Empty;
+    private string _nextActionsEditStatus = "Select a project with command center metadata to edit next actions.";
+    private string _nextActionsText = string.Empty;
 
     public MainViewModel()
         : this(
@@ -211,6 +213,7 @@ public sealed class MainViewModel : ViewModelBase
         SaveResearchMetadataCommand = new RelayCommand(SaveResearchMetadata);
         SaveProjectMetricsCommand = new RelayCommand(SaveProjectMetrics);
         SaveReleaseChecklistCommand = new RelayCommand(SaveReleaseChecklist);
+        SaveNextActionsCommand = new RelayCommand(SaveNextActions);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -906,6 +909,18 @@ public sealed class MainViewModel : ViewModelBase
         set => SetProperty(ref _releaseChecklistNotes, value);
     }
 
+    public string NextActionsEditStatus
+    {
+        get => _nextActionsEditStatus;
+        private set => SetProperty(ref _nextActionsEditStatus, value);
+    }
+
+    public string NextActionsText
+    {
+        get => _nextActionsText;
+        set => SetProperty(ref _nextActionsText, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -980,6 +995,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand SaveProjectMetricsCommand { get; }
 
     public IRelayCommand SaveReleaseChecklistCommand { get; }
+
+    public IRelayCommand SaveNextActionsCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -1078,6 +1095,7 @@ public sealed class MainViewModel : ViewModelBase
         LoadResearchEditor(project);
         LoadProjectMetricsEditor(project);
         LoadReleaseChecklistEditor(project);
+        LoadNextActionsEditor(project);
     }
 
     private void CreateCommandCenterMetadata()
@@ -1105,6 +1123,7 @@ public sealed class MainViewModel : ViewModelBase
         LoadResearchEditor(SelectedProject);
         LoadProjectMetricsEditor(SelectedProject);
         LoadReleaseChecklistEditor(SelectedProject);
+        LoadNextActionsEditor(SelectedProject);
     }
 
     private void LoadPublishingEditor(WorkspaceProjectItemViewModel? project)
@@ -1431,6 +1450,60 @@ public sealed class MainViewModel : ViewModelBase
         ReleaseChecklistEditStatus = $"Release checklist saved: {writeResult.MetadataPath}";
     }
 
+    private void LoadNextActionsEditor(WorkspaceProjectItemViewModel? project)
+    {
+        if (project is null)
+        {
+            NextActionsEditStatus = "Select a project with command center metadata to edit next actions.";
+            NextActionsText = string.Empty;
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(project.Path);
+        if (!readResult.HasMetadata)
+        {
+            NextActionsEditStatus = "Create command center metadata before editing next actions.";
+            NextActionsText = string.Empty;
+            return;
+        }
+
+        NextActionsText = JoinNextActions(readResult.Metadata.NextActions ?? []);
+        NextActionsEditStatus = "Next actions loaded for local editing.";
+    }
+
+    private void SaveNextActions()
+    {
+        if (SelectedProject is null)
+        {
+            NextActionsEditStatus = "Select a project before saving next actions.";
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(SelectedProject.Path);
+        if (!readResult.HasMetadata)
+        {
+            NextActionsEditStatus = "Create command center metadata before saving next actions.";
+            return;
+        }
+
+        var metadata = readResult.Metadata with
+        {
+            NextActions = ParseNextActions(NextActionsText)
+        };
+
+        var writeResult = _commandCenterMetadataService.Write(SelectedProject.Path, metadata);
+        if (!writeResult.IsSuccess)
+        {
+            NextActionsEditStatus = $"Next actions could not be saved: {string.Join(" ", writeResult.Errors)}";
+            return;
+        }
+
+        SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
+            _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
+        NextActionsText = JoinNextActions(writeResult.Metadata.NextActions);
+        NextActionsEditStatus = $"Next actions saved: {writeResult.MetadataPath}";
+    }
+
     private static string? Optional(string value)
     {
         return string.IsNullOrWhiteSpace(value)
@@ -1699,6 +1772,36 @@ public sealed class MainViewModel : ViewModelBase
                     item.Title,
                     item.Status,
                     item.Notes ?? string.Empty)));
+    }
+
+    private static IReadOnlyList<ApplicationNextActionMetadata> ParseNextActions(string value)
+    {
+        return SplitList(value)
+            .Select(line => line.Split('|').Select(part => part.Trim()).ToArray())
+            .Where(parts => parts.Length >= 4)
+            .Select(parts => new ApplicationNextActionMetadata
+            {
+                Id = parts[0],
+                Title = parts[1],
+                Group = parts[2],
+                Status = parts[3],
+                Notes = parts.Length > 4 ? Optional(parts[4]) : null
+            })
+            .ToArray();
+    }
+
+    private static string JoinNextActions(IReadOnlyList<ApplicationNextActionMetadata> actions)
+    {
+        return string.Join(
+            System.Environment.NewLine,
+            actions.Select(action =>
+                string.Join(
+                    "|",
+                    action.Id,
+                    action.Title,
+                    action.Group,
+                    action.Status,
+                    action.Notes ?? string.Empty)));
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)

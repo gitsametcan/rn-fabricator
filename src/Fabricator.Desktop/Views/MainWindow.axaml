@@ -1008,6 +1008,36 @@
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
+
+                                                    <Border Padding="10"
+                                                            CornerRadius="6"
+                                                            Background="#F9FAFB"
+                                                            BorderBrush="#EAECF0"
+                                                            BorderThickness="1">
+                                                        <StackPanel Spacing="8">
+                                                            <TextBlock Text="Next actions edit"
+                                                                       Foreground="#101828"
+                                                                       FontSize="12"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding NextActionsEditStatus}"
+                                                                       Foreground="#667085"
+                                                                       FontSize="12"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBox Text="{Binding NextActionsText}"
+                                                                     Watermark="Action rows: id|title|group|status|notes"
+                                                                     AcceptsReturn="True"
+                                                                     MinHeight="76" />
+                                                            <Button Padding="12,8"
+                                                                    HorizontalAlignment="Left"
+                                                                    Background="#0EA5E9"
+                                                                    BorderBrush="#0284C7"
+                                                                    BorderThickness="1"
+                                                                    Command="{Binding SaveNextActionsCommand}">
+                                                                <TextBlock Text="Save next actions"
+                                                                           Foreground="#FFFFFF" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
                                                 </StackPanel>
                                             </Grid>
                                         </Grid>
