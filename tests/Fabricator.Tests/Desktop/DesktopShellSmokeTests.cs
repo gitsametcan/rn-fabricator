@@ -1152,6 +1152,65 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Target users must be greater than or equal to the latest acquired users", viewModel.ProjectMetricsEditStatus, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void MainViewModelSavesReleaseChecklistForSelectedProject()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "ReleaseChecklistEditApp");
+        WriteFile(
+            workspace.Path,
+            "ReleaseChecklistEditApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "releaseChecklist": {
+                "items": [
+                  {
+                    "id": "privacy",
+                    "title": "Privacy policy",
+                    "status": "missing"
+                  }
+                ]
+              }
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.Contains("privacy|Privacy policy|missing", viewModel.ReleaseChecklistItemsText, StringComparison.Ordinal);
+
+        viewModel.ReleaseChecklistItemsText =
+            "screenshots|Store screenshots|ready|Captured" +
+            System.Environment.NewLine +
+            "privacy|Privacy policy|ready|Published";
+        viewModel.ReleaseChecklistNotes = "Ready for review.";
+
+        viewModel.SaveReleaseChecklistCommand.Execute(null);
+
+        var service = new ApplicationCommandCenterMetadataService();
+        var readResult = service.Read(Path.Combine(workspace.Path, "ReleaseChecklistEditApp"));
+        Assert.Equal(2, readResult.Metadata.ReleaseChecklist.Items.Count);
+        Assert.Equal("screenshots", readResult.Metadata.ReleaseChecklist.Items[0].Id);
+        Assert.Equal("privacy", readResult.Metadata.ReleaseChecklist.Items[1].Id);
+        Assert.Equal("Ready for review.", readResult.Metadata.ReleaseChecklist.Notes);
+        Assert.StartsWith("Release checklist saved:", viewModel.ReleaseChecklistEditStatus);
+
+        viewModel.ReleaseChecklistItemsText = "privacy|Privacy policy|ready|Published";
+
+        viewModel.SaveReleaseChecklistCommand.Execute(null);
+
+        readResult = service.Read(Path.Combine(workspace.Path, "ReleaseChecklistEditApp"));
+        Assert.Equal("privacy", Assert.Single(readResult.Metadata.ReleaseChecklist.Items).Id);
+        Assert.Contains(viewModel.SelectedProjectDetail!.ReleaseChecklistItems, item =>
+            item.Label == "Privacy policy" &&
+            item.Status == "ready");
+    }
+
     [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
@@ -1310,6 +1369,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Research notes", visibleText);
         Assert.Contains("Validate paid acquisition before launch.", visibleText);
         Assert.Contains("Release", visibleText);
+        Assert.Contains("Release checklist edit", visibleText);
+        Assert.Contains("Release checklist loaded for local editing.", visibleText);
+        Assert.Contains("Save release checklist", visibleText);
         Assert.Contains("2 release checklist item(s)", visibleText);
         Assert.Contains("Privacy policy", visibleText);
         Assert.Contains("Published and linked.", visibleText);

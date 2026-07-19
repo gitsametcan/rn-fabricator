@@ -940,6 +940,38 @@
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
+
+                                                    <Border Padding="10"
+                                                            CornerRadius="6"
+                                                            Background="#F9FAFB"
+                                                            BorderBrush="#EAECF0"
+                                                            BorderThickness="1">
+                                                        <StackPanel Spacing="8">
+                                                            <TextBlock Text="Release checklist edit"
+                                                                       Foreground="#101828"
+                                                                       FontSize="12"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding ReleaseChecklistEditStatus}"
+                                                                       Foreground="#667085"
+                                                                       FontSize="12"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBox Text="{Binding ReleaseChecklistItemsText}"
+                                                                     Watermark="Checklist rows: id|title|status|notes"
+                                                                     AcceptsReturn="True"
+                                                                     MinHeight="76" />
+                                                            <TextBox Text="{Binding ReleaseChecklistNotes}"
+                                                                     Watermark="Release checklist notes" />
+                                                            <Button Padding="12,8"
+                                                                    HorizontalAlignment="Left"
+                                                                    Background="#0EA5E9"
+                                                                    BorderBrush="#0284C7"
+                                                                    BorderThickness="1"
+                                                                    Command="{Binding SaveReleaseChecklistCommand}">
+                                                                <TextBlock Text="Save release checklist"
+                                                                           Foreground="#FFFFFF" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Column="3"
