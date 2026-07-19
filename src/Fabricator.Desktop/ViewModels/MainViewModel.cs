@@ -99,6 +99,9 @@ public sealed class MainViewModel : ViewModelBase
     private string _projectMetricSnapshotsText = string.Empty;
     private string _projectMilestoneProgressText = string.Empty;
     private string _projectIntelligenceNotes = string.Empty;
+    private string _releaseChecklistEditStatus = "Select a project with command center metadata to edit release checklist.";
+    private string _releaseChecklistItemsText = string.Empty;
+    private string _releaseChecklistNotes = string.Empty;
 
     public MainViewModel()
         : this(
@@ -207,6 +210,7 @@ public sealed class MainViewModel : ViewModelBase
         SavePublishingMetadataCommand = new RelayCommand(SavePublishingMetadata);
         SaveResearchMetadataCommand = new RelayCommand(SaveResearchMetadata);
         SaveProjectMetricsCommand = new RelayCommand(SaveProjectMetrics);
+        SaveReleaseChecklistCommand = new RelayCommand(SaveReleaseChecklist);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -884,6 +888,24 @@ public sealed class MainViewModel : ViewModelBase
         set => SetProperty(ref _projectIntelligenceNotes, value);
     }
 
+    public string ReleaseChecklistEditStatus
+    {
+        get => _releaseChecklistEditStatus;
+        private set => SetProperty(ref _releaseChecklistEditStatus, value);
+    }
+
+    public string ReleaseChecklistItemsText
+    {
+        get => _releaseChecklistItemsText;
+        set => SetProperty(ref _releaseChecklistItemsText, value);
+    }
+
+    public string ReleaseChecklistNotes
+    {
+        get => _releaseChecklistNotes;
+        set => SetProperty(ref _releaseChecklistNotes, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -956,6 +978,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand SaveResearchMetadataCommand { get; }
 
     public IRelayCommand SaveProjectMetricsCommand { get; }
+
+    public IRelayCommand SaveReleaseChecklistCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -1053,6 +1077,7 @@ public sealed class MainViewModel : ViewModelBase
         LoadPublishingEditor(project);
         LoadResearchEditor(project);
         LoadProjectMetricsEditor(project);
+        LoadReleaseChecklistEditor(project);
     }
 
     private void CreateCommandCenterMetadata()
@@ -1079,6 +1104,7 @@ public sealed class MainViewModel : ViewModelBase
         LoadPublishingEditor(SelectedProject);
         LoadResearchEditor(SelectedProject);
         LoadProjectMetricsEditor(SelectedProject);
+        LoadReleaseChecklistEditor(SelectedProject);
     }
 
     private void LoadPublishingEditor(WorkspaceProjectItemViewModel? project)
@@ -1340,6 +1366,71 @@ public sealed class MainViewModel : ViewModelBase
         ProjectMetricsEditStatus = $"Project metrics saved: {writeResult.MetadataPath}";
     }
 
+    private void LoadReleaseChecklistEditor(WorkspaceProjectItemViewModel? project)
+    {
+        if (project is null)
+        {
+            ReleaseChecklistEditStatus = "Select a project with command center metadata to edit release checklist.";
+            SetReleaseChecklistEditor(new ApplicationReleaseChecklistMetadata());
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(project.Path);
+        if (!readResult.HasMetadata)
+        {
+            ReleaseChecklistEditStatus = "Create command center metadata before editing release checklist.";
+            SetReleaseChecklistEditor(new ApplicationReleaseChecklistMetadata());
+            return;
+        }
+
+        SetReleaseChecklistEditor(readResult.Metadata.ReleaseChecklist ?? new ApplicationReleaseChecklistMetadata());
+        ReleaseChecklistEditStatus = "Release checklist loaded for local editing.";
+    }
+
+    private void SetReleaseChecklistEditor(ApplicationReleaseChecklistMetadata releaseChecklist)
+    {
+        ReleaseChecklistItemsText = JoinReleaseChecklistItems(releaseChecklist.Items ?? []);
+        ReleaseChecklistNotes = releaseChecklist.Notes ?? string.Empty;
+    }
+
+    private void SaveReleaseChecklist()
+    {
+        if (SelectedProject is null)
+        {
+            ReleaseChecklistEditStatus = "Select a project before saving release checklist.";
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(SelectedProject.Path);
+        if (!readResult.HasMetadata)
+        {
+            ReleaseChecklistEditStatus = "Create command center metadata before saving release checklist.";
+            return;
+        }
+
+        var items = ParseReleaseChecklistItems(ReleaseChecklistItemsText);
+        var metadata = readResult.Metadata with
+        {
+            ReleaseChecklist = new ApplicationReleaseChecklistMetadata
+            {
+                Items = items,
+                Notes = Optional(ReleaseChecklistNotes)
+            }
+        };
+
+        var writeResult = _commandCenterMetadataService.Write(SelectedProject.Path, metadata);
+        if (!writeResult.IsSuccess)
+        {
+            ReleaseChecklistEditStatus = $"Release checklist could not be saved: {string.Join(" ", writeResult.Errors)}";
+            return;
+        }
+
+        SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
+            _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
+        SetReleaseChecklistEditor(writeResult.Metadata.ReleaseChecklist);
+        ReleaseChecklistEditStatus = $"Release checklist saved: {writeResult.MetadataPath}";
+    }
+
     private static string? Optional(string value)
     {
         return string.IsNullOrWhiteSpace(value)
@@ -1580,6 +1671,34 @@ public sealed class MainViewModel : ViewModelBase
                     milestone.Status,
                     milestone.ProgressPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
                     milestone.Notes ?? string.Empty)));
+    }
+
+    private static IReadOnlyList<ApplicationReleaseChecklistItemMetadata> ParseReleaseChecklistItems(string value)
+    {
+        return SplitList(value)
+            .Select(line => line.Split('|').Select(part => part.Trim()).ToArray())
+            .Where(parts => parts.Length >= 3)
+            .Select(parts => new ApplicationReleaseChecklistItemMetadata
+            {
+                Id = parts[0],
+                Title = parts[1],
+                Status = parts[2],
+                Notes = parts.Length > 3 ? Optional(parts[3]) : null
+            })
+            .ToArray();
+    }
+
+    private static string JoinReleaseChecklistItems(IReadOnlyList<ApplicationReleaseChecklistItemMetadata> items)
+    {
+        return string.Join(
+            System.Environment.NewLine,
+            items.Select(item =>
+                string.Join(
+                    "|",
+                    item.Id,
+                    item.Title,
+                    item.Status,
+                    item.Notes ?? string.Empty)));
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)
