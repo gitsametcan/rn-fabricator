@@ -517,7 +517,7 @@
                                             Background="#FFFFFF"
                                             BorderBrush="#EAECF0"
                                             BorderThickness="1">
-                                        <Grid RowDefinitions="Auto,Auto"
+                                        <Grid RowDefinitions="Auto,Auto,Auto"
                                               RowSpacing="12">
                                             <Grid ColumnDefinitions="*,Auto"
                                                   ColumnSpacing="12">
@@ -551,7 +551,70 @@
                                                 </Button>
                                             </Grid>
 
-                                            <Grid Grid.Row="1"
+                                            <Border Grid.Row="1"
+                                                    Padding="10"
+                                                    CornerRadius="6"
+                                                    Background="#F9FAFB"
+                                                    BorderBrush="#EAECF0"
+                                                    BorderThickness="1">
+                                                <Grid RowDefinitions="Auto,Auto"
+                                                      RowSpacing="10">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="Project metrics edit"
+                                                                   Foreground="#101828"
+                                                                   FontSize="12"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding ProjectMetricsEditStatus}"
+                                                                   Foreground="#667085"
+                                                                   FontSize="12"
+                                                                   TextWrapping="Wrap" />
+                                                    </StackPanel>
+
+                                                    <Grid Grid.Row="1"
+                                                          ColumnDefinitions="*,*,*"
+                                                          RowDefinitions="Auto,Auto,Auto"
+                                                          ColumnSpacing="10"
+                                                          RowSpacing="8">
+                                                        <TextBox Text="{Binding ProjectTargetUsers}"
+                                                                 Watermark="Target users" />
+                                                        <TextBox Grid.Column="1"
+                                                                 Text="{Binding ProjectTargetDate}"
+                                                                 Watermark="Target date YYYY-MM-DD" />
+                                                        <TextBox Grid.Column="2"
+                                                                 Text="{Binding ProjectReportingCadence}"
+                                                                 Watermark="Reporting cadence" />
+                                                        <TextBox Grid.Row="1"
+                                                                 Grid.ColumnSpan="3"
+                                                                 Text="{Binding ProjectMetricSnapshotsText}"
+                                                                 Watermark="Metric snapshots: date|acquired|active|retention|notes"
+                                                                 AcceptsReturn="True"
+                                                                 MinHeight="76" />
+                                                        <TextBox Grid.Row="2"
+                                                                 Grid.ColumnSpan="2"
+                                                                 Text="{Binding ProjectMilestoneProgressText}"
+                                                                 Watermark="Milestones: id|title|status|progress|notes"
+                                                                 AcceptsReturn="True"
+                                                                 MinHeight="76" />
+                                                        <StackPanel Grid.Row="2"
+                                                                    Grid.Column="2"
+                                                                    Spacing="8">
+                                                            <TextBox Text="{Binding ProjectIntelligenceNotes}"
+                                                                     Watermark="Project intelligence notes" />
+                                                            <Button Padding="12,8"
+                                                                    HorizontalAlignment="Left"
+                                                                    Background="#0EA5E9"
+                                                                    BorderBrush="#0284C7"
+                                                                    BorderThickness="1"
+                                                                    Command="{Binding SaveProjectMetricsCommand}">
+                                                                <TextBlock Text="Save project metrics"
+                                                                           Foreground="#FFFFFF" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+
+                                            <Grid Grid.Row="2"
                                                   ColumnDefinitions="*,*,*,*"
                                                   ColumnSpacing="12">
                                                 <StackPanel Spacing="6">

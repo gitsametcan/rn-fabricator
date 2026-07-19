@@ -92,6 +92,13 @@ public sealed class MainViewModel : ViewModelBase
     private string _researchOpenQuestionsText = string.Empty;
     private string _researchGrowthAssumptionsText = string.Empty;
     private string _researchNotes = string.Empty;
+    private string _projectMetricsEditStatus = "Select a project with command center metadata to edit project metrics.";
+    private string _projectTargetUsers = string.Empty;
+    private string _projectTargetDate = string.Empty;
+    private string _projectReportingCadence = string.Empty;
+    private string _projectMetricSnapshotsText = string.Empty;
+    private string _projectMilestoneProgressText = string.Empty;
+    private string _projectIntelligenceNotes = string.Empty;
 
     public MainViewModel()
         : this(
@@ -199,6 +206,7 @@ public sealed class MainViewModel : ViewModelBase
         CreateCommandCenterMetadataCommand = new RelayCommand(CreateCommandCenterMetadata);
         SavePublishingMetadataCommand = new RelayCommand(SavePublishingMetadata);
         SaveResearchMetadataCommand = new RelayCommand(SaveResearchMetadata);
+        SaveProjectMetricsCommand = new RelayCommand(SaveProjectMetrics);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -834,6 +842,48 @@ public sealed class MainViewModel : ViewModelBase
         set => SetProperty(ref _researchNotes, value);
     }
 
+    public string ProjectMetricsEditStatus
+    {
+        get => _projectMetricsEditStatus;
+        private set => SetProperty(ref _projectMetricsEditStatus, value);
+    }
+
+    public string ProjectTargetUsers
+    {
+        get => _projectTargetUsers;
+        set => SetProperty(ref _projectTargetUsers, value);
+    }
+
+    public string ProjectTargetDate
+    {
+        get => _projectTargetDate;
+        set => SetProperty(ref _projectTargetDate, value);
+    }
+
+    public string ProjectReportingCadence
+    {
+        get => _projectReportingCadence;
+        set => SetProperty(ref _projectReportingCadence, value);
+    }
+
+    public string ProjectMetricSnapshotsText
+    {
+        get => _projectMetricSnapshotsText;
+        set => SetProperty(ref _projectMetricSnapshotsText, value);
+    }
+
+    public string ProjectMilestoneProgressText
+    {
+        get => _projectMilestoneProgressText;
+        set => SetProperty(ref _projectMilestoneProgressText, value);
+    }
+
+    public string ProjectIntelligenceNotes
+    {
+        get => _projectIntelligenceNotes;
+        set => SetProperty(ref _projectIntelligenceNotes, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -904,6 +954,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand SavePublishingMetadataCommand { get; }
 
     public IRelayCommand SaveResearchMetadataCommand { get; }
+
+    public IRelayCommand SaveProjectMetricsCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -1000,6 +1052,7 @@ public sealed class MainViewModel : ViewModelBase
                 : "Command center metadata is available for this project.";
         LoadPublishingEditor(project);
         LoadResearchEditor(project);
+        LoadProjectMetricsEditor(project);
     }
 
     private void CreateCommandCenterMetadata()
@@ -1025,6 +1078,7 @@ public sealed class MainViewModel : ViewModelBase
         CommandCenterCreateStatus = $"Command center metadata created: {result.MetadataPath}";
         LoadPublishingEditor(SelectedProject);
         LoadResearchEditor(SelectedProject);
+        LoadProjectMetricsEditor(SelectedProject);
     }
 
     private void LoadPublishingEditor(WorkspaceProjectItemViewModel? project)
@@ -1213,6 +1267,79 @@ public sealed class MainViewModel : ViewModelBase
         ResearchEditStatus = $"Research metadata saved: {writeResult.MetadataPath}";
     }
 
+    private void LoadProjectMetricsEditor(WorkspaceProjectItemViewModel? project)
+    {
+        if (project is null)
+        {
+            ProjectMetricsEditStatus = "Select a project with command center metadata to edit project metrics.";
+            SetProjectMetricsEditor(new ApplicationProjectIntelligenceMetadata());
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(project.Path);
+        if (!readResult.HasMetadata)
+        {
+            ProjectMetricsEditStatus = "Create command center metadata before editing project metrics.";
+            SetProjectMetricsEditor(new ApplicationProjectIntelligenceMetadata());
+            return;
+        }
+
+        SetProjectMetricsEditor(readResult.Metadata.ProjectIntelligence ?? new ApplicationProjectIntelligenceMetadata());
+        ProjectMetricsEditStatus = "Project metrics loaded for local editing.";
+    }
+
+    private void SetProjectMetricsEditor(ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        ProjectTargetUsers = intelligence.TargetUsers?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        ProjectTargetDate = intelligence.TargetDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        ProjectReportingCadence = intelligence.ReportingCadence ?? string.Empty;
+        ProjectMetricSnapshotsText = JoinMetricSnapshots(intelligence.MetricSnapshots ?? []);
+        ProjectMilestoneProgressText = JoinMilestoneProgress(intelligence.MilestoneProgress ?? []);
+        ProjectIntelligenceNotes = intelligence.Notes ?? string.Empty;
+    }
+
+    private void SaveProjectMetrics()
+    {
+        if (SelectedProject is null)
+        {
+            ProjectMetricsEditStatus = "Select a project before saving project metrics.";
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(SelectedProject.Path);
+        if (!readResult.HasMetadata)
+        {
+            ProjectMetricsEditStatus = "Create command center metadata before saving project metrics.";
+            return;
+        }
+
+        if (!TryBuildProjectIntelligence(
+                readResult.Metadata.ProjectIntelligence ?? new ApplicationProjectIntelligenceMetadata(),
+                out var projectIntelligence,
+                out var errors))
+        {
+            ProjectMetricsEditStatus = $"Project metrics could not be saved: {string.Join(" ", errors)}";
+            return;
+        }
+
+        var metadata = readResult.Metadata with
+        {
+            ProjectIntelligence = projectIntelligence
+        };
+
+        var writeResult = _commandCenterMetadataService.Write(SelectedProject.Path, metadata);
+        if (!writeResult.IsSuccess)
+        {
+            ProjectMetricsEditStatus = $"Project metrics could not be saved: {string.Join(" ", writeResult.Errors)}";
+            return;
+        }
+
+        SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
+            _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
+        SetProjectMetricsEditor(writeResult.Metadata.ProjectIntelligence);
+        ProjectMetricsEditStatus = $"Project metrics saved: {writeResult.MetadataPath}";
+    }
+
     private static string? Optional(string value)
     {
         return string.IsNullOrWhiteSpace(value)
@@ -1232,6 +1359,227 @@ public sealed class MainViewModel : ViewModelBase
             .Select(item => item.Trim())
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .ToArray();
+    }
+
+    private bool TryBuildProjectIntelligence(
+        ApplicationProjectIntelligenceMetadata current,
+        out ApplicationProjectIntelligenceMetadata projectIntelligence,
+        out IReadOnlyList<string> errors)
+    {
+        var validationErrors = new List<string>();
+        var targetUsers = ParseOptionalInt(ProjectTargetUsers, "Target users", validationErrors);
+        var targetDate = ParseOptionalDate(ProjectTargetDate, "Target date", validationErrors);
+        var metricSnapshots = ParseMetricSnapshots(ProjectMetricSnapshotsText, validationErrors);
+        var milestoneProgress = ParseMilestoneProgress(ProjectMilestoneProgressText, validationErrors);
+
+        var latestSnapshot = metricSnapshots
+            .OrderBy(snapshot => snapshot.Date)
+            .LastOrDefault();
+        if (targetUsers is not null && latestSnapshot is not null && targetUsers.Value < latestSnapshot.AcquiredUsers)
+        {
+            validationErrors.Add("Target users must be greater than or equal to the latest acquired users.");
+        }
+
+        if (targetUsers is not null &&
+            latestSnapshot is not null &&
+            targetUsers.Value > latestSnapshot.AcquiredUsers &&
+            targetDate is not null &&
+            targetDate.Value <= latestSnapshot.Date)
+        {
+            validationErrors.Add("Target date must be after the latest metric snapshot date.");
+        }
+
+        projectIntelligence = current with
+        {
+            TargetUsers = targetUsers,
+            TargetDate = targetDate,
+            ReportingCadence = Optional(ProjectReportingCadence),
+            MetricSnapshots = metricSnapshots,
+            MilestoneProgress = milestoneProgress,
+            Notes = Optional(ProjectIntelligenceNotes)
+        };
+        errors = validationErrors;
+        return validationErrors.Count == 0;
+    }
+
+    private static int? ParseOptionalInt(string value, string label, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (!int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var result))
+        {
+            errors.Add($"{label} must be a whole number.");
+            return null;
+        }
+
+        if (result < 0)
+        {
+            errors.Add($"{label} cannot be negative.");
+            return null;
+        }
+
+        return result;
+    }
+
+    private static DateOnly? ParseOptionalDate(string value, string label, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (DateOnly.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var result))
+        {
+            return result;
+        }
+
+        errors.Add($"{label} must be a valid date.");
+        return null;
+    }
+
+    private static IReadOnlyList<ApplicationProjectMetricSnapshotMetadata> ParseMetricSnapshots(
+        string value,
+        List<string> errors)
+    {
+        var snapshots = new List<ApplicationProjectMetricSnapshotMetadata>();
+        foreach (var line in SplitList(value))
+        {
+            var parts = line.Split('|').Select(part => part.Trim()).ToArray();
+            if (parts.Length < 3)
+            {
+                errors.Add("Metric snapshot rows must use date|acquired|active|retention|notes.");
+                continue;
+            }
+
+            if (!DateOnly.TryParse(parts[0], System.Globalization.CultureInfo.InvariantCulture, out var date))
+            {
+                errors.Add($"Metric snapshot date is invalid: {parts[0]}.");
+                continue;
+            }
+
+            var acquiredUsers = ParseRequiredInt(parts[1], "Acquired users", errors);
+            var activeUsers = ParseRequiredInt(parts[2], "Active users", errors);
+            var retentionProxy = ParseOptionalDecimal(parts.Length > 3 ? parts[3] : string.Empty, "Retention proxy", errors);
+            if (acquiredUsers is null || activeUsers is null)
+            {
+                continue;
+            }
+
+            if (activeUsers.Value > acquiredUsers.Value)
+            {
+                errors.Add("Active users cannot exceed acquired users for the same snapshot.");
+            }
+
+            snapshots.Add(new ApplicationProjectMetricSnapshotMetadata
+            {
+                Date = date,
+                AcquiredUsers = acquiredUsers.Value,
+                ActiveUsers = activeUsers.Value,
+                RetentionProxy = retentionProxy,
+                Notes = parts.Length > 4 ? Optional(parts[4]) : null
+            });
+        }
+
+        return snapshots
+            .OrderBy(snapshot => snapshot.Date)
+            .ToArray();
+    }
+
+    private static int? ParseRequiredInt(string value, string label, List<string> errors)
+    {
+        if (!int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var result))
+        {
+            errors.Add($"{label} must be a whole number.");
+            return null;
+        }
+
+        if (result < 0)
+        {
+            errors.Add($"{label} cannot be negative.");
+            return null;
+        }
+
+        return result;
+    }
+
+    private static decimal? ParseOptionalDecimal(string value, string label, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var result))
+        {
+            return result;
+        }
+
+        errors.Add($"{label} must be a decimal number.");
+        return null;
+    }
+
+    private static IReadOnlyList<ApplicationProductMilestoneMetadata> ParseMilestoneProgress(
+        string value,
+        List<string> errors)
+    {
+        var milestones = new List<ApplicationProductMilestoneMetadata>();
+        foreach (var line in SplitList(value))
+        {
+            var parts = line.Split('|').Select(part => part.Trim()).ToArray();
+            if (parts.Length < 3)
+            {
+                errors.Add("Milestone rows must use id|title|status|progress|notes.");
+                continue;
+            }
+
+            var progress = ParseOptionalInt(parts.Length > 3 ? parts[3] : string.Empty, "Milestone progress", errors);
+            if (progress is < 0 or > 100)
+            {
+                errors.Add("Milestone progress must be between 0 and 100.");
+            }
+
+            milestones.Add(new ApplicationProductMilestoneMetadata
+            {
+                Id = parts[0],
+                Title = parts[1],
+                Status = parts[2],
+                ProgressPercent = progress,
+                Notes = parts.Length > 4 ? Optional(parts[4]) : null
+            });
+        }
+
+        return milestones.ToArray();
+    }
+
+    private static string JoinMetricSnapshots(IReadOnlyList<ApplicationProjectMetricSnapshotMetadata> snapshots)
+    {
+        return string.Join(
+            System.Environment.NewLine,
+            snapshots.Select(snapshot =>
+                string.Join(
+                    "|",
+                    snapshot.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                    snapshot.AcquiredUsers.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    snapshot.ActiveUsers.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    snapshot.RetentionProxy?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                    snapshot.Notes ?? string.Empty)));
+    }
+
+    private static string JoinMilestoneProgress(IReadOnlyList<ApplicationProductMilestoneMetadata> milestones)
+    {
+        return string.Join(
+            System.Environment.NewLine,
+            milestones.Select(milestone =>
+                string.Join(
+                    "|",
+                    milestone.Id,
+                    milestone.Title,
+                    milestone.Status,
+                    milestone.ProgressPercent?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                    milestone.Notes ?? string.Empty)));
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)
