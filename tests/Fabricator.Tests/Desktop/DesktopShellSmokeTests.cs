@@ -983,6 +983,72 @@ public sealed class DesktopShellSmokeTests
             item.Status == "Missing");
     }
 
+    [Fact]
+    public void MainViewModelSavesMarketResearchMetadataForSelectedProject()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "ResearchEditApp");
+        WriteFile(
+            workspace.Path,
+            "ResearchEditApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "marketResearch": {
+                "targetAudience": "Founders",
+                "keywords": ["launch", "mobile"],
+                "competitors": ["Competitor A"]
+              },
+              "projectIntelligence": {
+                "assumptions": ["Paid acquisition remains stable."]
+              }
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.Equal("Founders", viewModel.ResearchTargetAudience);
+        Assert.Contains("launch", viewModel.ResearchKeywordsText, StringComparison.Ordinal);
+        Assert.Contains("Paid acquisition remains stable.", viewModel.ResearchGrowthAssumptionsText, StringComparison.Ordinal);
+
+        viewModel.ResearchTargetAudience = "Busy professionals";
+        viewModel.ResearchPositioning = "Habit tracking for mobile-first users";
+        viewModel.ResearchKeywordsText = "fitness" + System.Environment.NewLine + "habit";
+        viewModel.ResearchCompetitorsText = "Competitor B";
+        viewModel.ResearchOpenQuestionsText = "Which geography first?" + System.Environment.NewLine + "Which channel scales?";
+        viewModel.ResearchGrowthAssumptionsText = "Weekly acquisition stays above 200 users.";
+        viewModel.ResearchNotes = "Validate paid acquisition before launch.";
+
+        viewModel.SaveResearchMetadataCommand.Execute(null);
+
+        var service = new ApplicationCommandCenterMetadataService();
+        var readResult = service.Read(Path.Combine(workspace.Path, "ResearchEditApp"));
+        Assert.Equal("Busy professionals", readResult.Metadata.MarketResearch.TargetAudience);
+        Assert.Equal("Habit tracking for mobile-first users", readResult.Metadata.MarketResearch.Positioning);
+        Assert.Equal(["fitness", "habit"], readResult.Metadata.MarketResearch.Keywords);
+        Assert.Equal(["Competitor B"], readResult.Metadata.MarketResearch.Competitors);
+        Assert.Equal(["Which geography first?", "Which channel scales?"], readResult.Metadata.MarketResearch.OpenQuestions);
+        Assert.Equal(["Weekly acquisition stays above 200 users."], readResult.Metadata.ProjectIntelligence.Assumptions);
+        Assert.StartsWith("Research metadata saved:", viewModel.ResearchEditStatus);
+
+        viewModel.ResearchKeywordsText = "habit";
+        viewModel.ResearchCompetitorsText = string.Empty;
+
+        viewModel.SaveResearchMetadataCommand.Execute(null);
+
+        readResult = service.Read(Path.Combine(workspace.Path, "ResearchEditApp"));
+        Assert.Equal(["habit"], readResult.Metadata.MarketResearch.Keywords);
+        Assert.Empty(readResult.Metadata.MarketResearch.Competitors);
+        Assert.Contains(viewModel.SelectedProjectDetail!.ResearchItems, item =>
+            item.Label == "Competitors" &&
+            item.Status == "Missing");
+    }
+
     [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
@@ -1082,6 +1148,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Release owner", visibleText);
         Assert.Contains("Mobile Team", visibleText);
         Assert.Contains("Research", visibleText);
+        Assert.Contains("Research edit", visibleText);
+        Assert.Contains("Research metadata loaded for local editing.", visibleText);
+        Assert.Contains("Save research", visibleText);
         Assert.Contains("2 keyword(s), 1 competitor(s), 1 open question(s)", visibleText);
         Assert.Contains("Target audience", visibleText);
         Assert.Contains("Busy professionals", visibleText);

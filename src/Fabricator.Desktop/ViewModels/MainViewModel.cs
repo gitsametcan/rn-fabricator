@@ -84,6 +84,14 @@ public sealed class MainViewModel : ViewModelBase
     private string _publishingAndroidNotes = string.Empty;
     private string _publishingReleaseOwner = string.Empty;
     private string _publishingNotes = string.Empty;
+    private string _researchEditStatus = "Select a project with command center metadata to edit research.";
+    private string _researchTargetAudience = string.Empty;
+    private string _researchPositioning = string.Empty;
+    private string _researchKeywordsText = string.Empty;
+    private string _researchCompetitorsText = string.Empty;
+    private string _researchOpenQuestionsText = string.Empty;
+    private string _researchGrowthAssumptionsText = string.Empty;
+    private string _researchNotes = string.Empty;
 
     public MainViewModel()
         : this(
@@ -190,6 +198,7 @@ public sealed class MainViewModel : ViewModelBase
         ConfirmCreateCommand = new AsyncRelayCommand(ConfirmCreateAsync);
         CreateCommandCenterMetadataCommand = new RelayCommand(CreateCommandCenterMetadata);
         SavePublishingMetadataCommand = new RelayCommand(SavePublishingMetadata);
+        SaveResearchMetadataCommand = new RelayCommand(SaveResearchMetadata);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -777,6 +786,54 @@ public sealed class MainViewModel : ViewModelBase
         set => SetProperty(ref _publishingNotes, value);
     }
 
+    public string ResearchEditStatus
+    {
+        get => _researchEditStatus;
+        private set => SetProperty(ref _researchEditStatus, value);
+    }
+
+    public string ResearchTargetAudience
+    {
+        get => _researchTargetAudience;
+        set => SetProperty(ref _researchTargetAudience, value);
+    }
+
+    public string ResearchPositioning
+    {
+        get => _researchPositioning;
+        set => SetProperty(ref _researchPositioning, value);
+    }
+
+    public string ResearchKeywordsText
+    {
+        get => _researchKeywordsText;
+        set => SetProperty(ref _researchKeywordsText, value);
+    }
+
+    public string ResearchCompetitorsText
+    {
+        get => _researchCompetitorsText;
+        set => SetProperty(ref _researchCompetitorsText, value);
+    }
+
+    public string ResearchOpenQuestionsText
+    {
+        get => _researchOpenQuestionsText;
+        set => SetProperty(ref _researchOpenQuestionsText, value);
+    }
+
+    public string ResearchGrowthAssumptionsText
+    {
+        get => _researchGrowthAssumptionsText;
+        set => SetProperty(ref _researchGrowthAssumptionsText, value);
+    }
+
+    public string ResearchNotes
+    {
+        get => _researchNotes;
+        set => SetProperty(ref _researchNotes, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -845,6 +902,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand CreateCommandCenterMetadataCommand { get; }
 
     public IRelayCommand SavePublishingMetadataCommand { get; }
+
+    public IRelayCommand SaveResearchMetadataCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -940,6 +999,7 @@ public sealed class MainViewModel : ViewModelBase
                 ? "Command center metadata is missing. Create local metadata before editing project work."
                 : "Command center metadata is available for this project.";
         LoadPublishingEditor(project);
+        LoadResearchEditor(project);
     }
 
     private void CreateCommandCenterMetadata()
@@ -964,6 +1024,7 @@ public sealed class MainViewModel : ViewModelBase
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         CommandCenterCreateStatus = $"Command center metadata created: {result.MetadataPath}";
         LoadPublishingEditor(SelectedProject);
+        LoadResearchEditor(SelectedProject);
     }
 
     private void LoadPublishingEditor(WorkspaceProjectItemViewModel? project)
@@ -1067,11 +1128,110 @@ public sealed class MainViewModel : ViewModelBase
         PublishingEditStatus = $"Publishing metadata saved: {writeResult.MetadataPath}";
     }
 
+    private void LoadResearchEditor(WorkspaceProjectItemViewModel? project)
+    {
+        if (project is null)
+        {
+            ResearchEditStatus = "Select a project with command center metadata to edit research.";
+            SetResearchEditor(new ApplicationMarketResearchMetadata(), []);
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(project.Path);
+        if (!readResult.HasMetadata)
+        {
+            ResearchEditStatus = "Create command center metadata before editing research.";
+            SetResearchEditor(new ApplicationMarketResearchMetadata(), []);
+            return;
+        }
+
+        var projectIntelligence = readResult.Metadata.ProjectIntelligence ?? new ApplicationProjectIntelligenceMetadata();
+        SetResearchEditor(
+            readResult.Metadata.MarketResearch,
+            projectIntelligence.Assumptions);
+        ResearchEditStatus = "Research metadata loaded for local editing.";
+    }
+
+    private void SetResearchEditor(
+        ApplicationMarketResearchMetadata research,
+        IReadOnlyList<string> growthAssumptions)
+    {
+        ResearchTargetAudience = research.TargetAudience ?? string.Empty;
+        ResearchPositioning = research.Positioning ?? string.Empty;
+        ResearchKeywordsText = JoinList(research.Keywords);
+        ResearchCompetitorsText = JoinList(research.Competitors);
+        ResearchOpenQuestionsText = JoinList(research.OpenQuestions);
+        ResearchGrowthAssumptionsText = JoinList(growthAssumptions);
+        ResearchNotes = research.Notes ?? string.Empty;
+    }
+
+    private void SaveResearchMetadata()
+    {
+        if (SelectedProject is null)
+        {
+            ResearchEditStatus = "Select a project before saving research metadata.";
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(SelectedProject.Path);
+        if (!readResult.HasMetadata)
+        {
+            ResearchEditStatus = "Create command center metadata before saving research.";
+            return;
+        }
+
+        var projectIntelligence = readResult.Metadata.ProjectIntelligence ?? new ApplicationProjectIntelligenceMetadata();
+        var metadata = readResult.Metadata with
+        {
+            MarketResearch = new ApplicationMarketResearchMetadata
+            {
+                TargetAudience = Optional(ResearchTargetAudience),
+                Positioning = Optional(ResearchPositioning),
+                Keywords = SplitList(ResearchKeywordsText),
+                Competitors = SplitList(ResearchCompetitorsText),
+                OpenQuestions = SplitList(ResearchOpenQuestionsText),
+                Notes = Optional(ResearchNotes)
+            },
+            ProjectIntelligence = projectIntelligence with
+            {
+                Assumptions = SplitList(ResearchGrowthAssumptionsText)
+            }
+        };
+
+        var writeResult = _commandCenterMetadataService.Write(SelectedProject.Path, metadata);
+        if (!writeResult.IsSuccess)
+        {
+            ResearchEditStatus = $"Research metadata could not be saved: {string.Join(" ", writeResult.Errors)}";
+            return;
+        }
+
+        SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
+            _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
+        SetResearchEditor(
+            writeResult.Metadata.MarketResearch,
+            writeResult.Metadata.ProjectIntelligence.Assumptions);
+        ResearchEditStatus = $"Research metadata saved: {writeResult.MetadataPath}";
+    }
+
     private static string? Optional(string value)
     {
         return string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
+    }
+
+    private static string JoinList(IReadOnlyList<string> values)
+    {
+        return string.Join(System.Environment.NewLine, values);
+    }
+
+    private static IReadOnlyList<string> SplitList(string value)
+    {
+        return value
+            .Split(["\r\n", "\n", "\r"], StringSplitOptions.RemoveEmptyEntries)
+            .Select(item => item.Trim())
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .ToArray();
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)

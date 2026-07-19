@@ -681,6 +681,54 @@
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
+
+                                                    <Border Padding="10"
+                                                            CornerRadius="6"
+                                                            Background="#F9FAFB"
+                                                            BorderBrush="#EAECF0"
+                                                            BorderThickness="1">
+                                                        <StackPanel Spacing="8">
+                                                            <TextBlock Text="Research edit"
+                                                                       Foreground="#101828"
+                                                                       FontSize="12"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding ResearchEditStatus}"
+                                                                       Foreground="#667085"
+                                                                       FontSize="12"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBox Text="{Binding ResearchTargetAudience}"
+                                                                     Watermark="Target audience" />
+                                                            <TextBox Text="{Binding ResearchPositioning}"
+                                                                     Watermark="Positioning" />
+                                                            <TextBox Text="{Binding ResearchKeywordsText}"
+                                                                     Watermark="Keywords, one per line"
+                                                                     AcceptsReturn="True"
+                                                                     MinHeight="64" />
+                                                            <TextBox Text="{Binding ResearchCompetitorsText}"
+                                                                     Watermark="Competitors, one per line"
+                                                                     AcceptsReturn="True"
+                                                                     MinHeight="64" />
+                                                            <TextBox Text="{Binding ResearchOpenQuestionsText}"
+                                                                     Watermark="Open questions, one per line"
+                                                                     AcceptsReturn="True"
+                                                                     MinHeight="64" />
+                                                            <TextBox Text="{Binding ResearchGrowthAssumptionsText}"
+                                                                     Watermark="Growth assumptions, one per line"
+                                                                     AcceptsReturn="True"
+                                                                     MinHeight="64" />
+                                                            <TextBox Text="{Binding ResearchNotes}"
+                                                                     Watermark="Research notes" />
+                                                            <Button Padding="12,8"
+                                                                    HorizontalAlignment="Left"
+                                                                    Background="#0EA5E9"
+                                                                    BorderBrush="#0284C7"
+                                                                    BorderThickness="1"
+                                                                    Command="{Binding SaveResearchMetadataCommand}">
+                                                                <TextBlock Text="Save research"
+                                                                           Foreground="#FFFFFF" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Column="2"
