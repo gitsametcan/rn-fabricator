@@ -1049,6 +1049,107 @@ public sealed class DesktopShellSmokeTests
             item.Status == "Missing");
     }
 
+    [Fact]
+    public void MainViewModelSavesProjectMetricsForSelectedProject()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "MetricsEditApp");
+        WriteFile(
+            workspace.Path,
+            "MetricsEditApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "projectIntelligence": {
+                "targetUsers": 1000,
+                "targetDate": "2026-10-01",
+                "reportingCadence": "weekly",
+                "metricSnapshots": [
+                  {
+                    "date": "2026-07-01",
+                    "acquiredUsers": 100,
+                    "activeUsers": 80
+                  }
+                ]
+              }
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.Equal("1000", viewModel.ProjectTargetUsers);
+        Assert.Equal("2026-10-01", viewModel.ProjectTargetDate);
+        Assert.Contains("2026-07-01|100|80", viewModel.ProjectMetricSnapshotsText, StringComparison.Ordinal);
+
+        viewModel.ProjectTargetUsers = "2500";
+        viewModel.ProjectTargetDate = "2026-12-31";
+        viewModel.ProjectReportingCadence = "weekly";
+        viewModel.ProjectMetricSnapshotsText =
+            "2026-07-01|100|80||Baseline" +
+            System.Environment.NewLine +
+            "2026-07-15|180|120|0.67|Second snapshot";
+        viewModel.ProjectMilestoneProgressText = "beta|Beta release|ready|100|Closed beta live";
+        viewModel.ProjectIntelligenceNotes = "Track launch target weekly.";
+
+        viewModel.SaveProjectMetricsCommand.Execute(null);
+
+        var service = new ApplicationCommandCenterMetadataService();
+        var readResult = service.Read(Path.Combine(workspace.Path, "MetricsEditApp"));
+        Assert.Equal(2500, readResult.Metadata.ProjectIntelligence.TargetUsers);
+        Assert.Equal(new DateOnly(2026, 12, 31), readResult.Metadata.ProjectIntelligence.TargetDate);
+        Assert.Equal("weekly", readResult.Metadata.ProjectIntelligence.ReportingCadence);
+        Assert.Equal(2, readResult.Metadata.ProjectIntelligence.MetricSnapshots.Count);
+        Assert.Equal(180, readResult.Metadata.ProjectIntelligence.MetricSnapshots[1].AcquiredUsers);
+        Assert.Equal(0.67m, readResult.Metadata.ProjectIntelligence.MetricSnapshots[1].RetentionProxy);
+        Assert.Equal("beta", Assert.Single(readResult.Metadata.ProjectIntelligence.MilestoneProgress).Id);
+        Assert.StartsWith("Project metrics saved:", viewModel.ProjectMetricsEditStatus);
+
+        viewModel.ProjectMetricSnapshotsText = "2026-07-15|180|120|0.67|Second snapshot";
+        viewModel.ProjectMilestoneProgressText = string.Empty;
+
+        viewModel.SaveProjectMetricsCommand.Execute(null);
+
+        readResult = service.Read(Path.Combine(workspace.Path, "MetricsEditApp"));
+        Assert.Single(readResult.Metadata.ProjectIntelligence.MetricSnapshots);
+        Assert.Empty(readResult.Metadata.ProjectIntelligence.MilestoneProgress);
+    }
+
+    [Fact]
+    public void MainViewModelShowsProjectMetricValidationErrorsBeforeSave()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "InvalidMetricsApp");
+        WriteFile(
+            workspace.Path,
+            "InvalidMetricsApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center"
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+        viewModel.ProjectTargetUsers = "50";
+        viewModel.ProjectTargetDate = "2026-07-01";
+        viewModel.ProjectMetricSnapshotsText = "2026-07-19|100|120||Invalid active users";
+
+        viewModel.SaveProjectMetricsCommand.Execute(null);
+
+        Assert.Contains("Project metrics could not be saved", viewModel.ProjectMetricsEditStatus, StringComparison.Ordinal);
+        Assert.Contains("Active users cannot exceed acquired users", viewModel.ProjectMetricsEditStatus, StringComparison.Ordinal);
+        Assert.Contains("Target users must be greater than or equal to the latest acquired users", viewModel.ProjectMetricsEditStatus, StringComparison.Ordinal);
+    }
+
     [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
@@ -1136,6 +1237,9 @@ public sealed class DesktopShellSmokeTests
 
         Assert.Contains("Application Command Center", visibleText);
         Assert.Contains("Command center metadata loaded", visibleText);
+        Assert.Contains("Project metrics edit", visibleText);
+        Assert.Contains("Project metrics loaded for local editing.", visibleText);
+        Assert.Contains("Save project metrics", visibleText);
         Assert.Contains("Publishing", visibleText);
         Assert.Contains("Publishing edit", visibleText);
         Assert.Contains("Publishing metadata loaded for local editing.", visibleText);
