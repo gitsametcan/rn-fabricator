@@ -41,6 +41,36 @@ public sealed class ApplicationCommandCenterMetadataServiceTests
                 "openQuestions": ["Which market comes first?"],
                 "notes": "Validate demand."
               },
+              "projectIntelligence": {
+                "targetUsers": 10000,
+                "targetDate": "2026-12-31",
+                "reportingCadence": "weekly",
+                "metricSnapshots": [
+                  {
+                    "date": "2026-07-01",
+                    "acquiredUsers": 1200,
+                    "activeUsers": 860,
+                    "retentionProxy": 0.72,
+                    "notes": "Beta launch baseline."
+                  },
+                  {
+                    "date": "2026-07-15",
+                    "acquiredUsers": 1650,
+                    "activeUsers": 1200
+                  }
+                ],
+                "milestoneProgress": [
+                  {
+                    "id": "beta",
+                    "title": "Beta release",
+                    "status": "ready",
+                    "progressPercent": 100,
+                    "notes": "Closed beta is live."
+                  }
+                ],
+                "assumptions": ["Weekly acquisition stays above 200 users."],
+                "notes": "Track whether launch target is realistic."
+              },
               "releaseChecklist": {
                 "items": [
                   {
@@ -77,8 +107,99 @@ public sealed class ApplicationCommandCenterMetadataServiceTests
         Assert.Equal("Mobile Team", result.Metadata.Publishing.ReleaseOwner);
         Assert.Equal("Solo founders", result.Metadata.MarketResearch.TargetAudience);
         Assert.Equal(["launch", "mobile"], result.Metadata.MarketResearch.Keywords);
+        Assert.Equal(10000, result.Metadata.ProjectIntelligence.TargetUsers);
+        Assert.Equal(new DateOnly(2026, 12, 31), result.Metadata.ProjectIntelligence.TargetDate);
+        Assert.Equal("weekly", result.Metadata.ProjectIntelligence.ReportingCadence);
+        Assert.Equal(2, result.Metadata.ProjectIntelligence.MetricSnapshots.Count);
+        Assert.Equal(1200, result.Metadata.ProjectIntelligence.MetricSnapshots[0].AcquiredUsers);
+        Assert.Equal(860, result.Metadata.ProjectIntelligence.MetricSnapshots[0].ActiveUsers);
+        Assert.Equal(0.72m, result.Metadata.ProjectIntelligence.MetricSnapshots[0].RetentionProxy);
+        Assert.Equal("beta", Assert.Single(result.Metadata.ProjectIntelligence.MilestoneProgress).Id);
+        Assert.Equal(["Weekly acquisition stays above 200 users."], result.Metadata.ProjectIntelligence.Assumptions);
         Assert.Equal("privacy-policy", Assert.Single(result.Metadata.ReleaseChecklist.Items).Id);
         Assert.Equal("store-assets", Assert.Single(result.Metadata.NextActions).Id);
+    }
+
+    [Fact]
+    public void ReadDefaultsMissingProjectIntelligenceMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        WriteCommandCenterMetadata(
+            project.Path,
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center"
+            }
+            """);
+        var service = new ApplicationCommandCenterMetadataService();
+
+        var result = service.Read(project.Path);
+
+        Assert.True(result.HasMetadata);
+        Assert.Null(result.Metadata.ProjectIntelligence.TargetUsers);
+        Assert.Null(result.Metadata.ProjectIntelligence.TargetDate);
+        Assert.Null(result.Metadata.ProjectIntelligence.ReportingCadence);
+        Assert.Empty(result.Metadata.ProjectIntelligence.MetricSnapshots);
+        Assert.Empty(result.Metadata.ProjectIntelligence.MilestoneProgress);
+        Assert.Empty(result.Metadata.ProjectIntelligence.Assumptions);
+        Assert.Null(result.Metadata.ProjectIntelligence.Notes);
+    }
+
+    [Fact]
+    public void ReadLoadsEmptyProjectIntelligenceMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        WriteCommandCenterMetadata(
+            project.Path,
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "projectIntelligence": {}
+            }
+            """);
+        var service = new ApplicationCommandCenterMetadataService();
+
+        var result = service.Read(project.Path);
+
+        Assert.True(result.HasMetadata);
+        Assert.Empty(result.Metadata.ProjectIntelligence.MetricSnapshots);
+        Assert.Empty(result.Metadata.ProjectIntelligence.MilestoneProgress);
+        Assert.Empty(result.Metadata.ProjectIntelligence.Assumptions);
+    }
+
+    [Fact]
+    public void ReadLoadsPartiallySpecifiedProjectIntelligenceMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        WriteCommandCenterMetadata(
+            project.Path,
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "projectIntelligence": {
+                "targetUsers": 5000,
+                "metricSnapshots": [
+                  {
+                    "date": "2026-07-19",
+                    "acquiredUsers": 900,
+                    "activeUsers": 450
+                  }
+                ]
+              }
+            }
+            """);
+        var service = new ApplicationCommandCenterMetadataService();
+
+        var result = service.Read(project.Path);
+
+        Assert.True(result.HasMetadata);
+        Assert.Equal(5000, result.Metadata.ProjectIntelligence.TargetUsers);
+        Assert.Null(result.Metadata.ProjectIntelligence.TargetDate);
+        Assert.Equal(new DateOnly(2026, 7, 19), Assert.Single(result.Metadata.ProjectIntelligence.MetricSnapshots).Date);
+        Assert.Empty(result.Metadata.ProjectIntelligence.Assumptions);
     }
 
     [Fact]
