@@ -203,6 +203,182 @@ public sealed class ApplicationCommandCenterMetadataServiceTests
     }
 
     [Fact]
+    public void WriteCreatesApplicationCommandCenterMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        var service = new ApplicationCommandCenterMetadataService();
+        var metadata = new ApplicationCommandCenterMetadata
+        {
+            Publishing = new ApplicationPublishingMetadata
+            {
+                ReleaseOwner = "Mobile Team"
+            },
+            ProjectIntelligence = new ApplicationProjectIntelligenceMetadata
+            {
+                TargetUsers = 2500,
+                TargetDate = new DateOnly(2026, 10, 1),
+                ReportingCadence = "weekly",
+                MetricSnapshots =
+                [
+                    new ApplicationProjectMetricSnapshotMetadata
+                    {
+                        Date = new DateOnly(2026, 7, 19),
+                        AcquiredUsers = 300,
+                        ActiveUsers = 180
+                    }
+                ],
+                Assumptions = ["Weekly growth remains above 75 users."]
+            }
+        };
+
+        var result = service.Write(project.Path, metadata);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Errors);
+        Assert.True(File.Exists(result.MetadataPath));
+
+        var readResult = service.Read(project.Path);
+        Assert.True(readResult.HasMetadata);
+        Assert.Equal("Mobile Team", readResult.Metadata.Publishing.ReleaseOwner);
+        Assert.Equal(2500, readResult.Metadata.ProjectIntelligence.TargetUsers);
+        Assert.Equal(new DateOnly(2026, 7, 19), Assert.Single(readResult.Metadata.ProjectIntelligence.MetricSnapshots).Date);
+        Assert.Equal(["Weekly growth remains above 75 users."], readResult.Metadata.ProjectIntelligence.Assumptions);
+    }
+
+    [Fact]
+    public void WriteUpdatesApplicationCommandCenterMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        var service = new ApplicationCommandCenterMetadataService();
+        var first = new ApplicationCommandCenterMetadata
+        {
+            MarketResearch = new ApplicationMarketResearchMetadata
+            {
+                Keywords = ["launch"]
+            }
+        };
+        var second = new ApplicationCommandCenterMetadata
+        {
+            MarketResearch = new ApplicationMarketResearchMetadata
+            {
+                Keywords = ["launch", "growth"],
+                Competitors = ["Competitor A"]
+            },
+            NextActions =
+            [
+                new ApplicationNextActionMetadata
+                {
+                    Id = "research",
+                    Title = "Validate acquisition channel",
+                    Group = "research",
+                    Status = "open"
+                }
+            ]
+        };
+
+        var firstResult = service.Write(project.Path, first);
+        var secondResult = service.Write(project.Path, second);
+
+        Assert.True(firstResult.IsSuccess);
+        Assert.True(secondResult.IsSuccess);
+
+        var readResult = service.Read(project.Path);
+        Assert.Equal(["launch", "growth"], readResult.Metadata.MarketResearch.Keywords);
+        Assert.Equal(["Competitor A"], readResult.Metadata.MarketResearch.Competitors);
+        Assert.Equal("research", Assert.Single(readResult.Metadata.NextActions).Id);
+    }
+
+    [Fact]
+    public void WriteNormalizesMissingCollections()
+    {
+        using var project = new TemporaryDirectory();
+        var service = new ApplicationCommandCenterMetadataService();
+        var metadata = new ApplicationCommandCenterMetadata
+        {
+            MarketResearch = new ApplicationMarketResearchMetadata
+            {
+                Keywords = null!,
+                Competitors = null!,
+                OpenQuestions = null!
+            },
+            ProjectIntelligence = new ApplicationProjectIntelligenceMetadata
+            {
+                MetricSnapshots = null!,
+                MilestoneProgress = null!,
+                Assumptions = null!
+            },
+            ReleaseChecklist = new ApplicationReleaseChecklistMetadata
+            {
+                Items = null!
+            },
+            NextActions = null!
+        };
+
+        var result = service.Write(project.Path, metadata);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(result.Metadata.MarketResearch.Keywords);
+        Assert.Empty(result.Metadata.MarketResearch.Competitors);
+        Assert.Empty(result.Metadata.MarketResearch.OpenQuestions);
+        Assert.Empty(result.Metadata.ProjectIntelligence.MetricSnapshots);
+        Assert.Empty(result.Metadata.ProjectIntelligence.MilestoneProgress);
+        Assert.Empty(result.Metadata.ProjectIntelligence.Assumptions);
+        Assert.Empty(result.Metadata.ReleaseChecklist.Items);
+        Assert.Empty(result.Metadata.NextActions);
+    }
+
+    [Fact]
+    public void WriteReturnsStructuredErrorsForInvalidMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        var service = new ApplicationCommandCenterMetadataService();
+        var metadata = new ApplicationCommandCenterMetadata
+        {
+            SchemaVersion = 99,
+            Kind = "other-kind"
+        };
+
+        var result = service.Write(project.Path, metadata);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, error => error.Contains("schema version 99 is not supported", StringComparison.Ordinal));
+        Assert.Contains(result.Errors, error => error.Contains("kind must be fabricator-app-command-center", StringComparison.Ordinal));
+        Assert.False(File.Exists(result.MetadataPath));
+    }
+
+    [Fact]
+    public void WriteReturnsStructuredErrorsForInvalidProjectPath()
+    {
+        var missingPath = Path.Combine(
+            Path.GetTempPath(),
+            $"fabricator-command-center-missing-{Guid.NewGuid():N}");
+        var service = new ApplicationCommandCenterMetadataService();
+
+        var result = service.Write(missingPath, ApplicationCommandCenterMetadata.Empty);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Project path does not exist.", result.Errors);
+        Assert.False(File.Exists(result.MetadataPath));
+    }
+
+    [Fact]
+    public void WriteDoesNotOverwriteMalformedExistingMetadata()
+    {
+        using var project = new TemporaryDirectory();
+        WriteCommandCenterMetadata(project.Path, "{ not-json");
+        var metadataPath = Path.Combine(
+            project.Path,
+            ApplicationCommandCenterMetadataService.MetadataRelativePath);
+        var service = new ApplicationCommandCenterMetadataService();
+
+        var result = service.Write(project.Path, ApplicationCommandCenterMetadata.Empty);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, error => error.Contains("could not be read", StringComparison.Ordinal));
+        Assert.Equal("{ not-json", File.ReadAllText(metadataPath));
+    }
+
+    [Fact]
     public void ReadReturnsExplicitMissingStateWhenMetadataFileDoesNotExist()
     {
         using var project = new TemporaryDirectory();
