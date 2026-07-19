@@ -910,6 +910,79 @@ public sealed class DesktopShellSmokeTests
             ApplicationCommandCenterMetadataService.MetadataRelativePath)));
     }
 
+    [Fact]
+    public void MainViewModelSavesPublishingMetadataForSelectedProject()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "PublishingEditApp");
+        WriteFile(
+            workspace.Path,
+            "PublishingEditApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center",
+              "publishing": {
+                "ios": {
+                  "displayName": "Old iOS",
+                  "identifier": "com.example.old.ios"
+                }
+              }
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.Equal("Old iOS", viewModel.PublishingIosDisplayName);
+        Assert.Equal("com.example.old.ios", viewModel.PublishingIosIdentifier);
+
+        viewModel.PublishingIosDisplayName = "Launch iOS";
+        viewModel.PublishingIosIdentifier = "com.example.launch.ios";
+        viewModel.PublishingIosVersion = "1.0.0";
+        viewModel.PublishingIosBuildNumber = "7";
+        viewModel.PublishingIosStatus = "ready";
+        viewModel.PublishingIosStoreUrl = "https://apps.apple.com/app/example";
+        viewModel.PublishingIosNotes = "iOS store notes.";
+        viewModel.PublishingAndroidDisplayName = "Launch Android";
+        viewModel.PublishingAndroidIdentifier = "com.example.launch.android";
+        viewModel.PublishingAndroidVersion = "1.0.0";
+        viewModel.PublishingAndroidBuildNumber = "8";
+        viewModel.PublishingAndroidStatus = "draft";
+        viewModel.PublishingAndroidStoreUrl = "https://play.google.com/store/apps/details?id=com.example.launch.android";
+        viewModel.PublishingAndroidNotes = "Android store notes.";
+        viewModel.PublishingReleaseOwner = "Mobile Team";
+        viewModel.PublishingNotes = "Coordinate platform releases.";
+
+        viewModel.SavePublishingMetadataCommand.Execute(null);
+
+        var service = new ApplicationCommandCenterMetadataService();
+        var readResult = service.Read(Path.Combine(workspace.Path, "PublishingEditApp"));
+        Assert.Equal("Launch iOS", readResult.Metadata.Publishing.Ios.DisplayName);
+        Assert.Equal("com.example.launch.android", readResult.Metadata.Publishing.Android.Identifier);
+        Assert.Equal("Mobile Team", readResult.Metadata.Publishing.ReleaseOwner);
+        Assert.StartsWith("Publishing metadata saved:", viewModel.PublishingEditStatus);
+        Assert.Contains(viewModel.SelectedProjectDetail!.PublishingReadinessItems, item =>
+            item.Label == "Build number" &&
+            item.Status == "Ready" &&
+            item.Detail == "7");
+
+        viewModel.PublishingIosBuildNumber = string.Empty;
+        viewModel.PublishingAndroidBuildNumber = string.Empty;
+
+        viewModel.SavePublishingMetadataCommand.Execute(null);
+
+        readResult = service.Read(Path.Combine(workspace.Path, "PublishingEditApp"));
+        Assert.Null(readResult.Metadata.Publishing.Ios.BuildNumber);
+        Assert.Null(readResult.Metadata.Publishing.Android.BuildNumber);
+        Assert.Contains(viewModel.SelectedProjectDetail!.PublishingReadinessItems, item =>
+            item.Label == "Build number" &&
+            item.Status == "Missing");
+    }
+
     [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
@@ -998,6 +1071,9 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Application Command Center", visibleText);
         Assert.Contains("Command center metadata loaded", visibleText);
         Assert.Contains("Publishing", visibleText);
+        Assert.Contains("Publishing edit", visibleText);
+        Assert.Contains("Publishing metadata loaded for local editing.", visibleText);
+        Assert.Contains("Save publishing", visibleText);
         Assert.Contains("iOS: ready; Android: missing", visibleText);
         Assert.Contains("iOS bundle id", visibleText);
         Assert.Contains("com.example.commandcenter.ios", visibleText);

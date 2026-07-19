@@ -587,6 +587,64 @@
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
+
+                                                    <Border Padding="10"
+                                                            CornerRadius="6"
+                                                            Background="#F9FAFB"
+                                                            BorderBrush="#EAECF0"
+                                                            BorderThickness="1">
+                                                        <StackPanel Spacing="8">
+                                                            <TextBlock Text="Publishing edit"
+                                                                       Foreground="#101828"
+                                                                       FontSize="12"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding PublishingEditStatus}"
+                                                                       Foreground="#667085"
+                                                                       FontSize="12"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBox Text="{Binding PublishingIosDisplayName}"
+                                                                     Watermark="iOS display name" />
+                                                            <TextBox Text="{Binding PublishingIosIdentifier}"
+                                                                     Watermark="iOS bundle id" />
+                                                            <TextBox Text="{Binding PublishingIosVersion}"
+                                                                     Watermark="iOS version" />
+                                                            <TextBox Text="{Binding PublishingIosBuildNumber}"
+                                                                     Watermark="iOS build number" />
+                                                            <TextBox Text="{Binding PublishingIosStatus}"
+                                                                     Watermark="iOS status" />
+                                                            <TextBox Text="{Binding PublishingIosStoreUrl}"
+                                                                     Watermark="iOS store URL" />
+                                                            <TextBox Text="{Binding PublishingIosNotes}"
+                                                                     Watermark="iOS notes" />
+                                                            <TextBox Text="{Binding PublishingAndroidDisplayName}"
+                                                                     Watermark="Android display name" />
+                                                            <TextBox Text="{Binding PublishingAndroidIdentifier}"
+                                                                     Watermark="Android application id" />
+                                                            <TextBox Text="{Binding PublishingAndroidVersion}"
+                                                                     Watermark="Android version" />
+                                                            <TextBox Text="{Binding PublishingAndroidBuildNumber}"
+                                                                     Watermark="Android build number" />
+                                                            <TextBox Text="{Binding PublishingAndroidStatus}"
+                                                                     Watermark="Android status" />
+                                                            <TextBox Text="{Binding PublishingAndroidStoreUrl}"
+                                                                     Watermark="Android store URL" />
+                                                            <TextBox Text="{Binding PublishingAndroidNotes}"
+                                                                     Watermark="Android notes" />
+                                                            <TextBox Text="{Binding PublishingReleaseOwner}"
+                                                                     Watermark="Release owner" />
+                                                            <TextBox Text="{Binding PublishingNotes}"
+                                                                     Watermark="Publishing notes" />
+                                                            <Button Padding="12,8"
+                                                                    HorizontalAlignment="Left"
+                                                                    Background="#0EA5E9"
+                                                                    BorderBrush="#0284C7"
+                                                                    BorderThickness="1"
+                                                                    Command="{Binding SavePublishingMetadataCommand}">
+                                                                <TextBlock Text="Save publishing"
+                                                                           Foreground="#FFFFFF" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Column="1"
