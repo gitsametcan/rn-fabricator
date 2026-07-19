@@ -41,6 +41,8 @@ public sealed class WorkspaceProjectDetailViewModel
             : "current-focus.md missing";
         AgentCurrentFocusSummary = Missing(detail.AgentMemory.CurrentFocusSummary);
         AgentOpenQuestionCount = $"{detail.AgentMemory.OpenQuestionCount} open question(s)";
+        HasCommandCenterMetadata = detail.CommandCenterMetadata.HasMetadata;
+        CanCreateCommandCenterMetadata = !detail.CommandCenterMetadata.Exists;
         CommandCenterStatus = BuildCommandCenterStatus(detail.CommandCenterMetadata);
         CommandCenterMetadataPath = detail.CommandCenterMetadata.MetadataPath;
         PublishingSummary = detail.CommandCenterMetadata.HasMetadata
@@ -113,6 +115,10 @@ public sealed class WorkspaceProjectDetailViewModel
     public string CommandCenterStatus { get; }
 
     public string CommandCenterMetadataPath { get; }
+
+    public bool HasCommandCenterMetadata { get; }
+
+    public bool CanCreateCommandCenterMetadata { get; }
 
     public string PublishingSummary { get; }
 

@@ -21,6 +21,7 @@ public sealed class MainViewModel : ViewModelBase
     private readonly ICreateProjectService _createProjectService;
     private readonly IDependencyCheckService _dependencyCheckService;
     private readonly ISetupPlanService _setupPlanService;
+    private readonly IApplicationCommandCenterMetadataService _commandCenterMetadataService;
     private string _workspaceInputPath = string.Empty;
     private string _selectedWorkspacePath = "No workspace selected";
     private string _workspaceStatus = "Select a workspace directory to begin.";
@@ -65,6 +66,7 @@ public sealed class MainViewModel : ViewModelBase
     private string _setupPlanPlatformLabel = "Platform not checked.";
     private string _setupPlanPackageManagerLabel = "Package manager not checked.";
     private string _setupPlanToolchainLabel = "Toolchain profile not checked.";
+    private string _commandCenterCreateStatus = "Select a project to manage command center metadata.";
 
     public MainViewModel()
         : this(
@@ -73,7 +75,8 @@ public sealed class MainViewModel : ViewModelBase
             new FileWorkspaceSettingsStore(),
             CreateDefaultCreateProjectService(),
             CreateDefaultDependencyCheckService(),
-            CreateDefaultSetupPlanService())
+            CreateDefaultSetupPlanService(),
+            new ApplicationCommandCenterMetadataService())
     {
     }
 
@@ -86,7 +89,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceSettingsStore,
             CreateDefaultCreateProjectService(),
             CreateDefaultDependencyCheckService(),
-            CreateDefaultSetupPlanService())
+            CreateDefaultSetupPlanService(),
+            new ApplicationCommandCenterMetadataService())
     {
     }
 
@@ -100,7 +104,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceSettingsStore,
             CreateDefaultCreateProjectService(),
             CreateDefaultDependencyCheckService(),
-            CreateDefaultSetupPlanService())
+            CreateDefaultSetupPlanService(),
+            new ApplicationCommandCenterMetadataService())
     {
     }
 
@@ -115,7 +120,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceSettingsStore,
             createProjectService,
             CreateDefaultDependencyCheckService(),
-            CreateDefaultSetupPlanService())
+            CreateDefaultSetupPlanService(),
+            new ApplicationCommandCenterMetadataService())
     {
     }
 
@@ -131,7 +137,8 @@ public sealed class MainViewModel : ViewModelBase
             workspaceSettingsStore,
             createProjectService,
             dependencyCheckService,
-            CreateDefaultSetupPlanService())
+            CreateDefaultSetupPlanService(),
+            new ApplicationCommandCenterMetadataService())
     {
     }
 
@@ -141,7 +148,8 @@ public sealed class MainViewModel : ViewModelBase
         IWorkspaceSettingsStore workspaceSettingsStore,
         ICreateProjectService createProjectService,
         IDependencyCheckService dependencyCheckService,
-        ISetupPlanService setupPlanService)
+        ISetupPlanService setupPlanService,
+        IApplicationCommandCenterMetadataService commandCenterMetadataService)
     {
         _workspaceDiscoveryService = workspaceDiscoveryService;
         _workspaceProjectDetailService = workspaceProjectDetailService;
@@ -149,6 +157,7 @@ public sealed class MainViewModel : ViewModelBase
         _createProjectService = createProjectService;
         _dependencyCheckService = dependencyCheckService;
         _setupPlanService = setupPlanService;
+        _commandCenterMetadataService = commandCenterMetadataService;
         LoadWorkspaceCommand = new RelayCommand(LoadWorkspaceFromInput);
         SelectProjectCommand = new RelayCommand<WorkspaceProjectItemViewModel>(SelectProject);
         ClearProjectSelectionCommand = new RelayCommand(() => SelectProject(null));
@@ -162,6 +171,7 @@ public sealed class MainViewModel : ViewModelBase
         ReviewCreateCommand = new RelayCommand(ReviewCreate);
         EditCreateCommand = new RelayCommand(EditCreate);
         ConfirmCreateCommand = new AsyncRelayCommand(ConfirmCreateAsync);
+        CreateCommandCenterMetadataCommand = new RelayCommand(CreateCommandCenterMetadata);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -169,6 +179,24 @@ public sealed class MainViewModel : ViewModelBase
             WorkspaceInputPath = lastWorkspacePath;
             LoadWorkspace(lastWorkspacePath, save: false);
         }
+    }
+
+    public MainViewModel(
+        IWorkspaceDiscoveryService workspaceDiscoveryService,
+        IWorkspaceProjectDetailService workspaceProjectDetailService,
+        IWorkspaceSettingsStore workspaceSettingsStore,
+        ICreateProjectService createProjectService,
+        IDependencyCheckService dependencyCheckService,
+        ISetupPlanService setupPlanService)
+        : this(
+            workspaceDiscoveryService,
+            workspaceProjectDetailService,
+            workspaceSettingsStore,
+            createProjectService,
+            dependencyCheckService,
+            setupPlanService,
+            new ApplicationCommandCenterMetadataService())
+    {
     }
 
     public string ProductTagline { get; } = "Desktop companion for React Native CLI project setup.";
@@ -623,6 +651,12 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _setupPlanToolchainLabel, value);
     }
 
+    public string CommandCenterCreateStatus
+    {
+        get => _commandCenterCreateStatus;
+        private set => SetProperty(ref _commandCenterCreateStatus, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -687,6 +721,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand EditCreateCommand { get; }
 
     public IAsyncRelayCommand ConfirmCreateCommand { get; }
+
+    public IRelayCommand CreateCommandCenterMetadataCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -776,6 +812,34 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = project is null
             ? null
             : new WorkspaceProjectDetailViewModel(_workspaceProjectDetailService.GetDetail(project.Path));
+        CommandCenterCreateStatus = SelectedProjectDetail is null
+            ? "Select a project to manage command center metadata."
+            : SelectedProjectDetail.CanCreateCommandCenterMetadata
+                ? "Command center metadata is missing. Create local metadata before editing project work."
+                : "Command center metadata is available for this project.";
+    }
+
+    private void CreateCommandCenterMetadata()
+    {
+        if (SelectedProject is null)
+        {
+            CommandCenterCreateStatus = "Select a project before creating command center metadata.";
+            return;
+        }
+
+        var result = _commandCenterMetadataService.Write(
+            SelectedProject.Path,
+            ApplicationCommandCenterMetadata.Empty);
+
+        if (!result.IsSuccess)
+        {
+            CommandCenterCreateStatus = $"Command center metadata could not be created: {string.Join(" ", result.Errors)}";
+            return;
+        }
+
+        SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
+            _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
+        CommandCenterCreateStatus = $"Command center metadata created: {result.MetadataPath}";
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)

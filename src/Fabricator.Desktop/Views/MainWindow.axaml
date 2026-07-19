@@ -519,19 +519,37 @@
                                             BorderThickness="1">
                                         <Grid RowDefinitions="Auto,Auto"
                                               RowSpacing="12">
-                                            <StackPanel Spacing="4">
-                                                <TextBlock Text="Application Command Center"
-                                                           Foreground="#101828"
-                                                           FontSize="16"
-                                                           FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterStatus}"
-                                                           Foreground="#475467"
-                                                           TextWrapping="Wrap" />
-                                                <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterMetadataPath}"
-                                                           Foreground="#667085"
-                                                           FontSize="12"
-                                                           TextWrapping="Wrap" />
-                                            </StackPanel>
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  ColumnSpacing="12">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="Application Command Center"
+                                                               Foreground="#101828"
+                                                               FontSize="16"
+                                                               FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterStatus}"
+                                                               Foreground="#475467"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding CommandCenterCreateStatus}"
+                                                               Foreground="#475467"
+                                                               TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterMetadataPath}"
+                                                               Foreground="#667085"
+                                                               FontSize="12"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <Button Grid.Column="1"
+                                                        Padding="12,8"
+                                                        VerticalAlignment="Top"
+                                                        Background="#0EA5E9"
+                                                        BorderBrush="#0284C7"
+                                                        BorderThickness="1"
+                                                        IsVisible="{Binding SelectedProjectDetail.CanCreateCommandCenterMetadata}"
+                                                        Command="{Binding CreateCommandCenterMetadataCommand}">
+                                                    <TextBlock Text="Create metadata"
+                                                               Foreground="#FFFFFF" />
+                                                </Button>
+                                            </Grid>
 
                                             <Grid Grid.Row="1"
                                                   ColumnDefinitions="*,*,*,*"

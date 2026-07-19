@@ -869,6 +869,8 @@ public sealed class DesktopShellSmokeTests
 
         Assert.Contains("Application Command Center", visibleText);
         Assert.Contains("Command center metadata missing", visibleText);
+        Assert.Contains("Command center metadata is missing. Create local metadata before editing project work.", visibleText);
+        Assert.Contains("Create metadata", visibleText);
         Assert.Contains("No publishing metadata yet.", visibleText);
         Assert.Contains("Release metadata", visibleText);
         Assert.Contains("Add .fabricator/app-command-center.json to track release metadata.", visibleText);
@@ -877,6 +879,35 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("No local checklist items.", visibleText);
         Assert.Contains("No next actions yet.", visibleText);
         Assert.Contains("No local next actions.", visibleText);
+    }
+
+    [Fact]
+    public void MainViewModelCreatesApplicationCommandCenterMetadataForSelectedProject()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "CreateCommandCenterApp");
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.NotNull(viewModel.SelectedProjectDetail);
+        Assert.True(viewModel.SelectedProjectDetail.CanCreateCommandCenterMetadata);
+        Assert.Equal("Command center metadata missing", viewModel.SelectedProjectDetail.CommandCenterStatus);
+
+        viewModel.CreateCommandCenterMetadataCommand.Execute(null);
+
+        Assert.NotNull(viewModel.SelectedProjectDetail);
+        Assert.False(viewModel.SelectedProjectDetail.CanCreateCommandCenterMetadata);
+        Assert.True(viewModel.SelectedProjectDetail.HasCommandCenterMetadata);
+        Assert.Equal("Command center metadata loaded", viewModel.SelectedProjectDetail.CommandCenterStatus);
+        Assert.StartsWith("Command center metadata created:", viewModel.CommandCenterCreateStatus);
+        Assert.True(File.Exists(Path.Combine(
+            workspace.Path,
+            "CreateCommandCenterApp",
+            ApplicationCommandCenterMetadataService.MetadataRelativePath)));
     }
 
     [AvaloniaFact]
