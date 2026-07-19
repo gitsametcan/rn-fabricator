@@ -6,6 +6,8 @@ public sealed class WorkspaceProjectDetailViewModel
 {
     public WorkspaceProjectDetailViewModel(WorkspaceProjectDetail detail)
     {
+        var projectIntelligence = detail.CommandCenterMetadata.Metadata.ProjectIntelligence ?? new ApplicationProjectIntelligenceMetadata();
+
         DisplayName = detail.DisplayName;
         ProjectPath = detail.ProjectPath;
         PackageName = Missing(detail.PackageName);
@@ -56,6 +58,14 @@ public sealed class WorkspaceProjectDetailViewModel
             ? BuildResearchSummary(detail.CommandCenterMetadata.Metadata.MarketResearch)
             : "No market research notes yet.";
         ResearchItems = BuildResearchItems(detail.CommandCenterMetadata.Metadata.MarketResearch);
+        ProjectIntelligenceSummary = detail.CommandCenterMetadata.HasMetadata
+            ? BuildProjectIntelligenceSummary(projectIntelligence)
+            : "No project intelligence metadata yet.";
+        ProjectTargetProgressSummary = BuildProjectTargetProgressSummary(projectIntelligence);
+        ProjectTargetProgressValue = BuildProjectTargetProgressValue(projectIntelligence);
+        ProjectProjectionSummary = BuildProjectProjectionSummary(projectIntelligence);
+        ProjectIntelligenceChartItems = BuildProjectIntelligenceChartItems(projectIntelligence);
+        ProjectMilestoneItems = BuildProjectMilestoneItems(projectIntelligence);
         ReleaseChecklistSummary = detail.CommandCenterMetadata.HasMetadata
             ? $"{detail.CommandCenterMetadata.Metadata.ReleaseChecklist.Items.Count} release checklist item(s)"
             : "No release checklist yet.";
@@ -127,6 +137,18 @@ public sealed class WorkspaceProjectDetailViewModel
     public string ResearchSummary { get; }
 
     public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> ResearchItems { get; }
+
+    public string ProjectIntelligenceSummary { get; }
+
+    public string ProjectTargetProgressSummary { get; }
+
+    public double ProjectTargetProgressValue { get; }
+
+    public string ProjectProjectionSummary { get; }
+
+    public IReadOnlyList<ProjectIntelligenceChartItemViewModel> ProjectIntelligenceChartItems { get; }
+
+    public IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> ProjectMilestoneItems { get; }
 
     public string ReleaseChecklistSummary { get; }
 
@@ -228,6 +250,162 @@ public sealed class WorkspaceProjectDetailViewModel
         ];
     }
 
+    private static string BuildProjectIntelligenceSummary(ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        var snapshotCount = intelligence.MetricSnapshots?.Count ?? 0;
+        var milestoneCount = intelligence.MilestoneProgress?.Count ?? 0;
+        var target = intelligence.TargetUsers is null
+            ? "no target"
+            : $"{intelligence.TargetUsers.Value} target users";
+
+        return $"{snapshotCount} metric snapshot(s), {milestoneCount} milestone(s), {target}";
+    }
+
+    private static string BuildProjectTargetProgressSummary(ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        var latestSnapshot = LatestSnapshot(intelligence);
+        if (latestSnapshot is null)
+        {
+            return "No metric history yet.";
+        }
+
+        if (intelligence.TargetUsers is null || intelligence.TargetUsers.Value <= 0)
+        {
+            return $"{latestSnapshot.AcquiredUsers} acquired users. No target users yet.";
+        }
+
+        var percent = BuildProjectTargetProgressValue(intelligence);
+        return $"{latestSnapshot.AcquiredUsers} of {intelligence.TargetUsers.Value} target users ({percent:0.#}%).";
+    }
+
+    private static double BuildProjectTargetProgressValue(ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        var latestSnapshot = LatestSnapshot(intelligence);
+        if (latestSnapshot is null || intelligence.TargetUsers is null || intelligence.TargetUsers.Value <= 0)
+        {
+            return 0;
+        }
+
+        return Math.Clamp((double)latestSnapshot.AcquiredUsers / intelligence.TargetUsers.Value * 100, 0, 100);
+    }
+
+    private static string BuildProjectProjectionSummary(ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        var snapshots = OrderedSnapshots(intelligence);
+        if (intelligence.TargetUsers is null || intelligence.TargetDate is null)
+        {
+            return "No target projection yet.";
+        }
+
+        if (snapshots.Count == 0)
+        {
+            return "Insufficient history for projection.";
+        }
+
+        var latest = snapshots[^1];
+        if (latest.AcquiredUsers >= intelligence.TargetUsers.Value)
+        {
+            return "Reached: latest acquired users meet the target.";
+        }
+
+        if (snapshots.Count < 2)
+        {
+            return "Insufficient history for projection.";
+        }
+
+        if (intelligence.TargetDate.Value <= latest.Date)
+        {
+            return "At risk: target date is not after the latest metric snapshot.";
+        }
+
+        var first = snapshots[0];
+        var elapsedPeriods = CountPeriods(first.Date, latest.Date, intelligence.ReportingCadence);
+        var remainingPeriods = CountPeriods(latest.Date, intelligence.TargetDate.Value, intelligence.ReportingCadence);
+        var currentAverageGrowth = (latest.AcquiredUsers - first.AcquiredUsers) / elapsedPeriods;
+        var requiredGrowth = (intelligence.TargetUsers.Value - latest.AcquiredUsers) / remainingPeriods;
+        var status = currentAverageGrowth >= requiredGrowth ? "On track" : "At risk";
+
+        return $"{status}: current average growth {currentAverageGrowth:0.#} per period; required {requiredGrowth:0.#} per period.";
+    }
+
+    private static IReadOnlyList<ProjectIntelligenceChartItemViewModel> BuildProjectIntelligenceChartItems(
+        ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        var snapshots = OrderedSnapshots(intelligence);
+        if (snapshots.Count == 0)
+        {
+            return
+            [
+                new ProjectIntelligenceChartItemViewModel(
+                    "Metric history",
+                    "No local snapshots.",
+                    "Add dated snapshots to chart user acquisition and active users.",
+                    0,
+                    0)
+            ];
+        }
+
+        var maxAcquired = Math.Max(1, snapshots.Max(snapshot => snapshot.AcquiredUsers));
+        return snapshots
+            .Select(snapshot => new ProjectIntelligenceChartItemViewModel(
+                snapshot.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                $"{snapshot.AcquiredUsers} acquired",
+                $"{snapshot.ActiveUsers} active",
+                Math.Clamp((double)snapshot.AcquiredUsers / maxAcquired * 100, 0, 100),
+                snapshot.AcquiredUsers == 0
+                    ? 0
+                    : Math.Clamp((double)snapshot.ActiveUsers / snapshot.AcquiredUsers * 100, 0, 100)))
+            .ToArray();
+    }
+
+    private static IReadOnlyList<ApplicationCommandCenterPanelItemViewModel> BuildProjectMilestoneItems(
+        ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        if (intelligence.MilestoneProgress is null || intelligence.MilestoneProgress.Count == 0)
+        {
+            return
+            [
+                new ApplicationCommandCenterPanelItemViewModel(
+                    "Product progress",
+                    "Missing",
+                    "No local milestone progress.")
+            ];
+        }
+
+        return intelligence.MilestoneProgress
+            .Select(milestone => new ApplicationCommandCenterPanelItemViewModel(
+                string.IsNullOrWhiteSpace(milestone.Title) ? milestone.Id : milestone.Title,
+                Missing(milestone.Status),
+                milestone.ProgressPercent is null
+                    ? Missing(milestone.Notes)
+                    : $"{milestone.ProgressPercent.Value}% complete. {Missing(milestone.Notes)}"))
+            .ToArray();
+    }
+
+    private static IReadOnlyList<ApplicationProjectMetricSnapshotMetadata> OrderedSnapshots(
+        ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        return (intelligence.MetricSnapshots ?? [])
+            .OrderBy(snapshot => snapshot.Date)
+            .ToArray();
+    }
+
+    private static ApplicationProjectMetricSnapshotMetadata? LatestSnapshot(
+        ApplicationProjectIntelligenceMetadata intelligence)
+    {
+        return OrderedSnapshots(intelligence).LastOrDefault();
+    }
+
+    private static double CountPeriods(DateOnly from, DateOnly to, string? cadence)
+    {
+        var days = Math.Max(1, to.DayNumber - from.DayNumber);
+        var divisor = string.Equals(cadence, "monthly", StringComparison.OrdinalIgnoreCase)
+            ? 30d
+            : 7d;
+
+        return Math.Max(1, days / divisor);
+    }
+
     private static ApplicationCommandCenterPanelItemViewModel BuildCollectionItem(
         string label,
         IReadOnlyList<string> values)
@@ -296,3 +474,10 @@ public sealed record ApplicationCommandCenterPanelItemViewModel(
     string Label,
     string Status,
     string Detail);
+
+public sealed record ProjectIntelligenceChartItemViewModel(
+    string Label,
+    string AcquiredLabel,
+    string ActiveLabel,
+    double AcquiredValue,
+    double ActiveValue);
