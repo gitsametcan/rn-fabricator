@@ -1269,6 +1269,85 @@ public sealed class DesktopShellSmokeTests
             item.Status == "done");
     }
 
+    [Fact]
+    public void MainViewModelTracksDirtyStateAndBlocksNavigationUntilDiscarded()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "DirtyStateApp");
+        WriteFile(
+            workspace.Path,
+            "DirtyStateApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center"
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+
+        Assert.False(viewModel.HasCommandCenterUnsavedChanges);
+
+        viewModel.PublishingReleaseOwner = "Mobile Team";
+
+        Assert.True(viewModel.HasCommandCenterUnsavedChanges);
+        Assert.Equal("Unsaved command center changes.", viewModel.CommandCenterEditState);
+
+        viewModel.ShowCreateCommand.Execute(null);
+
+        Assert.False(viewModel.IsCreateView);
+        Assert.Equal("Unsaved command center changes. Save or discard before navigating.", viewModel.CommandCenterEditState);
+
+        viewModel.DiscardCommandCenterEditsCommand.Execute(null);
+
+        Assert.False(viewModel.HasCommandCenterUnsavedChanges);
+        Assert.Equal("Unsaved command center changes discarded.", viewModel.CommandCenterEditState);
+
+        viewModel.ShowCreateCommand.Execute(null);
+
+        Assert.True(viewModel.IsCreateView);
+    }
+
+    [Fact]
+    public void MainViewModelValidatesCommandCenterItemIdsBeforeSave()
+    {
+        using var workspace = new TemporaryDirectory();
+        CreateFabricatorProject(workspace.Path, "ValidationApp");
+        WriteFile(
+            workspace.Path,
+            "ValidationApp/.fabricator/app-command-center.json",
+            """
+            {
+              "schemaVersion": 1,
+              "kind": "fabricator-app-command-center"
+            }
+            """);
+        var viewModel = new MainViewModel(
+            new WorkspaceDiscoveryService(),
+            new WorkspaceProjectDetailService(),
+            new MemoryWorkspaceSettingsStore(workspace.Path));
+        var project = Assert.Single(viewModel.Projects);
+        viewModel.SelectProjectCommand.Execute(project);
+        viewModel.ReleaseChecklistItemsText =
+            "privacy|Privacy policy|ready|Published" +
+            System.Environment.NewLine +
+            "privacy|Privacy policy duplicate|missing|Duplicate";
+
+        viewModel.SaveReleaseChecklistCommand.Execute(null);
+
+        Assert.Contains("Release checklist item ID must be unique: privacy.", viewModel.ReleaseChecklistEditStatus, StringComparison.Ordinal);
+
+        viewModel.NextActionsText = "|Missing id|general|open|Needs id";
+
+        viewModel.SaveNextActionsCommand.Execute(null);
+
+        Assert.Contains("Next action ID is required.", viewModel.NextActionsEditStatus, StringComparison.Ordinal);
+    }
+
     [AvaloniaFact]
     public void MainWindowRendersApplicationCommandCenterShell()
     {
@@ -1385,6 +1464,7 @@ public sealed class DesktopShellSmokeTests
 
         Assert.Contains("Application Command Center", visibleText);
         Assert.Contains("Command center metadata loaded", visibleText);
+        Assert.Contains("No unsaved command center changes.", visibleText);
         Assert.Contains("Project metrics edit", visibleText);
         Assert.Contains("Project metrics loaded for local editing.", visibleText);
         Assert.Contains("Save project metrics", visibleText);

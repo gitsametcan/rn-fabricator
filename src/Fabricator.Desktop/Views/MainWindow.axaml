@@ -532,6 +532,9 @@
                                                     <TextBlock Text="{Binding CommandCenterCreateStatus}"
                                                                Foreground="#475467"
                                                                TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding CommandCenterEditState}"
+                                                               Foreground="#B45309"
+                                                               TextWrapping="Wrap" />
                                                     <TextBlock Text="{Binding SelectedProjectDetail.CommandCenterMetadataPath}"
                                                                Foreground="#667085"
                                                                FontSize="12"
@@ -548,6 +551,19 @@
                                                         Command="{Binding CreateCommandCenterMetadataCommand}">
                                                     <TextBlock Text="Create metadata"
                                                                Foreground="#FFFFFF" />
+                                                </Button>
+
+                                                <Button Grid.Column="1"
+                                                        Padding="12,8"
+                                                        Margin="0,42,0,0"
+                                                        VerticalAlignment="Top"
+                                                        Background="#FFFFFF"
+                                                        BorderBrush="#F59E0B"
+                                                        BorderThickness="1"
+                                                        IsVisible="{Binding HasCommandCenterUnsavedChanges}"
+                                                        Command="{Binding DiscardCommandCenterEditsCommand}">
+                                                    <TextBlock Text="Discard edits"
+                                                               Foreground="#92400E" />
                                                 </Button>
                                             </Grid>
 

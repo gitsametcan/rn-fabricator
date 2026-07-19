@@ -104,6 +104,9 @@ public sealed class MainViewModel : ViewModelBase
     private string _releaseChecklistNotes = string.Empty;
     private string _nextActionsEditStatus = "Select a project with command center metadata to edit next actions.";
     private string _nextActionsText = string.Empty;
+    private string _commandCenterEditState = "No command center edits loaded.";
+    private string _commandCenterLoadedEditFingerprint = string.Empty;
+    private bool _isLoadingCommandCenterEditors;
 
     public MainViewModel()
         : this(
@@ -214,6 +217,7 @@ public sealed class MainViewModel : ViewModelBase
         SaveProjectMetricsCommand = new RelayCommand(SaveProjectMetrics);
         SaveReleaseChecklistCommand = new RelayCommand(SaveReleaseChecklist);
         SaveNextActionsCommand = new RelayCommand(SaveNextActions);
+        DiscardCommandCenterEditsCommand = new RelayCommand(DiscardCommandCenterEdits);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -708,97 +712,97 @@ public sealed class MainViewModel : ViewModelBase
     public string PublishingIosDisplayName
     {
         get => _publishingIosDisplayName;
-        set => SetProperty(ref _publishingIosDisplayName, value);
+        set => SetEditorProperty(ref _publishingIosDisplayName, value);
     }
 
     public string PublishingIosIdentifier
     {
         get => _publishingIosIdentifier;
-        set => SetProperty(ref _publishingIosIdentifier, value);
+        set => SetEditorProperty(ref _publishingIosIdentifier, value);
     }
 
     public string PublishingIosVersion
     {
         get => _publishingIosVersion;
-        set => SetProperty(ref _publishingIosVersion, value);
+        set => SetEditorProperty(ref _publishingIosVersion, value);
     }
 
     public string PublishingIosBuildNumber
     {
         get => _publishingIosBuildNumber;
-        set => SetProperty(ref _publishingIosBuildNumber, value);
+        set => SetEditorProperty(ref _publishingIosBuildNumber, value);
     }
 
     public string PublishingIosStatus
     {
         get => _publishingIosStatus;
-        set => SetProperty(ref _publishingIosStatus, value);
+        set => SetEditorProperty(ref _publishingIosStatus, value);
     }
 
     public string PublishingIosStoreUrl
     {
         get => _publishingIosStoreUrl;
-        set => SetProperty(ref _publishingIosStoreUrl, value);
+        set => SetEditorProperty(ref _publishingIosStoreUrl, value);
     }
 
     public string PublishingIosNotes
     {
         get => _publishingIosNotes;
-        set => SetProperty(ref _publishingIosNotes, value);
+        set => SetEditorProperty(ref _publishingIosNotes, value);
     }
 
     public string PublishingAndroidDisplayName
     {
         get => _publishingAndroidDisplayName;
-        set => SetProperty(ref _publishingAndroidDisplayName, value);
+        set => SetEditorProperty(ref _publishingAndroidDisplayName, value);
     }
 
     public string PublishingAndroidIdentifier
     {
         get => _publishingAndroidIdentifier;
-        set => SetProperty(ref _publishingAndroidIdentifier, value);
+        set => SetEditorProperty(ref _publishingAndroidIdentifier, value);
     }
 
     public string PublishingAndroidVersion
     {
         get => _publishingAndroidVersion;
-        set => SetProperty(ref _publishingAndroidVersion, value);
+        set => SetEditorProperty(ref _publishingAndroidVersion, value);
     }
 
     public string PublishingAndroidBuildNumber
     {
         get => _publishingAndroidBuildNumber;
-        set => SetProperty(ref _publishingAndroidBuildNumber, value);
+        set => SetEditorProperty(ref _publishingAndroidBuildNumber, value);
     }
 
     public string PublishingAndroidStatus
     {
         get => _publishingAndroidStatus;
-        set => SetProperty(ref _publishingAndroidStatus, value);
+        set => SetEditorProperty(ref _publishingAndroidStatus, value);
     }
 
     public string PublishingAndroidStoreUrl
     {
         get => _publishingAndroidStoreUrl;
-        set => SetProperty(ref _publishingAndroidStoreUrl, value);
+        set => SetEditorProperty(ref _publishingAndroidStoreUrl, value);
     }
 
     public string PublishingAndroidNotes
     {
         get => _publishingAndroidNotes;
-        set => SetProperty(ref _publishingAndroidNotes, value);
+        set => SetEditorProperty(ref _publishingAndroidNotes, value);
     }
 
     public string PublishingReleaseOwner
     {
         get => _publishingReleaseOwner;
-        set => SetProperty(ref _publishingReleaseOwner, value);
+        set => SetEditorProperty(ref _publishingReleaseOwner, value);
     }
 
     public string PublishingNotes
     {
         get => _publishingNotes;
-        set => SetProperty(ref _publishingNotes, value);
+        set => SetEditorProperty(ref _publishingNotes, value);
     }
 
     public string ResearchEditStatus
@@ -810,43 +814,43 @@ public sealed class MainViewModel : ViewModelBase
     public string ResearchTargetAudience
     {
         get => _researchTargetAudience;
-        set => SetProperty(ref _researchTargetAudience, value);
+        set => SetEditorProperty(ref _researchTargetAudience, value);
     }
 
     public string ResearchPositioning
     {
         get => _researchPositioning;
-        set => SetProperty(ref _researchPositioning, value);
+        set => SetEditorProperty(ref _researchPositioning, value);
     }
 
     public string ResearchKeywordsText
     {
         get => _researchKeywordsText;
-        set => SetProperty(ref _researchKeywordsText, value);
+        set => SetEditorProperty(ref _researchKeywordsText, value);
     }
 
     public string ResearchCompetitorsText
     {
         get => _researchCompetitorsText;
-        set => SetProperty(ref _researchCompetitorsText, value);
+        set => SetEditorProperty(ref _researchCompetitorsText, value);
     }
 
     public string ResearchOpenQuestionsText
     {
         get => _researchOpenQuestionsText;
-        set => SetProperty(ref _researchOpenQuestionsText, value);
+        set => SetEditorProperty(ref _researchOpenQuestionsText, value);
     }
 
     public string ResearchGrowthAssumptionsText
     {
         get => _researchGrowthAssumptionsText;
-        set => SetProperty(ref _researchGrowthAssumptionsText, value);
+        set => SetEditorProperty(ref _researchGrowthAssumptionsText, value);
     }
 
     public string ResearchNotes
     {
         get => _researchNotes;
-        set => SetProperty(ref _researchNotes, value);
+        set => SetEditorProperty(ref _researchNotes, value);
     }
 
     public string ProjectMetricsEditStatus
@@ -858,37 +862,37 @@ public sealed class MainViewModel : ViewModelBase
     public string ProjectTargetUsers
     {
         get => _projectTargetUsers;
-        set => SetProperty(ref _projectTargetUsers, value);
+        set => SetEditorProperty(ref _projectTargetUsers, value);
     }
 
     public string ProjectTargetDate
     {
         get => _projectTargetDate;
-        set => SetProperty(ref _projectTargetDate, value);
+        set => SetEditorProperty(ref _projectTargetDate, value);
     }
 
     public string ProjectReportingCadence
     {
         get => _projectReportingCadence;
-        set => SetProperty(ref _projectReportingCadence, value);
+        set => SetEditorProperty(ref _projectReportingCadence, value);
     }
 
     public string ProjectMetricSnapshotsText
     {
         get => _projectMetricSnapshotsText;
-        set => SetProperty(ref _projectMetricSnapshotsText, value);
+        set => SetEditorProperty(ref _projectMetricSnapshotsText, value);
     }
 
     public string ProjectMilestoneProgressText
     {
         get => _projectMilestoneProgressText;
-        set => SetProperty(ref _projectMilestoneProgressText, value);
+        set => SetEditorProperty(ref _projectMilestoneProgressText, value);
     }
 
     public string ProjectIntelligenceNotes
     {
         get => _projectIntelligenceNotes;
-        set => SetProperty(ref _projectIntelligenceNotes, value);
+        set => SetEditorProperty(ref _projectIntelligenceNotes, value);
     }
 
     public string ReleaseChecklistEditStatus
@@ -900,13 +904,13 @@ public sealed class MainViewModel : ViewModelBase
     public string ReleaseChecklistItemsText
     {
         get => _releaseChecklistItemsText;
-        set => SetProperty(ref _releaseChecklistItemsText, value);
+        set => SetEditorProperty(ref _releaseChecklistItemsText, value);
     }
 
     public string ReleaseChecklistNotes
     {
         get => _releaseChecklistNotes;
-        set => SetProperty(ref _releaseChecklistNotes, value);
+        set => SetEditorProperty(ref _releaseChecklistNotes, value);
     }
 
     public string NextActionsEditStatus
@@ -918,8 +922,19 @@ public sealed class MainViewModel : ViewModelBase
     public string NextActionsText
     {
         get => _nextActionsText;
-        set => SetProperty(ref _nextActionsText, value);
+        set => SetEditorProperty(ref _nextActionsText, value);
     }
+
+    public string CommandCenterEditState
+    {
+        get => _commandCenterEditState;
+        private set => SetProperty(ref _commandCenterEditState, value);
+    }
+
+    public bool HasCommandCenterUnsavedChanges =>
+        SelectedProject is not null &&
+        !_isLoadingCommandCenterEditors &&
+        !string.Equals(_commandCenterLoadedEditFingerprint, BuildCommandCenterEditFingerprint(), StringComparison.Ordinal);
 
     public string CreateTargetProjectPath
     {
@@ -997,6 +1012,8 @@ public sealed class MainViewModel : ViewModelBase
     public IRelayCommand SaveReleaseChecklistCommand { get; }
 
     public IRelayCommand SaveNextActionsCommand { get; }
+
+    public IRelayCommand DiscardCommandCenterEditsCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -1091,11 +1108,7 @@ public sealed class MainViewModel : ViewModelBase
             : SelectedProjectDetail.CanCreateCommandCenterMetadata
                 ? "Command center metadata is missing. Create local metadata before editing project work."
                 : "Command center metadata is available for this project.";
-        LoadPublishingEditor(project);
-        LoadResearchEditor(project);
-        LoadProjectMetricsEditor(project);
-        LoadReleaseChecklistEditor(project);
-        LoadNextActionsEditor(project);
+        LoadCommandCenterEditors(project);
     }
 
     private void CreateCommandCenterMetadata()
@@ -1119,11 +1132,29 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         CommandCenterCreateStatus = $"Command center metadata created: {result.MetadataPath}";
-        LoadPublishingEditor(SelectedProject);
-        LoadResearchEditor(SelectedProject);
-        LoadProjectMetricsEditor(SelectedProject);
-        LoadReleaseChecklistEditor(SelectedProject);
-        LoadNextActionsEditor(SelectedProject);
+        LoadCommandCenterEditors(SelectedProject);
+    }
+
+    private void LoadCommandCenterEditors(WorkspaceProjectItemViewModel? project)
+    {
+        _isLoadingCommandCenterEditors = true;
+        try
+        {
+            LoadPublishingEditor(project);
+            LoadResearchEditor(project);
+            LoadProjectMetricsEditor(project);
+            LoadReleaseChecklistEditor(project);
+            LoadNextActionsEditor(project);
+            AcceptCommandCenterEditBaseline(
+                project is null
+                    ? "No command center edits loaded."
+                    : "No unsaved command center changes.");
+        }
+        finally
+        {
+            _isLoadingCommandCenterEditors = false;
+            OnPropertyChanged(nameof(HasCommandCenterUnsavedChanges));
+        }
     }
 
     private void LoadPublishingEditor(WorkspaceProjectItemViewModel? project)
@@ -1224,6 +1255,7 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         SetPublishingEditor(writeResult.Metadata.Publishing);
+        AcceptCommandCenterEditBaseline("No unsaved command center changes.");
         PublishingEditStatus = $"Publishing metadata saved: {writeResult.MetadataPath}";
     }
 
@@ -1309,6 +1341,7 @@ public sealed class MainViewModel : ViewModelBase
         SetResearchEditor(
             writeResult.Metadata.MarketResearch,
             writeResult.Metadata.ProjectIntelligence.Assumptions);
+        AcceptCommandCenterEditBaseline("No unsaved command center changes.");
         ResearchEditStatus = $"Research metadata saved: {writeResult.MetadataPath}";
     }
 
@@ -1382,6 +1415,7 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         SetProjectMetricsEditor(writeResult.Metadata.ProjectIntelligence);
+        AcceptCommandCenterEditBaseline("No unsaved command center changes.");
         ProjectMetricsEditStatus = $"Project metrics saved: {writeResult.MetadataPath}";
     }
 
@@ -1427,7 +1461,15 @@ public sealed class MainViewModel : ViewModelBase
             return;
         }
 
-        var items = ParseReleaseChecklistItems(ReleaseChecklistItemsText);
+        var validationErrors = new List<string>();
+        var items = ParseReleaseChecklistItems(ReleaseChecklistItemsText, validationErrors);
+        AddDuplicateIdErrors(items.Select(item => item.Id), "Release checklist item", validationErrors);
+        if (validationErrors.Count > 0)
+        {
+            ReleaseChecklistEditStatus = $"Release checklist could not be saved: {string.Join(" ", validationErrors)}";
+            return;
+        }
+
         var metadata = readResult.Metadata with
         {
             ReleaseChecklist = new ApplicationReleaseChecklistMetadata
@@ -1447,6 +1489,7 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         SetReleaseChecklistEditor(writeResult.Metadata.ReleaseChecklist);
+        AcceptCommandCenterEditBaseline("No unsaved command center changes.");
         ReleaseChecklistEditStatus = $"Release checklist saved: {writeResult.MetadataPath}";
     }
 
@@ -1486,9 +1529,18 @@ public sealed class MainViewModel : ViewModelBase
             return;
         }
 
+        var validationErrors = new List<string>();
+        var nextActions = ParseNextActions(NextActionsText, validationErrors);
+        AddDuplicateIdErrors(nextActions.Select(action => action.Id), "Next action", validationErrors);
+        if (validationErrors.Count > 0)
+        {
+            NextActionsEditStatus = $"Next actions could not be saved: {string.Join(" ", validationErrors)}";
+            return;
+        }
+
         var metadata = readResult.Metadata with
         {
-            NextActions = ParseNextActions(NextActionsText)
+            NextActions = nextActions
         };
 
         var writeResult = _commandCenterMetadataService.Write(SelectedProject.Path, metadata);
@@ -1501,7 +1553,25 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         NextActionsText = JoinNextActions(writeResult.Metadata.NextActions);
+        AcceptCommandCenterEditBaseline("No unsaved command center changes.");
         NextActionsEditStatus = $"Next actions saved: {writeResult.MetadataPath}";
+    }
+
+    private void DiscardCommandCenterEdits()
+    {
+        LoadCommandCenterEditors(SelectedProject);
+        CommandCenterEditState = "Unsaved command center changes discarded.";
+    }
+
+    private bool HasBlockingUnsavedCommandCenterChanges()
+    {
+        if (!HasCommandCenterUnsavedChanges)
+        {
+            return false;
+        }
+
+        CommandCenterEditState = "Unsaved command center changes. Save or discard before navigating.";
+        return true;
     }
 
     private static string? Optional(string value)
@@ -1509,6 +1579,75 @@ public sealed class MainViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
+    }
+
+    private bool SetEditorProperty(ref string field, string value)
+    {
+        if (!SetProperty(ref field, value))
+        {
+            return false;
+        }
+
+        MarkCommandCenterEditorChanged();
+        return true;
+    }
+
+    private void MarkCommandCenterEditorChanged()
+    {
+        if (_isLoadingCommandCenterEditors)
+        {
+            return;
+        }
+
+        CommandCenterEditState = HasCommandCenterUnsavedChanges
+            ? "Unsaved command center changes."
+            : "No unsaved command center changes.";
+        OnPropertyChanged(nameof(HasCommandCenterUnsavedChanges));
+    }
+
+    private void AcceptCommandCenterEditBaseline(string status)
+    {
+        _commandCenterLoadedEditFingerprint = BuildCommandCenterEditFingerprint();
+        CommandCenterEditState = status;
+        OnPropertyChanged(nameof(HasCommandCenterUnsavedChanges));
+    }
+
+    private string BuildCommandCenterEditFingerprint()
+    {
+        return string.Join(
+            "\u001f",
+            PublishingIosDisplayName,
+            PublishingIosIdentifier,
+            PublishingIosVersion,
+            PublishingIosBuildNumber,
+            PublishingIosStatus,
+            PublishingIosStoreUrl,
+            PublishingIosNotes,
+            PublishingAndroidDisplayName,
+            PublishingAndroidIdentifier,
+            PublishingAndroidVersion,
+            PublishingAndroidBuildNumber,
+            PublishingAndroidStatus,
+            PublishingAndroidStoreUrl,
+            PublishingAndroidNotes,
+            PublishingReleaseOwner,
+            PublishingNotes,
+            ResearchTargetAudience,
+            ResearchPositioning,
+            ResearchKeywordsText,
+            ResearchCompetitorsText,
+            ResearchOpenQuestionsText,
+            ResearchGrowthAssumptionsText,
+            ResearchNotes,
+            ProjectTargetUsers,
+            ProjectTargetDate,
+            ProjectReportingCadence,
+            ProjectMetricSnapshotsText,
+            ProjectMilestoneProgressText,
+            ProjectIntelligenceNotes,
+            ReleaseChecklistItemsText,
+            ReleaseChecklistNotes,
+            NextActionsText);
     }
 
     private static string JoinList(IReadOnlyList<string> values)
@@ -1746,19 +1885,34 @@ public sealed class MainViewModel : ViewModelBase
                     milestone.Notes ?? string.Empty)));
     }
 
-    private static IReadOnlyList<ApplicationReleaseChecklistItemMetadata> ParseReleaseChecklistItems(string value)
+    private static IReadOnlyList<ApplicationReleaseChecklistItemMetadata> ParseReleaseChecklistItems(
+        string value,
+        List<string> errors)
     {
-        return SplitList(value)
-            .Select(line => line.Split('|').Select(part => part.Trim()).ToArray())
-            .Where(parts => parts.Length >= 3)
-            .Select(parts => new ApplicationReleaseChecklistItemMetadata
+        var items = new List<ApplicationReleaseChecklistItemMetadata>();
+        foreach (var parts in SplitList(value).Select(line => line.Split('|').Select(part => part.Trim()).ToArray()))
+        {
+            if (parts.Length < 3)
+            {
+                errors.Add("Release checklist rows must use id|title|status|notes.");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(parts[0]))
+            {
+                errors.Add("Release checklist item ID is required.");
+            }
+
+            items.Add(new ApplicationReleaseChecklistItemMetadata
             {
                 Id = parts[0],
                 Title = parts[1],
                 Status = parts[2],
                 Notes = parts.Length > 3 ? Optional(parts[3]) : null
-            })
-            .ToArray();
+            });
+        }
+
+        return items;
     }
 
     private static string JoinReleaseChecklistItems(IReadOnlyList<ApplicationReleaseChecklistItemMetadata> items)
@@ -1774,20 +1928,35 @@ public sealed class MainViewModel : ViewModelBase
                     item.Notes ?? string.Empty)));
     }
 
-    private static IReadOnlyList<ApplicationNextActionMetadata> ParseNextActions(string value)
+    private static IReadOnlyList<ApplicationNextActionMetadata> ParseNextActions(
+        string value,
+        List<string> errors)
     {
-        return SplitList(value)
-            .Select(line => line.Split('|').Select(part => part.Trim()).ToArray())
-            .Where(parts => parts.Length >= 4)
-            .Select(parts => new ApplicationNextActionMetadata
+        var actions = new List<ApplicationNextActionMetadata>();
+        foreach (var parts in SplitList(value).Select(line => line.Split('|').Select(part => part.Trim()).ToArray()))
+        {
+            if (parts.Length < 4)
+            {
+                errors.Add("Next action rows must use id|title|group|status|notes.");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(parts[0]))
+            {
+                errors.Add("Next action ID is required.");
+            }
+
+            actions.Add(new ApplicationNextActionMetadata
             {
                 Id = parts[0],
                 Title = parts[1],
                 Group = parts[2],
                 Status = parts[3],
                 Notes = parts.Length > 4 ? Optional(parts[4]) : null
-            })
-            .ToArray();
+            });
+        }
+
+        return actions;
     }
 
     private static string JoinNextActions(IReadOnlyList<ApplicationNextActionMetadata> actions)
@@ -1802,6 +1971,21 @@ public sealed class MainViewModel : ViewModelBase
                     action.Group,
                     action.Status,
                     action.Notes ?? string.Empty)));
+    }
+
+    private static void AddDuplicateIdErrors(
+        IEnumerable<string> ids,
+        string label,
+        List<string> errors)
+    {
+        foreach (var duplicate in ids
+                     .Where(id => !string.IsNullOrWhiteSpace(id))
+                     .GroupBy(id => id, StringComparer.Ordinal)
+                     .Where(group => group.Count() > 1)
+                     .Select(group => group.Key))
+        {
+            errors.Add($"{label} ID must be unique: {duplicate}.");
+        }
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)
@@ -1833,6 +2017,11 @@ public sealed class MainViewModel : ViewModelBase
 
     private void ShowWorkspace()
     {
+        if (HasBlockingUnsavedCommandCenterChanges())
+        {
+            return;
+        }
+
         IsTemplatesView = false;
         IsCreateView = false;
         IsDoctorView = false;
@@ -1841,6 +2030,11 @@ public sealed class MainViewModel : ViewModelBase
 
     private void ShowTemplates()
     {
+        if (HasBlockingUnsavedCommandCenterChanges())
+        {
+            return;
+        }
+
         IsCreateView = false;
         IsDoctorView = false;
         IsSetupView = false;
@@ -1849,6 +2043,11 @@ public sealed class MainViewModel : ViewModelBase
 
     private void ShowCreate()
     {
+        if (HasBlockingUnsavedCommandCenterChanges())
+        {
+            return;
+        }
+
         IsTemplatesView = false;
         IsDoctorView = false;
         IsSetupView = false;
@@ -1862,6 +2061,11 @@ public sealed class MainViewModel : ViewModelBase
 
     private async Task ShowDoctorAsync()
     {
+        if (HasBlockingUnsavedCommandCenterChanges())
+        {
+            return;
+        }
+
         IsTemplatesView = false;
         IsCreateView = false;
         IsSetupView = false;
@@ -1875,6 +2079,11 @@ public sealed class MainViewModel : ViewModelBase
 
     private async Task ShowSetupAsync()
     {
+        if (HasBlockingUnsavedCommandCenterChanges())
+        {
+            return;
+        }
+
         IsTemplatesView = false;
         IsCreateView = false;
         IsDoctorView = false;
