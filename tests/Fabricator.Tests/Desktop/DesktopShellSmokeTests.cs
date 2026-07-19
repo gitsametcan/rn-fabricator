@@ -875,6 +875,8 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Release metadata", visibleText);
         Assert.Contains("Add .fabricator/app-command-center.json to track release metadata.", visibleText);
         Assert.Contains("No market research notes yet.", visibleText);
+        Assert.Contains("No project intelligence metadata yet.", visibleText);
+        Assert.Contains("No metric history yet.", visibleText);
         Assert.Contains("No release checklist yet.", visibleText);
         Assert.Contains("No local checklist items.", visibleText);
         Assert.Contains("No next actions yet.", visibleText);
@@ -1187,6 +1189,35 @@ public sealed class DesktopShellSmokeTests
                 "openQuestions": ["Which geography first?"],
                 "notes": "Validate paid acquisition before launch."
               },
+              "projectIntelligence": {
+                "targetUsers": 1000,
+                "targetDate": "2026-09-30",
+                "reportingCadence": "weekly",
+                "metricSnapshots": [
+                  {
+                    "date": "2026-07-01",
+                    "acquiredUsers": 100,
+                    "activeUsers": 70,
+                    "notes": "Launch baseline."
+                  },
+                  {
+                    "date": "2026-07-15",
+                    "acquiredUsers": 250,
+                    "activeUsers": 180,
+                    "retentionProxy": 0.72,
+                    "notes": "Second snapshot."
+                  }
+                ],
+                "milestoneProgress": [
+                  {
+                    "id": "beta",
+                    "title": "Beta release",
+                    "status": "ready",
+                    "progressPercent": 100,
+                    "notes": "Closed beta is live."
+                  }
+                ]
+              },
               "releaseChecklist": {
                 "items": [
                   {
@@ -1240,6 +1271,18 @@ public sealed class DesktopShellSmokeTests
         Assert.Contains("Project metrics edit", visibleText);
         Assert.Contains("Project metrics loaded for local editing.", visibleText);
         Assert.Contains("Save project metrics", visibleText);
+        Assert.Contains("Project Intelligence", visibleText);
+        Assert.Contains("2 metric snapshot(s), 1 milestone(s), 1000 target users", visibleText);
+        Assert.Contains("250 of 1000 target users (25%).", visibleText);
+        Assert.Contains(visibleText, text =>
+            text is not null &&
+            text.StartsWith("On track: current average growth 75", StringComparison.Ordinal));
+        Assert.Contains("2026-07-15", visibleText);
+        Assert.Contains("250 acquired", visibleText);
+        Assert.Contains("180 active", visibleText);
+        Assert.Contains("Product progress", visibleText);
+        Assert.Contains("Beta release", visibleText);
+        Assert.Contains("100% complete. Closed beta is live.", visibleText);
         Assert.Contains("Publishing", visibleText);
         Assert.Contains("Publishing edit", visibleText);
         Assert.Contains("Publishing metadata loaded for local editing.", visibleText);

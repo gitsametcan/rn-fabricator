@@ -517,7 +517,7 @@
                                             Background="#FFFFFF"
                                             BorderBrush="#EAECF0"
                                             BorderThickness="1">
-                                        <Grid RowDefinitions="Auto,Auto,Auto"
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto"
                                               RowSpacing="12">
                                             <Grid ColumnDefinitions="*,Auto"
                                                   ColumnSpacing="12">
@@ -552,6 +552,118 @@
                                             </Grid>
 
                                             <Border Grid.Row="1"
+                                                    Padding="10"
+                                                    CornerRadius="6"
+                                                    Background="#FFFFFF"
+                                                    BorderBrush="#EAECF0"
+                                                    BorderThickness="1">
+                                                <Grid RowDefinitions="Auto,Auto"
+                                                      RowSpacing="10">
+                                                    <Grid ColumnDefinitions="*,Auto"
+                                                          ColumnSpacing="12">
+                                                        <StackPanel Spacing="4">
+                                                            <TextBlock Text="Project Intelligence"
+                                                                       Foreground="#101828"
+                                                                       FontSize="14"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding SelectedProjectDetail.ProjectIntelligenceSummary}"
+                                                                       Foreground="#475467"
+                                                                       TextWrapping="Wrap" />
+                                                            <TextBlock Text="{Binding SelectedProjectDetail.ProjectProjectionSummary}"
+                                                                       Foreground="#101828"
+                                                                       TextWrapping="Wrap" />
+                                                        </StackPanel>
+
+                                                        <StackPanel Grid.Column="1"
+                                                                    MinWidth="220"
+                                                                    Spacing="4">
+                                                            <TextBlock Text="Target progress"
+                                                                       Foreground="#475467"
+                                                                       FontSize="12"
+                                                                       FontWeight="SemiBold" />
+                                                            <ProgressBar Minimum="0"
+                                                                         Maximum="100"
+                                                                         Value="{Binding SelectedProjectDetail.ProjectTargetProgressValue}"
+                                                                         Height="10" />
+                                                            <TextBlock Text="{Binding SelectedProjectDetail.ProjectTargetProgressSummary}"
+                                                                       Foreground="#667085"
+                                                                       FontSize="12"
+                                                                       TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <Grid Grid.Row="1"
+                                                          ColumnDefinitions="2*,*"
+                                                          ColumnSpacing="12">
+                                                        <ItemsControl ItemsSource="{Binding SelectedProjectDetail.ProjectIntelligenceChartItems}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Grid RowDefinitions="Auto,Auto,Auto"
+                                                                          RowSpacing="3"
+                                                                          Margin="0,0,0,8">
+                                                                        <Grid ColumnDefinitions="*,Auto"
+                                                                              ColumnSpacing="8">
+                                                                            <TextBlock Text="{Binding Label}"
+                                                                                       Foreground="#475467"
+                                                                                       FontSize="12" />
+                                                                            <TextBlock Grid.Column="1"
+                                                                                       Text="{Binding AcquiredLabel}"
+                                                                                       Foreground="#101828"
+                                                                                       FontSize="12"
+                                                                                       FontWeight="SemiBold" />
+                                                                        </Grid>
+                                                                        <ProgressBar Grid.Row="1"
+                                                                                     Minimum="0"
+                                                                                     Maximum="100"
+                                                                                     Value="{Binding AcquiredValue}"
+                                                                                     Height="8" />
+                                                                        <TextBlock Grid.Row="2"
+                                                                                   Text="{Binding ActiveLabel}"
+                                                                                   Foreground="#667085"
+                                                                                   FontSize="12"
+                                                                                   TextWrapping="Wrap" />
+                                                                    </Grid>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+
+                                                        <StackPanel Grid.Column="1"
+                                                                    Spacing="6">
+                                                            <TextBlock Text="Product progress"
+                                                                       Foreground="#475467"
+                                                                       FontSize="12"
+                                                                       FontWeight="SemiBold" />
+                                                            <ItemsControl ItemsSource="{Binding SelectedProjectDetail.ProjectMilestoneItems}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Grid ColumnDefinitions="*,Auto"
+                                                                              RowDefinitions="Auto,Auto"
+                                                                              RowSpacing="2"
+                                                                              Margin="0,0,0,6">
+                                                                            <TextBlock Text="{Binding Label}"
+                                                                                       Foreground="#475467"
+                                                                                       FontSize="12" />
+                                                                            <TextBlock Grid.Column="1"
+                                                                                       Text="{Binding Status}"
+                                                                                       Foreground="#101828"
+                                                                                       FontSize="12"
+                                                                                       FontWeight="SemiBold" />
+                                                                            <TextBlock Grid.Row="1"
+                                                                                       Grid.ColumnSpan="2"
+                                                                                       Text="{Binding Detail}"
+                                                                                       Foreground="#667085"
+                                                                                       FontSize="12"
+                                                                                       TextWrapping="Wrap" />
+                                                                        </Grid>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Grid.Row="2"
                                                     Padding="10"
                                                     CornerRadius="6"
                                                     Background="#F9FAFB"
@@ -614,7 +726,7 @@
                                                 </Grid>
                                             </Border>
 
-                                            <Grid Grid.Row="2"
+                                            <Grid Grid.Row="3"
                                                   ColumnDefinitions="*,*,*,*"
                                                   ColumnSpacing="12">
                                                 <StackPanel Spacing="6">
