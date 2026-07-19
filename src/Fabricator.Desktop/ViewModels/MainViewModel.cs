@@ -67,6 +67,23 @@ public sealed class MainViewModel : ViewModelBase
     private string _setupPlanPackageManagerLabel = "Package manager not checked.";
     private string _setupPlanToolchainLabel = "Toolchain profile not checked.";
     private string _commandCenterCreateStatus = "Select a project to manage command center metadata.";
+    private string _publishingEditStatus = "Select a project with command center metadata to edit publishing.";
+    private string _publishingIosDisplayName = string.Empty;
+    private string _publishingIosIdentifier = string.Empty;
+    private string _publishingIosVersion = string.Empty;
+    private string _publishingIosBuildNumber = string.Empty;
+    private string _publishingIosStatus = string.Empty;
+    private string _publishingIosStoreUrl = string.Empty;
+    private string _publishingIosNotes = string.Empty;
+    private string _publishingAndroidDisplayName = string.Empty;
+    private string _publishingAndroidIdentifier = string.Empty;
+    private string _publishingAndroidVersion = string.Empty;
+    private string _publishingAndroidBuildNumber = string.Empty;
+    private string _publishingAndroidStatus = string.Empty;
+    private string _publishingAndroidStoreUrl = string.Empty;
+    private string _publishingAndroidNotes = string.Empty;
+    private string _publishingReleaseOwner = string.Empty;
+    private string _publishingNotes = string.Empty;
 
     public MainViewModel()
         : this(
@@ -172,6 +189,7 @@ public sealed class MainViewModel : ViewModelBase
         EditCreateCommand = new RelayCommand(EditCreate);
         ConfirmCreateCommand = new AsyncRelayCommand(ConfirmCreateAsync);
         CreateCommandCenterMetadataCommand = new RelayCommand(CreateCommandCenterMetadata);
+        SavePublishingMetadataCommand = new RelayCommand(SavePublishingMetadata);
 
         var lastWorkspacePath = _workspaceSettingsStore.LoadLastWorkspacePath();
         if (!string.IsNullOrWhiteSpace(lastWorkspacePath))
@@ -657,6 +675,108 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _commandCenterCreateStatus, value);
     }
 
+    public string PublishingEditStatus
+    {
+        get => _publishingEditStatus;
+        private set => SetProperty(ref _publishingEditStatus, value);
+    }
+
+    public string PublishingIosDisplayName
+    {
+        get => _publishingIosDisplayName;
+        set => SetProperty(ref _publishingIosDisplayName, value);
+    }
+
+    public string PublishingIosIdentifier
+    {
+        get => _publishingIosIdentifier;
+        set => SetProperty(ref _publishingIosIdentifier, value);
+    }
+
+    public string PublishingIosVersion
+    {
+        get => _publishingIosVersion;
+        set => SetProperty(ref _publishingIosVersion, value);
+    }
+
+    public string PublishingIosBuildNumber
+    {
+        get => _publishingIosBuildNumber;
+        set => SetProperty(ref _publishingIosBuildNumber, value);
+    }
+
+    public string PublishingIosStatus
+    {
+        get => _publishingIosStatus;
+        set => SetProperty(ref _publishingIosStatus, value);
+    }
+
+    public string PublishingIosStoreUrl
+    {
+        get => _publishingIosStoreUrl;
+        set => SetProperty(ref _publishingIosStoreUrl, value);
+    }
+
+    public string PublishingIosNotes
+    {
+        get => _publishingIosNotes;
+        set => SetProperty(ref _publishingIosNotes, value);
+    }
+
+    public string PublishingAndroidDisplayName
+    {
+        get => _publishingAndroidDisplayName;
+        set => SetProperty(ref _publishingAndroidDisplayName, value);
+    }
+
+    public string PublishingAndroidIdentifier
+    {
+        get => _publishingAndroidIdentifier;
+        set => SetProperty(ref _publishingAndroidIdentifier, value);
+    }
+
+    public string PublishingAndroidVersion
+    {
+        get => _publishingAndroidVersion;
+        set => SetProperty(ref _publishingAndroidVersion, value);
+    }
+
+    public string PublishingAndroidBuildNumber
+    {
+        get => _publishingAndroidBuildNumber;
+        set => SetProperty(ref _publishingAndroidBuildNumber, value);
+    }
+
+    public string PublishingAndroidStatus
+    {
+        get => _publishingAndroidStatus;
+        set => SetProperty(ref _publishingAndroidStatus, value);
+    }
+
+    public string PublishingAndroidStoreUrl
+    {
+        get => _publishingAndroidStoreUrl;
+        set => SetProperty(ref _publishingAndroidStoreUrl, value);
+    }
+
+    public string PublishingAndroidNotes
+    {
+        get => _publishingAndroidNotes;
+        set => SetProperty(ref _publishingAndroidNotes, value);
+    }
+
+    public string PublishingReleaseOwner
+    {
+        get => _publishingReleaseOwner;
+        set => SetProperty(ref _publishingReleaseOwner, value);
+    }
+
+    public string PublishingNotes
+    {
+        get => _publishingNotes;
+        set => SetProperty(ref _publishingNotes, value);
+    }
+
     public string CreateTargetProjectPath
     {
         get
@@ -723,6 +843,8 @@ public sealed class MainViewModel : ViewModelBase
     public IAsyncRelayCommand ConfirmCreateCommand { get; }
 
     public IRelayCommand CreateCommandCenterMetadataCommand { get; }
+
+    public IRelayCommand SavePublishingMetadataCommand { get; }
 
     public IReadOnlyList<ShellNavigationItem> NavigationItems { get; } =
     [
@@ -817,6 +939,7 @@ public sealed class MainViewModel : ViewModelBase
             : SelectedProjectDetail.CanCreateCommandCenterMetadata
                 ? "Command center metadata is missing. Create local metadata before editing project work."
                 : "Command center metadata is available for this project.";
+        LoadPublishingEditor(project);
     }
 
     private void CreateCommandCenterMetadata()
@@ -840,6 +963,115 @@ public sealed class MainViewModel : ViewModelBase
         SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
             _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
         CommandCenterCreateStatus = $"Command center metadata created: {result.MetadataPath}";
+        LoadPublishingEditor(SelectedProject);
+    }
+
+    private void LoadPublishingEditor(WorkspaceProjectItemViewModel? project)
+    {
+        if (project is null)
+        {
+            PublishingEditStatus = "Select a project with command center metadata to edit publishing.";
+            SetPublishingEditor(new ApplicationPublishingMetadata());
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(project.Path);
+        if (!readResult.HasMetadata)
+        {
+            PublishingEditStatus = "Create command center metadata before editing publishing.";
+            SetPublishingEditor(new ApplicationPublishingMetadata());
+            return;
+        }
+
+        SetPublishingEditor(readResult.Metadata.Publishing);
+        PublishingEditStatus = "Publishing metadata loaded for local editing.";
+    }
+
+    private void SetPublishingEditor(ApplicationPublishingMetadata publishing)
+    {
+        var ios = publishing.Ios ?? new ApplicationPlatformPublishingMetadata();
+        var android = publishing.Android ?? new ApplicationPlatformPublishingMetadata();
+
+        PublishingIosDisplayName = ios.DisplayName ?? string.Empty;
+        PublishingIosIdentifier = ios.Identifier ?? string.Empty;
+        PublishingIosVersion = ios.Version ?? string.Empty;
+        PublishingIosBuildNumber = ios.BuildNumber ?? string.Empty;
+        PublishingIosStatus = ios.Status ?? string.Empty;
+        PublishingIosStoreUrl = ios.StoreUrl ?? string.Empty;
+        PublishingIosNotes = ios.Notes ?? string.Empty;
+        PublishingAndroidDisplayName = android.DisplayName ?? string.Empty;
+        PublishingAndroidIdentifier = android.Identifier ?? string.Empty;
+        PublishingAndroidVersion = android.Version ?? string.Empty;
+        PublishingAndroidBuildNumber = android.BuildNumber ?? string.Empty;
+        PublishingAndroidStatus = android.Status ?? string.Empty;
+        PublishingAndroidStoreUrl = android.StoreUrl ?? string.Empty;
+        PublishingAndroidNotes = android.Notes ?? string.Empty;
+        PublishingReleaseOwner = publishing.ReleaseOwner ?? string.Empty;
+        PublishingNotes = publishing.Notes ?? string.Empty;
+    }
+
+    private void SavePublishingMetadata()
+    {
+        if (SelectedProject is null)
+        {
+            PublishingEditStatus = "Select a project before saving publishing metadata.";
+            return;
+        }
+
+        var readResult = _commandCenterMetadataService.Read(SelectedProject.Path);
+        if (!readResult.HasMetadata)
+        {
+            PublishingEditStatus = "Create command center metadata before saving publishing.";
+            return;
+        }
+
+        var metadata = readResult.Metadata with
+        {
+            Publishing = new ApplicationPublishingMetadata
+            {
+                Ios = new ApplicationPlatformPublishingMetadata
+                {
+                    DisplayName = Optional(PublishingIosDisplayName),
+                    Identifier = Optional(PublishingIosIdentifier),
+                    Version = Optional(PublishingIosVersion),
+                    BuildNumber = Optional(PublishingIosBuildNumber),
+                    Status = Optional(PublishingIosStatus),
+                    StoreUrl = Optional(PublishingIosStoreUrl),
+                    Notes = Optional(PublishingIosNotes)
+                },
+                Android = new ApplicationPlatformPublishingMetadata
+                {
+                    DisplayName = Optional(PublishingAndroidDisplayName),
+                    Identifier = Optional(PublishingAndroidIdentifier),
+                    Version = Optional(PublishingAndroidVersion),
+                    BuildNumber = Optional(PublishingAndroidBuildNumber),
+                    Status = Optional(PublishingAndroidStatus),
+                    StoreUrl = Optional(PublishingAndroidStoreUrl),
+                    Notes = Optional(PublishingAndroidNotes)
+                },
+                ReleaseOwner = Optional(PublishingReleaseOwner),
+                Notes = Optional(PublishingNotes)
+            }
+        };
+
+        var writeResult = _commandCenterMetadataService.Write(SelectedProject.Path, metadata);
+        if (!writeResult.IsSuccess)
+        {
+            PublishingEditStatus = $"Publishing metadata could not be saved: {string.Join(" ", writeResult.Errors)}";
+            return;
+        }
+
+        SelectedProjectDetail = new WorkspaceProjectDetailViewModel(
+            _workspaceProjectDetailService.GetDetail(SelectedProject.Path));
+        SetPublishingEditor(writeResult.Metadata.Publishing);
+        PublishingEditStatus = $"Publishing metadata saved: {writeResult.MetadataPath}";
+    }
+
+    private static string? Optional(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
     }
 
     private void RefreshWorkspaceAfterCreate(CreateProjectResult result)
